@@ -29,13 +29,14 @@ const Signup = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:3000/api/auth/signup", {
+      const response = await fetch("http://localhost:5000/api/auth/signup", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name: firstName + " " + lastName,
+          firstName,
+          lastName,
           email,
           password,
           role,
@@ -45,25 +46,30 @@ const Signup = () => {
       const data = await response.json();
 
       if (response.ok) {
+        // Store token and user role in localStorage
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('userRole', role);
+        }
         alert(data.message); // Show success message
         navigate("/dashboard"); // Redirect to dashboard
       } else {
         alert(data.message || "Signup failed");
       }
     } catch (error) {
-      console.error(error);
-      alert("Server error");
+      console.error("Fetch error:", error);
+      alert("Network error. Please check your connection.");
     }
   };
 
   return (
-    <div className="min-h-screen w-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex flex-col relative overflow-y-auto">
+    <div className="min-h-screen w-screen bg-gradient-to-br from-emerald-900 via-teal-800 to-cyan-900 flex flex-col relative overflow-y-auto">
 
       {/* Animated background elements */}
       <div className="absolute inset-0 fixed">
-        <div className="absolute top-20 left-20 w-96 h-96 bg-purple-500/20 rounded-full mix-blend-screen filter blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-blue-500/20 rounded-full mix-blend-screen filter blur-3xl animate-pulse animation-delay-2000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-500/20 rounded-full mix-blend-screen filter blur-3xl animate-pulse animation-delay-4000"></div>
+        <div className="absolute top-20 left-20 w-96 h-96 bg-emerald-400/15 rounded-full mix-blend-screen filter blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-20 right-20 w-96 h-96 bg-teal-400/15 rounded-full mix-blend-screen filter blur-3xl animate-pulse animation-delay-2000"></div>
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-400/15 rounded-full mix-blend-screen filter blur-3xl animate-pulse animation-delay-4000"></div>
       </div>
 
       {/* Header */}
@@ -83,22 +89,22 @@ const Signup = () => {
             <h2 className="text-3xl font-bold text-white mb-3">
               Join Suite Dreams
             </h2>
-            <p className="text-gray-300">
+            <p className="text-emerald-100">
               Create your account and start your journey with us
             </p>
           </div>
 
           {/* Role selection */}
           <div className="mb-8">
-            <label className="block text-sm font-semibold text-gray-200 mb-4">I am a:</label>
+            <label className="block text-sm font-semibold text-emerald-100 mb-4">I am a:</label>
             <div className="flex gap-3">
               <button
                 type="button"
                 onClick={() => setRole("Tenant")}
                 className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all duration-300 ${
                   role === "Tenant" 
-                    ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg transform scale-[1.02] border border-purple-400/50" 
-                    : "bg-white/10 text-gray-300 hover:bg-white/20 border border-white/20"
+                    ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg transform scale-[1.02] border border-emerald-400/30" 
+                    : "bg-white/10 text-emerald-100 hover:bg-white/20 border border-white/20"
                 }`}
               >
                 <span className="flex items-center justify-center gap-2">
@@ -113,8 +119,8 @@ const Signup = () => {
                 onClick={() => setRole("Landlord")}
                 className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all duration-300 ${
                   role === "Landlord" 
-                    ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg transform scale-[1.02] border border-purple-400/50" 
-                    : "bg-white/10 text-gray-300 hover:bg-white/20 border border-white/20"
+                    ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg transform scale-[1.02] border border-emerald-400/30" 
+                    : "bg-white/10 text-emerald-100 hover:bg-white/20 border border-white/20"
                 }`}
               >
                 <span className="flex items-center justify-center gap-2">
@@ -130,22 +136,22 @@ const Signup = () => {
           {/* First & Last Name */}
           <div className="grid grid-cols-2 gap-4 mb-6">
             <div>
-              <label className="block text-sm font-semibold text-gray-200 mb-2">First Name</label>
+              <label className="block text-sm font-semibold text-emerald-100 mb-2">First Name</label>
               <input
                 type="text"
                 placeholder="John"
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 text-white placeholder-gray-400 hover:bg-white/15"
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 text-white placeholder-emerald-200/60 hover:bg-white/15"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-200 mb-2">Last Name</label>
+              <label className="block text-sm font-semibold text-emerald-100 mb-2">Last Name</label>
               <input
                 type="text"
                 placeholder="Doe"
-                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 text-white placeholder-gray-400 hover:bg-white/15"
+                className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 text-white placeholder-emerald-200/60 hover:bg-white/15"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 required
@@ -155,11 +161,11 @@ const Signup = () => {
 
           {/* Email */}
           <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-200 mb-2">Email Address</label>
+            <label className="block text-sm font-semibold text-emerald-100 mb-2">Email Address</label>
             <input
               type="email"
               placeholder="you@example.com"
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 text-white placeholder-gray-400 hover:bg-white/15"
+              className="w-full px-4 py-3 bg-white/10 border border-emerald-200/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 text-white placeholder-emerald-200/60 hover:bg-white/15"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -168,11 +174,11 @@ const Signup = () => {
 
           {/* Password */}
           <div className="mb-6">
-            <label className="block text-sm font-semibold text-gray-200 mb-2">Password</label>
+            <label className="block text-sm font-semibold text-emerald-100 mb-2">Password</label>
             <input
               type="password"
               placeholder="Create a strong password"
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 text-white placeholder-gray-400 hover:bg-white/15"
+              className="w-full px-4 py-3 bg-white/10 border border-emerald-200/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 text-white placeholder-emerald-200/60 hover:bg-white/15"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -181,11 +187,11 @@ const Signup = () => {
 
           {/* Confirm Password */}
           <div className="mb-8">
-            <label className="block text-sm font-semibold text-gray-200 mb-2">Confirm Password</label>
+            <label className="block text-sm font-semibold text-emerald-100 mb-2">Confirm Password</label>
             <input
               type="password"
               placeholder="Confirm your password"
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 text-white placeholder-gray-400 hover:bg-white/15"
+              className="w-full px-4 py-3 bg-white/10 border border-emerald-200/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 text-white placeholder-emerald-200/60 hover:bg-white/15"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
@@ -197,32 +203,32 @@ const Signup = () => {
             <input 
               type="checkbox" 
               required 
-              className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500 mt-1 bg-white/10 border-white/20"
+              className="w-4 h-4 text-emerald-500 border-gray-300 rounded focus:ring-emerald-400 mt-1 bg-white/10 border-white/20"
             />
-            <p className="text-sm text-gray-300">
-              I agree to the <a href="#" className="text-purple-400 hover:text-purple-300 font-medium transition-colors">Terms of Service</a> and <a href="#" className="text-purple-400 hover:text-purple-300 font-medium transition-colors">Privacy Policy</a>
+            <p className="text-sm text-emerald-100">
+              I agree to the <a href="#" className="text-emerald-300 hover:text-emerald-200 font-medium transition-colors">Terms of Service</a> and <a href="#" className="text-emerald-300 hover:text-emerald-200 font-medium transition-colors">Privacy Policy</a>
             </p>
           </div>
 
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-3 rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-purple-500/30"
+            className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-3 rounded-xl font-semibold hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-emerald-400/30"
           >
             Create Account
           </button>
 
           {/* Divider */}
           <div className="flex items-center my-8">
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
-            <span className="px-4 text-sm text-gray-400 font-medium">Or continue with</span>
-            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-emerald-300/30 to-transparent"></div>
+            <span className="px-4 text-sm text-emerald-200/70 font-medium">Or continue with</span>
+            <div className="flex-1 h-px bg-gradient-to-r from-transparent via-emerald-300/30 to-transparent"></div>
           </div>
 
           {/* Google Button */}
           <button
             type="button"
-            className="w-full bg-white/10 border border-white/20 py-3 rounded-xl font-medium hover:bg-white/20 transition-all duration-300 flex items-center justify-center gap-3 text-gray-300 hover:border-white/30 mb-8"
+            className="w-full bg-white/10 border border-white/20 py-3 rounded-xl font-medium hover:bg-white/20 transition-all duration-300 flex items-center justify-center gap-3 text-emerald-100 hover:border-white/30 mb-8"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -234,9 +240,9 @@ const Signup = () => {
           </button>
 
           {/* Login Link */}
-          <p className="text-gray-300 text-center">
+          <p className="text-emerald-100 text-center">
             Already have an account?{" "}
-            <Link to="/" className="font-bold text-purple-400 hover:text-purple-300 transition-colors">
+            <Link to="/" className="font-bold text-emerald-300 hover:text-emerald-200 transition-colors">
               Sign In
             </Link>
           </p>

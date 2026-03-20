@@ -1,0 +1,355 @@
+import React, { useState } from 'react';
+
+interface SettingsSection {
+  id: string;
+  title: string;
+  icon: string;
+  items: SettingsItem[];
+}
+
+interface SettingsItem {
+  id: string;
+  label: string;
+  type: 'toggle' | 'input' | 'select' | 'textarea' | 'button';
+  value?: string | boolean;
+  placeholder?: string;
+  options?: { value: string; label: string }[];
+  description?: string;
+}
+
+const SettingsManagement: React.FC = () => {
+  const [activeSection, setActiveSection] = useState('profile');
+  const [formData, setFormData] = useState({
+    firstName: 'John',
+    lastName: 'Doe',
+    email: 'john.doe@example.com',
+    phone: '+977-9841234567',
+    address: 'Thamel, Kathmandu',
+    bio: 'I am a responsible tenant looking for comfortable living spaces.',
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: '',
+    notifications: true,
+    emailAlerts: true,
+    smsAlerts: false,
+    language: 'english',
+    timezone: 'Asia/Kathmandu',
+    theme: 'dark'
+  });
+
+  const settingsSections: SettingsSection[] = [
+    {
+      id: 'profile',
+      title: 'Profile Settings',
+      icon: '',
+      items: [
+        { id: 'firstName', label: 'First Name', type: 'input', value: formData.firstName, placeholder: 'Enter your first name' },
+        { id: 'lastName', label: 'Last Name', type: 'input', value: formData.lastName, placeholder: 'Enter your last name' },
+        { id: 'email', label: 'Email Address', type: 'input', value: formData.email, placeholder: 'Enter your email' },
+        { id: 'phone', label: 'Phone Number', type: 'input', value: formData.phone, placeholder: 'Enter your phone number' },
+        { id: 'address', label: 'Address', type: 'input', value: formData.address, placeholder: 'Enter your address' },
+        { id: 'bio', label: 'Bio', type: 'textarea', value: formData.bio, placeholder: 'Tell us about yourself' }
+      ]
+    },
+    {
+      id: 'security',
+      title: 'Security',
+      icon: '',
+      items: [
+        { id: 'currentPassword', label: 'Current Password', type: 'input', placeholder: 'Enter current password' },
+        { id: 'newPassword', label: 'New Password', type: 'input', placeholder: 'Enter new password' },
+        { id: 'confirmPassword', label: 'Confirm New Password', type: 'input', placeholder: 'Confirm new password' }
+      ]
+    },
+    {
+      id: 'notifications',
+      title: 'Notifications',
+      icon: '',
+      items: [
+        { id: 'notifications', label: 'Push Notifications', type: 'toggle', value: formData.notifications, description: 'Receive push notifications on your device' },
+        { id: 'emailAlerts', label: 'Email Alerts', type: 'toggle', value: formData.emailAlerts, description: 'Receive important updates via email' },
+        { id: 'smsAlerts', label: 'SMS Alerts', type: 'toggle', value: formData.smsAlerts, description: 'Get text messages for urgent matters' }
+      ]
+    },
+    {
+      id: 'preferences',
+      title: 'Preferences',
+      icon: '',
+      items: [
+        { 
+          id: 'language', 
+          label: 'Language', 
+          type: 'select', 
+          value: formData.language,
+          options: [
+            { value: 'english', label: 'English' },
+            { value: 'nepali', label: 'नेपाली' },
+            { value: 'hindi', label: 'हिन्दी' }
+          ]
+        },
+        {
+          id: 'timezone',
+          label: 'Timezone',
+          type: 'select',
+          value: formData.timezone,
+          options: [
+            { value: 'Asia/Kathmandu', label: 'Kathmandu (GMT+5:45)' },
+            { value: 'Asia/Delhi', label: 'Delhi (GMT+5:30)' },
+            { value: 'UTC', label: 'UTC (GMT+0)' }
+          ]
+        },
+        {
+          id: 'theme',
+          label: 'Theme',
+          type: 'select',
+          value: formData.theme,
+          options: [
+            { value: 'dark', label: 'Dark Mode' },
+            { value: 'light', label: 'Light Mode' },
+            { value: 'auto', label: 'Auto' }
+          ]
+        }
+      ]
+    }
+  ];
+
+  const handleInputChange = (field: string, value: string | boolean) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSaveSection = (sectionId: string) => {
+    console.log(`Saving ${sectionId}:`, formData);
+    alert(`${settingsSections.find(s => s.id === sectionId)?.title} saved successfully!`);
+  };
+
+  const handlePasswordChange = () => {
+    if (formData.newPassword !== formData.confirmPassword) {
+      alert('New passwords do not match!');
+      return;
+    }
+    if (formData.newPassword.length < 6) {
+      alert('Password must be at least 6 characters long!');
+      return;
+    }
+    alert('Password changed successfully!');
+    setFormData(prev => ({
+      ...prev,
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    }));
+  };
+
+  const handleDeleteAccount = () => {
+    if (window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+      if (window.confirm('This will permanently delete all your data. Are you absolutely sure?')) {
+        alert('Account deletion requested. You will receive a confirmation email.');
+      }
+    }
+  };
+
+  const renderSettingItem = (item: SettingsItem) => {
+    switch (item.type) {
+      case 'toggle':
+        return (
+          <div className="flex items-center justify-between">
+            <div className="flex-1">
+              <label className="text-white font-medium">{item.label}</label>
+              {item.description && (
+                <p className="text-emerald-200/60 text-sm mt-1">{item.description}</p>
+              )}
+            </div>
+            <button
+              onClick={() => handleInputChange(item.id, !item.value)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                item.value ? 'bg-emerald-500' : 'bg-gray-600'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  item.value ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+        );
+
+      case 'select':
+        return (
+          <div>
+            <label className="block text-white font-medium mb-2">{item.label}</label>
+            <select
+              value={(item.value as string) || ''}
+              onChange={(e) => handleInputChange(item.id, e.target.value)}
+              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 text-white hover:bg-white/15"
+            >
+              {item.options?.map((option) => (
+                <option key={option.value} value={option.value} className="bg-gray-800">
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        );
+
+      case 'textarea':
+        return (
+          <div>
+            <label className="block text-white font-medium mb-2">{item.label}</label>
+            <textarea
+              value={(item.value as string) || ''}
+              onChange={(e) => handleInputChange(item.id, e.target.value)}
+              placeholder={item.placeholder}
+              rows={3}
+              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 text-white placeholder-emerald-200/60 hover:bg-white/15 resize-none"
+            />
+          </div>
+        );
+
+      default: // input
+        return (
+          <div>
+            <label className="block text-white font-medium mb-2">{item.label}</label>
+            <input
+              type={item.id.includes('Password') ? 'password' : 'text'}
+              value={(item.value as string) || ''}
+              onChange={(e) => handleInputChange(item.id, e.target.value)}
+              placeholder={item.placeholder}
+              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 text-white placeholder-emerald-200/60 hover:bg-white/15"
+            />
+          </div>
+        );
+    }
+  };
+
+  return (
+    <div className="p-6">
+      {/* Header */}
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold text-white mb-2">Settings</h2>
+        <p className="text-emerald-100">Manage your account settings and preferences</p>
+      </div>
+
+      <div className="grid md:grid-cols-4 gap-6">
+        {/* Sidebar */}
+        <div className="md:col-span-1">
+          <div className="bg-white/10 backdrop-blur-xl rounded-xl border border-white/20">
+            <nav className="p-4">
+              <ul className="space-y-2">
+                {settingsSections.map((section) => (
+                  <li key={section.id}>
+                    <button
+                      onClick={() => setActiveSection(section.id)}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
+                        activeSection === section.id
+                          ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
+                          : 'text-emerald-200 hover:bg-emerald-800/50 hover:text-white'
+                      }`}
+                    >
+                      <span className="text-xl">{section.icon}</span>
+                      <span className="font-medium">{section.title}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="md:col-span-3">
+          <div className="bg-white/10 backdrop-blur-xl rounded-xl border border-white/20">
+            <div className="p-6">
+              {/* Section Header */}
+              <div className="mb-6">
+                <h3 className="text-xl font-bold text-white mb-2">
+                  {settingsSections.find(s => s.id === activeSection)?.title}
+                </h3>
+                <p className="text-emerald-100/80 text-sm">
+                  {activeSection === 'profile' && 'Update your personal information and profile details'}
+                  {activeSection === 'security' && 'Manage your password and security settings'}
+                  {activeSection === 'notifications' && 'Control how you receive notifications and alerts'}
+                  {activeSection === 'preferences' && 'Customize your app experience and preferences'}
+                </p>
+              </div>
+
+              {/* Settings Form */}
+              <div className="space-y-6">
+                {settingsSections
+                  .find(s => s.id === activeSection)
+                  ?.items.map((item) => (
+                    <div key={item.id} className="pb-6 border-b border-white/10 last:border-0">
+                      {renderSettingItem(item)}
+                    </div>
+                  ))}
+
+                {/* Section-specific actions */}
+                {activeSection === 'security' && (
+                  <div className="pt-6 border-t border-white/10">
+                    <button
+                      onClick={handlePasswordChange}
+                      className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg"
+                    >
+                      Change Password
+                    </button>
+                  </div>
+                )}
+
+                {activeSection === 'profile' && (
+                  <div className="pt-6 border-t border-white/10">
+                    <button
+                      onClick={() => handleSaveSection('profile')}
+                      className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg"
+                    >
+                      Save Profile Changes
+                    </button>
+                  </div>
+                )}
+
+                {activeSection === 'notifications' && (
+                  <div className="pt-6 border-t border-white/10">
+                    <button
+                      onClick={() => handleSaveSection('notifications')}
+                      className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg"
+                    >
+                      Save Notification Settings
+                    </button>
+                  </div>
+                )}
+
+                {activeSection === 'preferences' && (
+                  <div className="pt-6 border-t border-white/10">
+                    <button
+                      onClick={() => handleSaveSection('preferences')}
+                      className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg"
+                    >
+                      Save Preferences
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Danger Zone */}
+          {activeSection === 'security' && (
+            <div className="mt-6 bg-red-500/10 backdrop-blur-xl rounded-xl border border-red-400/30 p-6">
+              <h4 className="text-red-300 font-bold text-lg mb-3">Danger Zone</h4>
+              <p className="text-red-200/80 text-sm mb-4">
+                Irreversible and destructive actions. Please be careful.
+              </p>
+              <button
+                onClick={handleDeleteAccount}
+                className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors"
+              >
+                Delete Account
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default SettingsManagement;

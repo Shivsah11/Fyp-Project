@@ -1,13 +1,47 @@
 import { Link, useNavigate } from "react-router-dom";
-import React from 'react';
+import React, { useState } from 'react';
 
 const Login = () => {
   const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login logic here
-    navigate('/dashboard');
+    
+    // Basic validation
+    if (!email || !password) {
+      alert('Please enter both email and password');
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:5000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Store token and user role in localStorage
+        if (data.token && data.user) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('userRole', data.user.role);
+          localStorage.setItem('userName', `${data.user.firstName} ${data.user.lastName}`);
+        }
+        alert(data.message);
+        navigate('/dashboard');
+      } else {
+        alert(data.message || 'Login failed');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('Server error. Please try again.');
+    }
   };
 
   return (
@@ -47,6 +81,8 @@ const Login = () => {
             <input
               type="email"
               placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 text-white placeholder-emerald-200/60 hover:bg-white/15"
             />
           </div>
@@ -57,6 +93,8 @@ const Login = () => {
             <input
               type="password"
               placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 text-white placeholder-emerald-200/60 hover:bg-white/15"
             />
           </div>
@@ -76,6 +114,17 @@ const Login = () => {
           <button type="submit" className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-3 rounded-xl font-semibold hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-emerald-400/30">
             Log In
           </button>
+
+          {/* Admin Login Button */}
+          <div className="mt-6 text-center">
+            <a 
+              href="/admin/login" 
+              className="inline-flex items-center gap-2 px-6 py-3 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 hover:text-white rounded-xl font-medium transition-all duration-300 border border-purple-400/20 hover:border-purple-400/40"
+            >
+              <span>👑</span>
+              <span>Admin Login</span>
+            </a>
+          </div>
 
           {/* Divider */}
           <div className="flex items-center my-8">
