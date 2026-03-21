@@ -12,22 +12,45 @@ interface User {
 }
 
 const AdminDashboard = () => {
-  const [activeSection, setActiveSection] = useState<'overview' | 'users' | 'tenants' | 'landlords'>('overview');
+  const [activeSection, setActiveSection] = useState<'dashboard' | 'users' | 'properties' | 'bookings' | 'analytics' | 'settings'>('dashboard');
   const [users, setUsers] = useState<User[]>([]);
   const [stats, setStats] = useState({
+    totalRevenue: 125344,
+    activeProperties: 0,
+    pendingVerification: 0,
     totalUsers: 0,
     totalTenants: 0,
     totalLandlords: 0,
     totalProperties: 0
   });
+  const [revenueData] = useState([
+    { month: 'Jan', revenue: 85000 },
+    { month: 'Feb', revenue: 92000 },
+    { month: 'Mar', revenue: 78000 },
+    { month: 'Apr', revenue: 105000 },
+    { month: 'May', revenue: 118000 },
+    { month: 'Jun', revenue: 125344 }
+  ]);
+  const [recentBookings] = useState([
+    {
+      id: 1,
+      property: 'Lal 2BHK',
+      tenant: 'Alex',
+      date: '20dec',
+      amount: '3400',
+      status: 'Confirmed'
+    }
+  ]);
 
   const navigate = useNavigate();
 
-  const menuItems: Array<{id: 'overview' | 'users' | 'tenants' | 'landlords'; label: string; icon: string}> = [
-    { id: 'overview', label: 'Overview', icon: '📊' },
-    { id: 'users', label: 'User Management', icon: '👥' },
-    { id: 'tenants', label: 'Tenants', icon: '👤' },
-    { id: 'landlords', label: 'Landlords', icon: '🏠' },
+  const menuItems: Array<{id: 'dashboard' | 'users' | 'properties' | 'bookings' | 'analytics' | 'settings'; label: string; icon: string}> = [
+    { id: 'dashboard', label: 'Dashboard', icon: '' },
+    { id: 'users', label: 'Users', icon: '' },
+    { id: 'properties', label: 'Properties', icon: '' },
+    { id: 'bookings', label: 'Bookings', icon: '' },
+    { id: 'analytics', label: 'Analytics', icon: '' },
+    { id: 'settings', label: 'System Settings', icon: '' },
   ];
 
   useEffect(() => {
@@ -117,68 +140,73 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen w-screen bg-gradient-to-br from-purple-900 via-indigo-800 to-blue-900 flex relative overflow-hidden">
+    <div className="min-h-screen w-screen bg-gray-50 flex relative overflow-hidden">
       
-      {/* Animated background elements */}
-      <div className="absolute inset-0 fixed">
-        <div className="absolute top-20 left-20 w-96 h-96 bg-purple-400/15 rounded-full mix-blend-screen filter blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-indigo-400/15 rounded-full mix-blend-screen filter blur-3xl animate-pulse animation-delay-2000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-blue-400/15 rounded-full mix-blend-screen filter blur-3xl animate-pulse animation-delay-4000"></div>
-      </div>
+      {/* Clean light background */}
+      <div className="absolute inset-0 fixed bg-gray-50"></div>
 
-      {/* Sidebar */}
-      <div className="relative z-10 w-80 bg-white/10 backdrop-blur-xl border-r border-white/20 flex flex-col">
-        <div className="p-6 border-b border-white/20">
-          <h2 className="text-2xl font-bold text-white">Admin Panel</h2>
-          <p className="text-purple-200 text-sm mt-1">System Management</p>
+      {/* Modern Light Sidebar */}
+      <div className="relative z-10 w-64 bg-white border-r border-gray-200 flex flex-col shadow-sm">
+        {/* Logo Section */}
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-lg flex items-center justify-center shadow-sm">
+              <span className="text-white font-bold text-lg">SD</span>
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-gray-900">Suite Dreams</h2>
+              <p className="text-xs text-gray-500">Real estate management platform</p>
+            </div>
+          </div>
         </div>
         
+        {/* Navigation Items */}
         <nav className="flex-1 p-4">
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveSection(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl mb-2 transition-all duration-300 ${
-                activeSection === item.id
-                  ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-lg transform scale-[1.02]'
-                  : 'text-purple-200 hover:bg-white/10 hover:text-white'
-              }`}
-            >
-              <span className="text-xl">{item.icon}</span>
-              <span className="font-medium">{item.label}</span>
-            </button>
-          ))}
+          <div className="space-y-1">
+            {menuItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setActiveSection(item.id)}
+                className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-bold transition-all duration-200 rounded-lg border-4 border-black bg-white hover:border-green-500 hover:bg-green-50 hover:text-green-700 ${
+                  activeSection === item.id
+                    ? 'text-white bg-gradient-to-r from-green-600 to-green-700 border-black shadow-lg'
+                    : 'text-gray-800'
+                }`}
+              >
+                <span className="w-5 h-5 flex items-center justify-center text-gray-500">
+                </span>
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </div>
         </nav>
 
-        <div className="p-4 border-t border-white/20">
+        {/* User Section */}
+        <div className="p-4 border-t border-gray-200">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 bg-red-500/20 hover:bg-red-500/30 text-red-300 hover:text-white rounded-xl transition-all duration-300"
+            className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-gray-800 border-4 border-black bg-white hover:border-red-500 hover:bg-red-50 hover:text-red-700 rounded-lg transition-all duration-200"
           >
-            <span>🚪</span>
-            <span className="font-medium">Logout</span>
+            <span className="w-5 h-5 flex items-center justify-center text-gray-500">←</span>
+            <span>Sign out</span>
           </button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 relative z-10">
-        {/* Top Bar */}
-        <div className="bg-white/5 backdrop-blur-xl border-b border-white/20 px-8 py-6">
+      <div className="flex-1 relative z-10 bg-gray-50">
+        {/* Clean Top Bar */}
+        <div className="bg-white px-8 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-white">
-                {activeSection === 'overview' ? 'Dashboard Overview' :
-                 activeSection === 'users' ? 'User Management' :
-                 activeSection === 'tenants' ? 'Tenant Management' :
-                 activeSection === 'landlords' ? 'Landlord Management' :
-                 'Admin Panel'}
-              </h1>
-              <p className="text-purple-200 mt-1">Manage your platform efficiently</p>
+              <h1 className="text-xs font-normal text-gray-700" style={{fontSize: '20px'}}>Admin Dashboard</h1>
             </div>
             <div className="flex items-center gap-4">
-              <div className="bg-white/10 px-4 py-2 rounded-xl">
-                <span className="text-purple-200 text-sm">Administrator</span>
+              <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded transition-colors">
+                <span className="text-lg">🔔</span>
+              </button>
+              <div className="bg-gray-100 px-3 py-1.5 rounded">
+                <span className="text-gray-600 text-sm">Administrator</span>
               </div>
             </div>
           </div>
@@ -186,123 +214,224 @@ const AdminDashboard = () => {
 
         {/* Content Area */}
         <div className="p-8">
-          {activeSection === 'overview' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-white/10 backdrop-blur-xl rounded-xl p-6 border border-white/20">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-white">Total Users</h3>
-                  <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center">
-                    <span className="text-2xl">👥</span>
+          {activeSection === 'dashboard' && (
+            <div>
+              {/* Clean Information Cards */}
+              <div className="flex gap-6 mb-8">
+                <div className="flex-1 bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Total Revenue</h3>
+                    <div className="w-12 h-12 bg-green-50 rounded-full flex items-center justify-center">
+                      <span className="text-2xl font-semibold text-green-600">$</span>
+                    </div>
                   </div>
+                  <p className="text-3xl font-bold text-gray-900">Npr {stats.totalRevenue.toLocaleString()}</p>
+                  <p className="text-gray-600 text-sm">All time revenue</p>
                 </div>
-                <p className="text-3xl font-bold text-white">{stats.totalUsers}</p>
-                <p className="text-blue-300 text-sm">All registered users</p>
+
+                <div className="flex-1 bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Active Properties</h3>
+                    <div className="w-12 h-12 bg-blue-50 rounded-full flex items-center justify-center">
+                      <span className="text-2xl font-semibold text-blue-600">P</span>
+                    </div>
+                  </div>
+                  <p className="text-3xl font-bold text-gray-900">{stats.activeProperties}</p>
+                  <p className="text-gray-600 text-sm">Currently listed</p>
+                </div>
+
+                <div className="flex-1 bg-white rounded-xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Pending verification</h3>
+                    <div className="w-12 h-12 bg-orange-50 rounded-full flex items-center justify-center">
+                      <span className="text-2xl font-semibold text-orange-600">PV</span>
+                    </div>
+                  </div>
+                  <p className="text-3xl font-bold text-gray-900">{stats.pendingVerification}</p>
+                  <p className="text-gray-600 text-sm">Awaiting review</p>
+                </div>
               </div>
 
-              <div className="bg-white/10 backdrop-blur-xl rounded-xl p-6 border border-white/20">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-white">Tenants</h3>
-                  <div className="w-12 h-12 bg-emerald-500/20 rounded-full flex items-center justify-center">
-                    <span className="text-2xl">👤</span>
-                  </div>
+              {/* Clean Revenue Analytics */}
+              <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm mb-8">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-semibold text-gray-900">Revenue Analytics</h3>
+                  <span className="text-gray-600 text-sm">Last 30 days</span>
                 </div>
-                <p className="text-3xl font-bold text-white">{stats.totalTenants}</p>
-                <p className="text-emerald-300 text-sm">Active tenant accounts</p>
+                <div className="h-64 flex items-end justify-between gap-4">
+                  {revenueData.map((data, index) => (
+                    <div key={index} className="flex-1 flex flex-col items-center gap-2">
+                      <div 
+                        className="w-full bg-gradient-to-t from-teal-500 to-cyan-400 rounded-t-lg transition-all duration-200 hover:from-teal-400 hover:to-cyan-300"
+                        style={{ 
+                          height: `${(data.revenue / Math.max(...revenueData.map(d => d.revenue))) * 100}%`,
+                          minHeight: '20px'
+                        }}
+                      ></div>
+                      <span className="text-gray-600 text-xs font-medium">{data.month}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              <div className="bg-white/10 backdrop-blur-xl rounded-xl p-6 border border-white/20">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-white">Landlords</h3>
-                  <div className="w-12 h-12 bg-orange-500/20 rounded-full flex items-center justify-center">
-                    <span className="text-2xl">🏠</span>
+              {/* Clean Action Required and Recent Bookings */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Clean Action Required */}
+                <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-semibold text-gray-900">Action Required</h3>
+                    <button className="text-teal-600 hover:text-teal-700 text-sm font-medium transition-colors">
+                      View All
+                    </button>
+                  </div>
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((item) => (
+                      <div key={item} className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:bg-gray-100 transition-all duration-200">
+                        <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
+                        <div className="h-3 bg-gray-300 rounded w-1/2"></div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <p className="text-3xl font-bold text-white">{stats.totalLandlords}</p>
-                <p className="text-orange-300 text-sm">Active landlord accounts</p>
-              </div>
 
-              <div className="bg-white/10 backdrop-blur-xl rounded-xl p-6 border border-white/20">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-white">Properties</h3>
-                  <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
-                    <span className="text-2xl">🏢</span>
+                {/* Clean Recent Bookings */}
+                <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-xl font-semibold text-gray-900">Recent Bookings</h3>
+                    <button className="text-teal-600 hover:text-teal-700 text-sm font-medium transition-colors">
+                      View All
+                    </button>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="border-b border-gray-200">
+                          <th className="text-left p-2 font-semibold text-sm text-gray-700">Property</th>
+                          <th className="text-left p-2 font-semibold text-sm text-gray-700">Tenant</th>
+                          <th className="text-left p-2 font-semibold text-sm text-gray-700">Date</th>
+                          <th className="text-left p-2 font-semibold text-sm text-gray-700">Amount</th>
+                          <th className="text-left p-2 font-semibold text-sm text-gray-700">Status</th>
+                          <th className="text-left p-2 font-semibold text-sm text-gray-700">Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {recentBookings.map((booking) => (
+                          <tr key={booking.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200">
+                            <td className="p-2 text-sm text-gray-900">{booking.property}</td>
+                            <td className="p-2 text-sm text-gray-900">{booking.tenant}</td>
+                            <td className="p-2 text-sm text-gray-900">{booking.date}</td>
+                            <td className="p-2 text-sm text-gray-900">{booking.amount}</td>
+                            <td className="p-2">
+                              <span className="px-2 py-1 bg-green-50 text-green-700 rounded text-xs font-medium">
+                                {booking.status}
+                              </span>
+                            </td>
+                            <td className="p-2">
+                              <button className="text-teal-600 hover:text-teal-700 text-sm font-medium transition-colors">
+                                View
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
-                <p className="text-3xl font-bold text-white">{stats.totalProperties}</p>
-                <p className="text-green-300 text-sm">Total properties listed</p>
               </div>
             </div>
           )}
 
-          {(activeSection === 'users' || activeSection === 'tenants' || activeSection === 'landlords') && (
-            <div className="bg-white/10 backdrop-blur-xl rounded-xl border border-white/20">
-              <div className="p-6 border-b border-white/20">
-                <h3 className="text-xl font-bold text-white mb-4">
-                  {activeSection === 'users' ? 'All Users' :
-                   activeSection === 'tenants' ? 'Tenants' :
-                   'Landlords'}
-                </h3>
+          {activeSection === 'users' && (
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
+              <div className="p-6 border-b border-gray-200">
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">User Management</h3>
               </div>
               
               <div className="overflow-x-auto">
-                <table className="w-full text-white">
+                <table className="w-full">
                   <thead>
-                    <tr className="border-b border-white/20">
-                      <th className="text-left p-4 font-semibold">Name</th>
-                      <th className="text-left p-4 font-semibold">Email</th>
-                      <th className="text-left p-4 font-semibold">Type</th>
-                      <th className="text-left p-4 font-semibold">Status</th>
-                      <th className="text-left p-4 font-semibold">Actions</th>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left p-4 font-semibold text-gray-700">Name</th>
+                      <th className="text-left p-4 font-semibold text-gray-700">Email</th>
+                      <th className="text-left p-4 font-semibold text-gray-700">Type</th>
+                      <th className="text-left p-4 font-semibold text-gray-700">Status</th>
+                      <th className="text-left p-4 font-semibold text-gray-700">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {users
-                      .filter(user => activeSection === 'users' || user.userType === activeSection.slice(0, -1))
-                      .map((user) => (
-                        <tr key={user._id} className="border-b border-white/10 hover:bg-white/5">
-                          <td className="p-4">
-                            <div className="flex items-center gap-2">
-                              <span>{user.firstName} {user.lastName}</span>
-                            </div>
-                          </td>
-                          <td className="p-4 text-purple-200">{user.email}</td>
-                          <td className="p-4">
-                            <span className={`px-2 py-1 rounded-full text-xs ${
-                              user.userType === 'Tenant' ? 'bg-emerald-500/20 text-emerald-300' :
-                              user.userType === 'Landlord' ? 'bg-orange-500/20 text-orange-300' :
-                              'bg-purple-500/20 text-purple-300'
-                            }`}>
-                              {user.userType}
-                            </span>
-                          </td>
-                          <td className="p-4">
-                            <span className={`px-2 py-1 rounded-full text-xs ${
-                              user.isActive ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'
-                            }`}>
-                              {user.isActive ? 'Active' : 'Inactive'}
-                            </span>
-                          </td>
-                          <td className="p-4">
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => handleEditUser(user._id)}
-                                className="px-3 py-1 bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 hover:text-white rounded text-sm transition-colors"
-                              >
-                                Edit
-                              </button>
-                              <button
-                                onClick={() => handleDeleteUser(user._id)}
-                                className="px-3 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-300 hover:text-white rounded text-sm transition-colors"
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                    {users.map((user) => (
+                      <tr key={user._id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors duration-200">
+                        <td className="p-4">
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-900">{user.firstName} {user.lastName}</span>
+                          </div>
+                        </td>
+                        <td className="p-4 text-gray-600">{user.email}</td>
+                        <td className="p-4">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            user.userType === 'Tenant' ? 'bg-emerald-50 text-emerald-700' :
+                            user.userType === 'Landlord' ? 'bg-orange-50 text-orange-700' :
+                            'bg-purple-50 text-purple-700'
+                          }`}>
+                            {user.userType}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            user.isActive ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                          }`}>
+                            {user.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleEditUser(user._id)}
+                              className="px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded text-sm font-medium transition-colors"
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDeleteUser(user._id)}
+                              className="px-3 py-1 bg-red-50 hover:bg-red-100 text-red-700 rounded text-sm font-medium transition-colors"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
+            </div>
+          )}
+
+          {activeSection === 'properties' && (
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">Properties Management</h3>
+              <p className="text-gray-600 font-medium">Properties management coming soon...</p>
+            </div>
+          )}
+
+          {activeSection === 'bookings' && (
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">Bookings Management</h3>
+              <p className="text-gray-600 font-medium">Bookings management coming soon...</p>
+            </div>
+          )}
+
+          {activeSection === 'analytics' && (
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">Analytics Dashboard</h3>
+              <p className="text-gray-600 font-medium">Advanced analytics coming soon...</p>
+            </div>
+          )}
+
+          {activeSection === 'settings' && (
+            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">System Settings</h3>
+              <p className="text-gray-600 font-medium">System settings coming soon...</p>
             </div>
           )}
         </div>

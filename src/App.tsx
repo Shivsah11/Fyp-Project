@@ -1,4 +1,5 @@
 import "./App.css";
+import "./styles/admin-animations.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Login from "./component/auth/Login";
