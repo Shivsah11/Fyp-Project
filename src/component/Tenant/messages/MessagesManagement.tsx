@@ -157,12 +157,12 @@ const MessagesManagement: React.FC = () => {
     <div className="p-6">
       {/* Header */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-white mb-2">Messages</h2>
-        <p className="text-emerald-100">Communicate with landlords and support</p>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Messages</h2>
+        <p className="text-gray-700">Communicate with landlords and support</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6 bg-white/5 backdrop-blur-sm rounded-xl p-1 border border-white/10">
+      <div className="flex gap-2 mb-6 bg-white rounded-xl p-1 border border-gray-200 shadow-sm">
         {(['inbox', 'sent', 'archived'] as const).map((tab) => (
           <button
             key={tab}
@@ -170,7 +170,7 @@ const MessagesManagement: React.FC = () => {
             className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
               activeTab === tab
                 ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
-                : 'text-emerald-200 hover:bg-emerald-800/50 hover:text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
             }`}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)} ({tab === 'inbox' ? messages.filter(m => m.type !== 'sent').length : 0})
@@ -190,11 +190,11 @@ const MessagesManagement: React.FC = () => {
                     setSelectedMessage(message);
                     handleMarkAsRead(message.id);
                   }}
-                  className={`p-4 border-b border-white/10 cursor-pointer transition-all duration-200 ${
+                  className={`p-4 border-b border-gray-200 cursor-pointer transition-all duration-200 ${
                     selectedMessage?.id === message.id 
-                      ? 'bg-emerald-500/20 border-l-4 border-l-emerald-400' 
-                      : 'hover:bg-white/10'
-                  } ${!message.isRead ? 'bg-white/5' : ''}`}
+                      ? 'bg-emerald-50 border-l-4 border-l-emerald-400' 
+                      : 'hover:bg-gray-50'
+                  } ${!message.isRead ? 'bg-blue-50' : ''}`}
                 >
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
@@ -209,9 +209,9 @@ const MessagesManagement: React.FC = () => {
                           <span className="w-2 h-2 bg-emerald-400 rounded-full"></span>
                         )}
                       </div>
-                      <h4 className="text-white font-semibold text-sm truncate">{message.sender}</h4>
-                      <p className="text-emerald-200 text-sm font-medium truncate">{message.subject}</p>
-                      <p className="text-emerald-100/60 text-xs mt-1">{formatDate(message.timestamp)}</p>
+                      <h4 className="text-gray-900 font-semibold text-sm truncate">{message.sender}</h4>
+                      <p className="text-gray-700 text-sm font-medium truncate">{message.subject}</p>
+                      <p className="text-gray-500 text-xs mt-1">{formatDate(message.timestamp)}</p>
                     </div>
                   </div>
                 </div>
@@ -223,7 +223,7 @@ const MessagesManagement: React.FC = () => {
         {/* Message Content */}
         <div className="md:col-span-2">
           {selectedMessage ? (
-            <div className="bg-white/10 backdrop-blur-xl rounded-xl border border-white/20">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
               <div className="p-6">
                 {/* Message Header */}
                 <div className="flex items-start justify-between mb-6">
@@ -233,12 +233,12 @@ const MessagesManagement: React.FC = () => {
                     </div>
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-xl font-bold text-white">{selectedMessage.sender}</h3>
+                        <h3 className="text-xl font-bold text-gray-900">{selectedMessage.sender}</h3>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getTypeColor(selectedMessage.type)}`}>
                           {getTypeIcon(selectedMessage.type)} {selectedMessage.type}
                         </span>
                       </div>
-                      <p className="text-emerald-200 text-sm">{selectedMessage.timestamp}</p>
+                      <p className="text-gray-600 text-sm">{selectedMessage.timestamp}</p>
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -253,26 +253,26 @@ const MessagesManagement: React.FC = () => {
                 </div>
 
                 {/* Message Subject */}
-                <h4 className="text-lg font-semibold text-white mb-4">{selectedMessage.subject}</h4>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">{selectedMessage.subject}</h4>
 
                 {/* Message Content */}
-                <div className="bg-white/5 rounded-xl p-4 mb-6">
-                  <p className="text-emerald-100 leading-relaxed">{selectedMessage.content}</p>
+                <div className="bg-gray-50 rounded-xl p-4 mb-6">
+                  <p className="text-gray-800 leading-relaxed">{selectedMessage.content}</p>
                 </div>
 
                 {/* Reply Section */}
-                <div className="border-t border-white/10 pt-6">
-                  <h5 className="text-white font-semibold mb-3">
+                <div className="border-t border-gray-200 pt-6">
+                  <h5 className="text-gray-900 font-semibold mb-3">
                     {newMessage ? 'Compose new message' : 'Reply to message'}
                     {newMessage && (
-                      <span className="ml-2 text-sm text-emerald-300">
+                      <span className="ml-2 text-sm text-gray-600">
                         to {newMessage.recipient}
                       </span>
                     )}
                   </h5>
                   {newMessage && (
                     <div className="mb-3">
-                      <p className="text-emerald-200 text-sm">Subject: {newMessage.subject}</p>
+                      <p className="text-gray-600 text-sm">Subject: {newMessage.subject}</p>
                     </div>
                   )}
                   <div className="space-y-3">
@@ -280,7 +280,7 @@ const MessagesManagement: React.FC = () => {
                       value={replyText}
                       onChange={(e) => setReplyText(e.target.value)}
                       placeholder={newMessage ? "Type your message here..." : "Type your reply here..."}
-                      className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 text-white placeholder-emerald-200/60 hover:bg-white/15 resize-none"
+                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 text-gray-800 placeholder-gray-500 hover:bg-gray-50 resize-none"
                       rows={4}
                     />
                     <div className="flex justify-end gap-3">
@@ -291,7 +291,7 @@ const MessagesManagement: React.FC = () => {
                             setNewMessage(null);
                           }
                         }}
-                        className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg font-medium transition-colors"
+                        className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
                       >
                         Cancel
                       </button>
@@ -315,13 +315,13 @@ const MessagesManagement: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 h-96 flex items-center justify-center">
+            <div className="bg-white rounded-xl border border-gray-200 shadow-sm h-96 flex items-center justify-center">
               <div className="text-center">
                 <div className="text-6xl mb-4">📬</div>
-                <h3 className="text-xl font-bold text-white mb-2">
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
                   {newMessage ? 'Compose New Message' : 'Select a message'}
                 </h3>
-                <p className="text-emerald-100">
+                <p className="text-gray-700">
                   {newMessage 
                     ? `Send a message to ${newMessage.recipient}` 
                     : 'Choose a message from the list to view its contents'
@@ -329,14 +329,14 @@ const MessagesManagement: React.FC = () => {
                 </p>
                 {newMessage && (
                   <div className="mt-6 max-w-md mx-auto">
-                    <div className="bg-white/5 rounded-xl p-4 mb-4">
-                      <p className="text-emerald-200 text-sm mb-2">To: {newMessage.recipient}</p>
-                      <p className="text-emerald-200 text-sm mb-4">Subject: {newMessage.subject}</p>
+                    <div className="bg-gray-50 rounded-xl p-4 mb-4">
+                      <p className="text-gray-600 text-sm mb-2">To: {newMessage.recipient}</p>
+                      <p className="text-gray-600 text-sm mb-4">Subject: {newMessage.subject}</p>
                       <textarea
                         value={replyText}
                         onChange={(e) => setReplyText(e.target.value)}
                         placeholder="Type your message here..."
-                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 text-white placeholder-emerald-200/60 hover:bg-white/15 resize-none"
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 text-gray-800 placeholder-gray-500 hover:bg-gray-50 resize-none"
                         rows={4}
                       />
                       <div className="flex justify-end gap-3 mt-4">
@@ -345,7 +345,7 @@ const MessagesManagement: React.FC = () => {
                             setReplyText('');
                             setNewMessage(null);
                           }}
-                          className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg font-medium transition-colors"
+                          className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
                         >
                           Cancel
                         </button>
@@ -373,8 +373,8 @@ const MessagesManagement: React.FC = () => {
       {filteredMessages.length === 0 && (
         <div className="text-center py-16">
           <div className="text-6xl mb-4">📭</div>
-          <h3 className="text-xl font-bold text-white mb-2">No messages</h3>
-          <p className="text-emerald-100">
+          <h3 className="text-xl font-bold text-gray-900 mb-2">No messages</h3>
+          <p className="text-gray-700">
             {activeTab === 'inbox' ? 'You have no messages in your inbox' :
              activeTab === 'sent' ? 'You have no sent messages' :
              'You have no archived messages'}

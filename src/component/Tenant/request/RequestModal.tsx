@@ -75,7 +75,7 @@ const RequestModal = ({ isOpen, onClose }: RequestModalProps) => {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Request Type */}
           <div>
-            <label className="block text-sm font-semibold text-gray-200 mb-3">Request Type</label>
+            <label className="block text-sm font-semibold text-gray-600 mb-3">Request Type</label>
             <div className="grid grid-cols-2 gap-3">
               {requestTypes.map((type) => (
                 <button
@@ -84,8 +84,8 @@ const RequestModal = ({ isOpen, onClose }: RequestModalProps) => {
                   onClick={() => setRequestType(type.id)}
                   className={`p-3 rounded-xl border transition-all duration-300 flex items-center gap-2 ${
                     requestType === type.id
-                      ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white border-purple-400/50'
-                      : 'bg-white/10 text-gray-300 border-white/20 hover:bg-white/20'
+                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-blue-400/50'
+                      : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-100'
                   }`}
                 >
                   <span className="text-lg">{type.icon}</span>
@@ -97,12 +97,12 @@ const RequestModal = ({ isOpen, onClose }: RequestModalProps) => {
 
           {/* Subject */}
           <div>
-            <label className="block text-sm font-semibold text-gray-200 mb-2">Subject</label>
+            <label className="block text-sm font-semibold text-gray-600 mb-2">Subject</label>
             <input
               type="text"
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 text-white placeholder-gray-400 hover:bg-white/15"
+              className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-700 placeholder-gray-400 hover:bg-gray-50"
               placeholder="Brief description of your request"
               required
             />
@@ -110,11 +110,11 @@ const RequestModal = ({ isOpen, onClose }: RequestModalProps) => {
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-semibold text-gray-200 mb-2">Description</label>
+            <label className="block text-sm font-semibold text-gray-600 mb-2">Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 text-white placeholder-gray-400 hover:bg-white/15 resize-none"
+              className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-700 placeholder-gray-400 hover:bg-gray-50 resize-none"
               placeholder="Provide detailed information about your request..."
               rows={4}
               required
@@ -123,7 +123,7 @@ const RequestModal = ({ isOpen, onClose }: RequestModalProps) => {
 
           {/* Priority */}
           <div>
-            <label className="block text-sm font-semibold text-gray-200 mb-2">Priority Level</label>
+            <label className="block text-sm font-semibold text-gray-600 mb-2">Priority Level</label>
             <div className="flex gap-3">
               {[
                 { value: 'low', label: 'Low', color: 'green' },

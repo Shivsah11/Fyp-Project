@@ -51,23 +51,16 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="min-h-screen w-screen bg-gradient-to-br from-emerald-900 via-teal-800 to-cyan-900 flex relative overflow-hidden">
-
-      {/* Animated background elements - matching signup theme */}
-      <div className="absolute inset-0 fixed">
-        <div className="absolute top-20 left-20 w-96 h-96 bg-emerald-400/15 rounded-full mix-blend-screen filter blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-teal-400/15 rounded-full mix-blend-screen filter blur-3xl animate-pulse animation-delay-2000"></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-400/15 rounded-full mix-blend-screen filter blur-3xl animate-pulse animation-delay-4000"></div>
-      </div>
+    <div className="min-h-screen w-screen bg-gray-50 flex relative overflow-hidden">
 
       {/* Sidebar */}
-      <div className="relative z-10 w-64 bg-white/10 backdrop-blur-xl border-r border-white/20 min-h-screen">
+      <div className="relative z-10 w-64 bg-white border-r border-gray-200 min-h-screen shadow-sm">
         {/* Logo */}
-        <div className="px-6 py-6 border-b border-white/20">
-          <h1 className="text-2xl font-extrabold text-white tracking-wide drop-shadow-lg">
+        <div className="px-6 py-6 border-b border-gray-200">
+          <h1 className="text-[20px] font-extrabold text-gray-900 tracking-wide drop-shadow-lg">
             SUITE DREAMS
           </h1>
-          <p className="text-emerald-100 text-sm mt-1">Tenant Portal</p>
+          <p className="text-gray-700 text-sm mt-1">Tenant Portal</p>
         </div>
 
         {/* Navigation */}
@@ -80,7 +73,7 @@ const Dashboard = () => {
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
                     activeSection === item.id
                       ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg transform scale-[1.02] border border-emerald-400/30'
-                      : 'text-emerald-200 hover:bg-emerald-800/50 hover:text-white border border-emerald-600/30 hover:border-emerald-500/50'
+                      : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300 hover:border-gray-400'
                   }`}
                 >
                   <span className="font-medium">{item.label}</span>
@@ -92,13 +85,13 @@ const Dashboard = () => {
 
         {/* User Profile Section */}
         <div className="absolute bottom-20 left-6 right-6">
-          <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+          <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg">
                 A
               </div>
               <div>
-                <p className="text-white font-semibold">Alex</p>
+                <p className="text-gray-900 font-semibold">Alex</p>
               </div>
             </div>
           </div>
@@ -116,12 +109,12 @@ const Dashboard = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 relative z-10 overflow-y-auto">
+      <div className="flex-1 relative z-10 overflow-y-auto bg-white">
         {/* Top Bar */}
-        <div className="bg-white/10 backdrop-blur-xl border-b border-white/20 px-8 py-6">
+        <div className="bg-white border-b border-gray-200 px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl font-extrabold text-white mb-1 tracking-wide drop-shadow-lg">
+              <h2 className="text-2xl font-extrabold text-gray-900 mb-1 tracking-wide drop-shadow-lg">
                 {activeSection === 'dashboard' ? 'Welcome Back, Alex' : 
                  activeSection === 'rooms' ? 'Explore Rooms' :
                  activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
@@ -151,11 +144,11 @@ const Dashboard = () => {
           <div className="p-6">
             {/* Square Info Cards */}
             <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="bg-white/10 backdrop-blur-xl rounded-xl p-6 border border-white/20 h-40">
+              <div className="bg-white rounded-xl p-6 border border-gray-200 h-40 shadow-sm">
                 <div className="flex flex-col justify-between h-full">
                   <div>
-                    <p className="text-emerald-100 text-sm font-semibold">Days until Rent</p>
-                    <p className="text-3xl font-bold text-white mt-2">24</p>
+                    <p className="text-gray-700 text-sm font-semibold">Days until Rent</p>
+                    <p className="text-3xl font-bold text-gray-900 mt-2">24</p>
                   </div>
                   <div className="bg-emerald-500/20 rounded-full h-2 overflow-hidden">
                     <div className="bg-gradient-to-r from-emerald-500 to-teal-600 h-full rounded-full" style={{width: '80%'}}></div>
@@ -163,11 +156,11 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              <div className="bg-white/10 backdrop-blur-xl rounded-xl p-6 border border-white/20 h-40">
+              <div className="bg-white rounded-xl p-6 border border-gray-200 h-40 shadow-sm">
                 <div className="flex flex-col justify-between h-full">
                   <div>
-                    <p className="text-emerald-100 text-sm font-semibold">Active Request</p>
-                    <p className="text-3xl font-bold text-white mt-2">1</p>
+                    <p className="text-gray-700 text-sm font-semibold">Active Request</p>
+                    <p className="text-3xl font-bold text-gray-900 mt-2">1</p>
                   </div>
                   <div className="flex gap-2">
                     <span className="px-2 py-1 bg-emerald-500/20 text-emerald-300 text-xs rounded-full border border-emerald-400/30">request</span>
@@ -177,28 +170,28 @@ const Dashboard = () => {
             </div>
 
             {/* Search Section */}
-            <div className="bg-white/10 backdrop-blur-xl rounded-xl p-4 border border-white/20 mb-6">
+            <div className="bg-white rounded-xl p-4 border border-gray-200 mb-6 shadow-sm">
               <div className="grid grid-cols-3 gap-3">
                 <input
                   type="text"
                   placeholder="Location where Do You Want"
                   value={searchLocation}
                   onChange={(e) => setSearchLocation(e.target.value)}
-                  className="px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-emerald-200/60 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 text-sm hover:bg-white/15"
+                  className="px-3 py-2 bg-white border border-gray-300 rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 text-sm hover:bg-gray-50"
                 />
                 <input
                   type="text"
                   placeholder="Room structure"
                   value={roomStructure}
                   onChange={(e) => setRoomStructure(e.target.value)}
-                  className="px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-emerald-200/60 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 text-sm hover:bg-white/15"
+                  className="px-3 py-2 bg-white border border-gray-300 rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 text-sm hover:bg-gray-50"
                 />
                 <input
                   type="text"
                   placeholder="Price Range"
                   value={priceRange}
                   onChange={(e) => setPriceRange(e.target.value)}
-                  className="px-3 py-2 bg-white/10 border border-white/20 rounded-xl text-white placeholder-emerald-200/60 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 text-sm hover:bg-white/15"
+                  className="px-3 py-2 bg-white border border-gray-300 rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 text-sm hover:bg-gray-50"
                 />
               </div>
               <div className="flex justify-center mt-3">
@@ -211,10 +204,10 @@ const Dashboard = () => {
             <div className="grid grid-cols-3 gap-6">
               {/* Recommended Rooms */}
               <div className="col-span-2">
-                <h3 className="text-lg font-bold text-white mb-4">Recommended Rooms for you</h3>
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Recommended Rooms for you</h3>
                 <div className="grid grid-cols-2 gap-4">
                   {recommendedRooms.map((room) => (
-                    <div key={room.id} className="bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 h-48 flex items-center justify-center hover:bg-white/15 transition-all duration-300">
+                    <div key={room.id} className="bg-white rounded-xl border border-gray-200 h-48 flex items-center justify-center hover:bg-gray-50 transition-all duration-300 shadow-sm">
                       <div className="text-gray-400 text-center">
                         <div className="w-16 h-16 bg-white/10 rounded-xl mx-auto mb-2"></div>
                         <p className="text-sm">Room Preview</p>
@@ -226,20 +219,20 @@ const Dashboard = () => {
 
               {/* Invite Friend Section */}
               <div>
-                <h3 className="text-lg font-bold text-white mb-4">Invite a Friend</h3>
-                <form onSubmit={handleInviteFriend} className="bg-white/10 backdrop-blur-xl rounded-3xl p-6 border border-white/20">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Invite a Friend</h3>
+                <form onSubmit={handleInviteFriend} className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm">
                   <div className="text-center mb-6">
-                    <p className="text-emerald-100/80 text-sm mb-2">Get 50 bonus points for each successful referral!</p>
+                    <p className="text-gray-600 text-sm mb-2">Get 50 bonus points for each successful referral!</p>
                   </div>
                   
                   <div className="mb-4">
-                    <label className="block text-sm font-semibold text-emerald-100/80 mb-2">Friend's Email</label>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">Friend's Email</label>
                     <input
                       type="email"
                       placeholder="friend@example.com"
                       value={friendEmail}
                       onChange={(e) => setFriendEmail(e.target.value)}
-                      className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 text-white placeholder-emerald-200/60 hover:bg-white/15"
+                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 text-gray-800 placeholder-gray-500 hover:bg-gray-50"
                       required
                     />
                   </div>
@@ -253,13 +246,13 @@ const Dashboard = () => {
 
                   <div className="flex items-center my-4">
                     <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
-                    <span className="px-3 text-xs text-white/60 font-medium">Or</span>
+                    <span className="px-3 text-xs text-gray-600 font-medium">Or</span>
                     <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
                   </div>
 
                   <button
                     type="button"
-                    className="w-full bg-white/10 border border-white/20 py-2 rounded-lg font-medium hover:bg-white/20 transition-all duration-300 text-emerald-100 hover:text-white text-sm"
+                    className="w-full bg-white border border-gray-300 py-2 rounded-lg font-medium hover:bg-gray-50 transition-all duration-300 text-gray-700 hover:text-gray-900 text-sm"
                   >
                     Copy Referral Link
                   </button>
@@ -269,15 +262,15 @@ const Dashboard = () => {
 
             {/* Recent Bookings */}
             <div className="mt-6">
-              <h3 className="text-lg font-bold text-white mb-4">Recent Bookings</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-4">Recent Bookings</h3>
               <div className="space-y-3">
                 {recentBookings.map((booking) => (
-                  <div key={booking.id} className="bg-white/10 backdrop-blur-xl rounded-xl p-4 border border-white/20">
+                  <div key={booking.id} className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="text-white font-semibold">{booking.room}</h4>
-                        <p className="text-gray-400 text-sm">Booked on {booking.checkIn}</p>
-                        <p className="text-white font-bold">{booking.price}</p>
+                        <h4 className="text-gray-900 font-semibold">{booking.room}</h4>
+                        <p className="text-gray-600 text-sm">Booked on {booking.checkIn}</p>
+                        <p className="text-gray-900 font-bold">{booking.price}</p>
                       </div>
                       <div className="text-right">
                         <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 text-sm rounded-full border border-emerald-400/30">
@@ -312,8 +305,8 @@ const Dashboard = () => {
           <div className="p-6">
             <div className="text-center py-16">
               <div className="text-6xl mb-4">Coming Soon</div>
-              <h3 className="text-2xl font-bold text-white mb-2">Coming Soon</h3>
-              <p className="text-emerald-100">The {activeSection} section is under development</p>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Coming Soon</h3>
+              <p className="text-gray-700">The {activeSection} section is under development</p>
             </div>
           </div>
         )}

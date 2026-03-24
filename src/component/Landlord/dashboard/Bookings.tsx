@@ -23,6 +23,8 @@ const Bookings: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'pending' | 'confirmed' | 'active' | 'completed' | 'cancelled'>('pending');
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showMessageModal, setShowMessageModal] = useState(false);
+  const [selectedTenant, setSelectedTenant] = useState<string>('');
 
   // Sample booking data for landlord
   const bookings: Booking[] = [
@@ -150,8 +152,9 @@ const Bookings: React.FC = () => {
     window.open(`tel:${tenantPhone}`);
   };
 
-  const handleEmailTenant = (tenantEmail: string) => {
-    window.open(`mailto:${tenantEmail}`);
+  const handleMessageTenant = (tenantName: string) => {
+    setSelectedTenant(tenantName);
+    setShowMessageModal(true);
   };
 
   const calculateTotalRevenue = () => {
@@ -295,7 +298,7 @@ const Bookings: React.FC = () => {
               <div className="grid md:grid-cols-3 gap-6">
                 {/* Enhanced Property Image */}
                 <div className="relative h-48 md:h-auto overflow-hidden rounded-t-2xl md:rounded-l-2xl">
-                  <div className="w-full h-full bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 flex items-center justify-center">
+                  <div className="w-full h-full bg-gradient-to-br from-green-400 via-emerald-500 to-teal-600 flex items-center justify-center shadow-inner">
                     <div className="text-center text-white">
                       <div className="text-4xl mb-2 font-bold">{booking.propertyType}</div>
                       <p className="text-sm font-medium">{booking.propertyType}</p>
@@ -333,32 +336,32 @@ const Bookings: React.FC = () => {
 
                   {/* Enhanced Tenant Information */}
                   <div className="bg-gradient-to-r from-white/5 to-white/10 rounded-2xl p-5 mb-4 border border-white/10">
-                    <h4 className="text-white font-bold text-lg mb-4 flex items-center gap-2">
+                    <h4 className="text-gray-800 font-bold text-lg mb-4 flex items-center gap-2">
                       <span className="text-lg">Profile</span>
                       Tenant Information
                     </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="bg-white/5 rounded-xl p-3">
-                        <p className="text-emerald-200 text-xs font-medium mb-1">Name</p>
-                        <p className="text-white font-semibold">{booking.tenantName}</p>
+                        <p className="text-gray-700 text-xs font-medium mb-1">Name</p>
+                        <p className="text-gray-900 font-semibold">{booking.tenantName}</p>
                       </div>
                       <div className="bg-white/5 rounded-xl p-3">
-                        <p className="text-emerald-200 text-xs font-medium mb-1">Email</p>
-                        <p className="text-white font-semibold">{booking.tenantEmail}</p>
+                        <p className="text-gray-700 text-xs font-medium mb-1">Email</p>
+                        <p className="text-gray-900 font-semibold">{booking.tenantEmail}</p>
                       </div>
                       <div className="bg-white/5 rounded-xl p-3">
-                        <p className="text-emerald-200 text-xs font-medium mb-1">Phone</p>
-                        <p className="text-white font-semibold">{booking.tenantPhone}</p>
+                        <p className="text-gray-700 text-xs font-medium mb-1">Phone</p>
+                        <p className="text-gray-900 font-semibold">{booking.tenantPhone}</p>
                       </div>
                       <div className="bg-white/5 rounded-xl p-3">
-                        <p className="text-emerald-200 text-xs font-medium mb-1">Request Date</p>
-                        <p className="text-white font-semibold">{formatDate(booking.requestDate)}</p>
+                        <p className="text-gray-700 text-xs font-medium mb-1">Request Date</p>
+                        <p className="text-gray-900 font-semibold">{formatDate(booking.requestDate)}</p>
                       </div>
                     </div>
                     {booking.specialRequests && (
                       <div className="mt-4 pt-4 border-t border-white/10">
-                        <p className="text-emerald-200 text-xs font-medium mb-2">Special Requests</p>
-                        <p className="text-emerald-100 text-sm bg-white/5 rounded-lg p-2">{booking.specialRequests}</p>
+                        <p className="text-gray-700 text-xs font-medium mb-2">Special Requests</p>
+                        <p className="text-gray-800 text-sm bg-white/5 rounded-lg p-2">{booking.specialRequests}</p>
                       </div>
                     )}
                   </div>
@@ -383,18 +386,11 @@ const Bookings: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-3">
                       <button
-                        onClick={() => handleEmailTenant(booking.tenantEmail)}
-                        className="px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg"
-                        title="Email tenant"
+                        onClick={() => handleMessageTenant(booking.tenantName)}
+                        className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg"
+                        title="Message tenant"
                       >
-                        Email
-                      </button>
-                      <button
-                        onClick={() => handleContactTenant(booking.tenantPhone)}
-                        className="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg"
-                        title="Call tenant"
-                      >
-                        Call
+                        Message
                       </button>
                       {booking.status === 'pending' && (
                         <>
@@ -568,6 +564,67 @@ const Bookings: React.FC = () => {
                   </button>
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Message Modal */}
+      {showMessageModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900 rounded-3xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-white/20 shadow-2xl transform transition-all duration-300">
+            <div className="flex justify-between items-center mb-8">
+              <h3 className="text-3xl font-bold text-white bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
+                Message with {selectedTenant}
+              </h3>
+              <button
+                onClick={() => setShowMessageModal(false)}
+                className="text-white hover:text-purple-200 text-3xl transition-colors transform hover:scale-110"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Chat Interface */}
+            <div className="bg-white/10 rounded-2xl p-6 border border-white/20 mb-6 h-96 overflow-y-auto">
+              <div className="space-y-4">
+                {/* Sample Messages */}
+                <div className="flex justify-start">
+                  <div className="bg-white/20 rounded-2xl p-4 max-w-md">
+                    <p className="text-white font-medium mb-1">{selectedTenant}</p>
+                    <p className="text-white/90">Hi, I'm interested in the property. Is it still available?</p>
+                    <p className="text-white/60 text-xs mt-2">2 hours ago</p>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end">
+                  <div className="bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl p-4 max-w-md">
+                    <p className="text-white font-medium mb-1">You</p>
+                    <p className="text-white">Yes, the property is still available! Would you like to schedule a viewing?</p>
+                    <p className="text-white/80 text-xs mt-2">1 hour ago</p>
+                  </div>
+                </div>
+
+                <div className="flex justify-start">
+                  <div className="bg-white/20 rounded-2xl p-4 max-w-md">
+                    <p className="text-white font-medium mb-1">{selectedTenant}</p>
+                    <p className="text-white/90">That would be great! When would be a good time?</p>
+                    <p className="text-white/60 text-xs mt-2">30 minutes ago</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Message Input */}
+            <div className="flex gap-4">
+              <input
+                type="text"
+                placeholder="Type your message..."
+                className="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-300"
+              />
+              <button className="px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg">
+                Send
+              </button>
             </div>
           </div>
         </div>

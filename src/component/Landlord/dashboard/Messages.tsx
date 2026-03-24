@@ -220,7 +220,7 @@ const Messages = () => {
       <div className="w-96 bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 flex flex-col">
         {/* Header */}
         <div className="p-4 border-b border-white/20">
-          <h3 className="text-xl font-bold text-white mb-3">Messages</h3>
+          <h3 className="text-xl font-bold text-gray-900 mb-3">Messages</h3>
           
           {/* Search */}
           <div className="relative mb-3">
@@ -229,9 +229,9 @@ const Messages = () => {
               placeholder="Search conversations..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 pl-10 bg-white/10 border border-white/20 rounded-xl text-white placeholder-emerald-200/60 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
+              className="w-full px-4 py-2 pl-10 bg-white border border-gray-300 rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
             />
-            <span className="absolute left-3 top-2.5 text-emerald-300">🔍</span>
+            <span className="absolute left-3 top-2.5 text-gray-600">🔍</span>
           </div>
 
           {/* Filters */}
@@ -248,7 +248,7 @@ const Messages = () => {
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-300 whitespace-nowrap ${
                   filter === key
                     ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white border border-emerald-400/30 shadow-lg'
-                    : 'bg-white/10 text-emerald-200 hover:bg-white/20 border border-white/20 hover:border-white/30'
+                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300 hover:border-gray-400'
                 }`}
               >
                 {label} ({count})
@@ -273,16 +273,16 @@ const Messages = () => {
               }`}
             >
               <div className="flex items-start gap-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg flex-shrink-0">
+                <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg flex-shrink-0">
                   {conversation.avatar}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
-                    <h4 className="text-white font-semibold truncate">{conversation.participant}</h4>
-                    <span className="text-emerald-200/60 text-xs flex-shrink-0">{conversation.time}</span>
+                    <h4 className="text-gray-800 font-semibold truncate">{conversation.participant}</h4>
+                    <span className="text-gray-600 text-xs flex-shrink-0">{conversation.time}</span>
                   </div>
-                  <p className="text-emerald-200 text-xs mb-1">{conversation.property}</p>
-                  <p className="text-emerald-100/80 text-sm truncate">{conversation.lastMessage}</p>
+                  <p className="text-gray-700 text-xs mb-1">{conversation.property}</p>
+                  <p className="text-gray-900 text-sm truncate">{conversation.lastMessage}</p>
                 </div>
                 {conversation.unread > 0 && (
                   <div className="w-5 h-5 bg-emerald-400 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
@@ -306,8 +306,8 @@ const Messages = () => {
                   {selectedConv.avatar}
                 </div>
                 <div>
-                  <h4 className="text-white font-semibold">{selectedConv.participant}</h4>
-                  <p className="text-emerald-200 text-sm">{selectedConv.property}</p>
+                  <h4 className="text-black font-semibold">{selectedConv.participant}</h4>
+                  <p className="text-gray-900 text-sm">{selectedConv.property}</p>
                 </div>
               </div>
             </div>
@@ -323,13 +323,13 @@ const Messages = () => {
                     className={`max-w-xs lg:max-w-md px-4 py-3 rounded-xl ${
                       message.sender === 'You'
                         ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white'
-                        : 'bg-white/10 text-white border border-white/20'
+                        : 'bg-gray-800 text-white border border-gray-600'
                     }`}
                   >
-                    <p className="text-sm font-medium mb-1">{message.subject}</p>
-                    <p className="text-sm">{message.message}</p>
-                    <p className={`text-xs mt-2 ${
-                      message.sender === 'You' ? 'text-emerald-100' : 'text-emerald-200/60'
+                    <p className="text-sm font-semibold mb-1">{message.subject}</p>
+                    <p className="text-sm leading-relaxed">{message.message}</p>
+                    <p className={`text-xs mt-2 font-medium ${
+                      message.sender === 'You' ? 'text-emerald-200' : 'text-gray-300'
                     }`}>
                       {message.time}
                     </p>
@@ -362,8 +362,8 @@ const Messages = () => {
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center">
               <div className="text-6xl mb-4">💬</div>
-              <h3 className="text-xl font-bold text-white mb-2">Select a conversation</h3>
-              <p className="text-emerald-200">Choose a conversation from the left to start messaging</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Select a conversation</h3>
+              <p className="text-gray-700">Choose a conversation from the left to start messaging</p>
             </div>
           </div>
         )}

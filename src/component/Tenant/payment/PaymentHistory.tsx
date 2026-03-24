@@ -50,22 +50,22 @@ const PaymentHistory = () => {
   };
 
   return (
-    <div className="bg-white/10 backdrop-blur-xl rounded-xl p-6 border border-white/20">
-      <h3 className="text-lg font-bold text-white mb-4">Payment History</h3>
+    <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+      <h3 className="text-lg font-bold text-gray-900 mb-4">Payment History</h3>
       
       <div className="space-y-3">
         {payments.map((payment) => (
-          <div key={payment.id} className="bg-white/5 rounded-lg p-4 border border-white/10 hover:bg-white/10 transition-all duration-300">
+          <div key={payment.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200 hover:bg-gray-100 transition-all duration-300">
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <span className="text-white font-semibold">${payment.amount}</span>
+                  <span className="text-gray-900 font-semibold">${payment.amount}</span>
                   <span className={`px-2 py-1 text-xs rounded-full border ${getStatusColor(payment.status)}`}>
                     {payment.status}
                   </span>
                 </div>
-                <p className="text-gray-300 text-sm mb-1">{payment.description}</p>
-                <div className="flex items-center gap-4 text-xs text-gray-400">
+                <p className="text-gray-700 text-sm mb-1">{payment.description}</p>
+                <div className="flex items-center gap-4 text-xs text-gray-600">
                   <span>📅 {payment.date}</span>
                   <span>💳 {payment.method}</span>
                 </div>
@@ -75,7 +75,7 @@ const PaymentHistory = () => {
         ))}
       </div>
       
-      <button className="w-full mt-4 text-purple-400 hover:text-purple-300 text-sm font-medium transition-colors">
+      <button className="w-full mt-4 text-emerald-600 hover:text-emerald-700 text-sm font-medium transition-colors">
         View All Payments →
       </button>
     </div>

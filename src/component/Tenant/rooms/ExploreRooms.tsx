@@ -142,29 +142,29 @@ const ExploreRooms = () => {
   });
 
   const RoomCard = ({ room }: { room: Room }) => (
-    <div className="bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 overflow-hidden hover:bg-white/15 transition-all duration-300 transform hover:scale-[1.02]">
-      <div className="h-48 bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-        <div className="text-white/60 text-center">
-          <div className="w-16 h-16 bg-white/10 rounded-lg mx-auto mb-2"></div>
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:bg-gray-50 transition-all duration-300 transform hover:scale-[1.02]">
+      <div className="h-48 bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+        <div className="text-white/80 text-center">
+          <div className="w-16 h-16 bg-white/20 rounded-lg mx-auto mb-2"></div>
           <p className="text-sm">Room Image</p>
         </div>
       </div>
       
       <div className="p-4">
         <div className="flex justify-between items-start mb-2">
-          <h3 className="text-white font-semibold text-lg">{room.title}</h3>
+          <h3 className="text-gray-800 font-semibold text-lg">{room.title}</h3>
           <span className={`px-2 py-1 text-xs rounded-full ${
             room.available 
-              ? 'bg-green-500/20 text-green-300 border-green-400/30' 
-              : 'bg-red-500/20 text-red-300 border-red-400/30'
+              ? 'bg-green-100 text-green-800 border-green-200' 
+              : 'bg-red-100 text-red-800 border-red-200'
           }`}>
             {room.available ? 'Available' : 'Occupied'}
           </span>
         </div>
         
-        <p className="text-emerald-100 text-sm mb-3">📍 {room.location}</p>
+        <p className="text-gray-600 text-sm mb-3">📍 {room.location}</p>
         
-        <div className="flex items-center gap-4 text-sm text-emerald-200 mb-3">
+        <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
           <span>🛏️ {room.beds} bed</span>
           <span>🚿 {room.baths} bath</span>
           <span>📐 {room.sqft} sqft</span>
@@ -172,23 +172,23 @@ const ExploreRooms = () => {
         
         <div className="flex items-center justify-between mb-3">
           <div>
-            <span className="text-2xl font-bold text-white">${room.price}</span>
-            <span className="text-emerald-200 text-sm">/month</span>
+            <span className="text-2xl font-bold text-gray-800">${room.price}</span>
+            <span className="text-gray-500 text-sm">/month</span>
           </div>
           <div className="flex items-center gap-1">
             <span className="text-yellow-400">⭐</span>
-            <span className="text-white text-sm">{room.rating}</span>
+            <span className="text-gray-700 text-sm">{room.rating}</span>
           </div>
         </div>
         
         <div className="flex flex-wrap gap-1 mb-3">
           {room.amenities.slice(0, 3).map((amenity, index) => (
-            <span key={index} className="px-2 py-1 bg-emerald-500/20 text-emerald-300 text-xs rounded-full">
+            <span key={index} className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full">
               {amenity}
             </span>
           ))}
           {room.amenities.length > 3 && (
-            <span className="px-2 py-1 bg-white/10 text-emerald-200 text-xs rounded-full">
+            <span className="px-2 py-1 bg-gray-100 border border-gray-300 text-gray-600 text-xs rounded-full">
               +{room.amenities.length - 3} more
             </span>
           )}
@@ -196,7 +196,7 @@ const ExploreRooms = () => {
         
         <button 
           onClick={() => setSelectedRoom(room)}
-          className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white py-2 rounded-lg font-medium transition-all duration-300"
+          className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-blue-400"
         >
           View Details
         </button>
@@ -208,9 +208,9 @@ const ExploreRooms = () => {
     if (!selectedRoom) return null;
 
     return (
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-        <div className="bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-          <div className="relative h-64 bg-gradient-to-br from-purple-600 to-indigo-600">
+      <div className="fixed inset-0 bg-gray-100/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-3xl border border-gray-200 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="relative h-64 bg-blue-500">
             <button
               onClick={() => setSelectedRoom(null)}
               className="absolute top-4 right-4 text-white/60 hover:text-white text-2xl"
@@ -218,8 +218,8 @@ const ExploreRooms = () => {
               ×
             </button>
             <div className="flex items-center justify-center h-full">
-              <div className="text-white/60 text-center">
-                <div className="w-24 h-24 bg-white/10 rounded-xl mx-auto mb-2"></div>
+              <div className="text-white text-center">
+                <div className="w-24 h-24 bg-white rounded-xl mx-auto mb-2"></div>
                 <p className="text-lg">Room Gallery</p>
               </div>
             </div>
@@ -228,61 +228,61 @@ const ExploreRooms = () => {
           <div className="p-8">
             <div className="flex justify-between items-start mb-6">
               <div>
-                <h2 className="text-3xl font-bold text-white mb-2">{selectedRoom.title}</h2>
-                <p className="text-gray-300 flex items-center gap-2">
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">{selectedRoom.title}</h2>
+                <p className="text-gray-600 flex items-center gap-2">
                   📍 {selectedRoom.location}
                   <span className={`px-2 py-1 text-xs rounded-full ${
                     selectedRoom.available 
-                      ? 'bg-green-500/20 text-green-300 border-green-400/30' 
-                      : 'bg-red-500/20 text-red-300 border-red-400/30'
+                      ? 'bg-green-200 text-green-600 border-green-300' 
+                      : 'bg-red-200 text-red-600 border-red-300'
                   }`}>
                     {selectedRoom.available ? 'Available' : 'Occupied'}
                   </span>
                 </p>
               </div>
               <div className="text-right">
-                <div className="text-3xl font-bold text-white">${selectedRoom.price}</div>
-                <div className="text-gray-400">/month</div>
+                <div className="text-3xl font-bold text-gray-900">${selectedRoom.price}</div>
+                <div className="text-gray-600">/month</div>
                 <div className="flex items-center gap-1 mt-2">
                   <span className="text-yellow-400">⭐</span>
-                  <span className="text-white">{selectedRoom.rating} (24 reviews)</span>
+                  <span className="text-gray-900">{selectedRoom.rating} (24 reviews)</span>
                 </div>
               </div>
             </div>
             
             <div className="grid grid-cols-4 gap-4 mb-6">
-              <div className="bg-white/5 rounded-lg p-3 text-center">
+              <div className="bg-gray-100 rounded-lg p-3 text-center">
                 <div className="text-2xl mb-1">🛏️</div>
-                <div className="text-white font-semibold">{selectedRoom.beds}</div>
-                <div className="text-gray-400 text-sm">Bedrooms</div>
+                <div className="text-gray-900 font-semibold">{selectedRoom.beds}</div>
+                <div className="text-gray-600 text-sm">Bedrooms</div>
               </div>
-              <div className="bg-white/5 rounded-lg p-3 text-center">
+              <div className="bg-gray-100 rounded-lg p-3 text-center">
                 <div className="text-2xl mb-1">🚿</div>
-                <div className="text-white font-semibold">{selectedRoom.baths}</div>
-                <div className="text-gray-400 text-sm">Bathrooms</div>
+                <div className="text-gray-900 font-semibold">{selectedRoom.baths}</div>
+                <div className="text-gray-600 text-sm">Bathrooms</div>
               </div>
-              <div className="bg-white/5 rounded-lg p-3 text-center">
+              <div className="bg-gray-100 rounded-lg p-3 text-center">
                 <div className="text-2xl mb-1">📐</div>
-                <div className="text-white font-semibold">{selectedRoom.sqft}</div>
-                <div className="text-gray-400 text-sm">Sq Ft</div>
+                <div className="text-gray-900 font-semibold">{selectedRoom.sqft}</div>
+                <div className="text-gray-600 text-sm">Sq Ft</div>
               </div>
-              <div className="bg-white/5 rounded-lg p-3 text-center">
+              <div className="bg-gray-100 rounded-lg p-3 text-center">
                 <div className="text-2xl mb-1">🏠</div>
-                <div className="text-white font-semibold">{selectedRoom.type}</div>
-                <div className="text-gray-400 text-sm">Type</div>
+                <div className="text-gray-900 font-semibold">{selectedRoom.type}</div>
+                <div className="text-gray-600 text-sm">Type</div>
               </div>
             </div>
             
             <div className="mb-6">
-              <h3 className="text-xl font-bold text-white mb-3">Description</h3>
-              <p className="text-gray-300 leading-relaxed">{selectedRoom.description}</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Description</h3>
+              <p className="text-gray-600 leading-relaxed">{selectedRoom.description}</p>
             </div>
             
             <div className="mb-6">
-              <h3 className="text-xl font-bold text-white mb-3">Amenities</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Amenities</h3>
               <div className="grid grid-cols-3 gap-3">
                 {selectedRoom.amenities.map((amenity, index) => (
-                  <div key={index} className="flex items-center gap-2 text-gray-300">
+                  <div key={index} className="flex items-center gap-2 text-gray-600">
                     <span className="text-green-400">✓</span>
                     <span>{amenity}</span>
                   </div>
@@ -291,15 +291,15 @@ const ExploreRooms = () => {
             </div>
             
             <div className="mb-6">
-              <h3 className="text-xl font-bold text-white mb-3">Landlord Information</h3>
-              <div className="bg-white/5 rounded-lg p-4">
-                <p className="text-white font-semibold mb-1">{selectedRoom.landlord}</p>
-                <p className="text-gray-300 text-sm">📧 {selectedRoom.contactInfo}</p>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Landlord Information</h3>
+              <div className="bg-gray-100 rounded-lg p-4">
+                <p className="text-gray-900 font-semibold mb-1">{selectedRoom.landlord}</p>
+                <p className="text-gray-500 text-sm">📧 {selectedRoom.contactInfo}</p>
               </div>
             </div>
             
             <div className="flex gap-4">
-              <button className="flex-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white py-3 rounded-xl font-semibold transition-all duration-300">
+              <button className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-xl font-semibold transition-all duration-300">
                 Schedule Tour
               </button>
               <button className="flex-1 bg-white/10 hover:bg-white/20 text-white py-3 rounded-xl font-semibold transition-all duration-300 border border-white/20">
@@ -315,25 +315,25 @@ const ExploreRooms = () => {
   return (
     <div className="p-6">
       <div className="mb-8">
-        <h2 className="text-3xl font-bold text-white mb-2">Explore Rooms</h2>
-        <p className="text-gray-300">Find your perfect living space from our curated selection</p>
+        <h2 className="text-3xl font-bold text-gray-800 mb-2">Explore Rooms</h2>
+        <p className="text-gray-600">Find your perfect living space from our curated selection</p>
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white/10 backdrop-blur-xl rounded-xl p-6 border border-white/20 mb-8">
+      <div className="bg-white rounded-xl p-6 border border-gray-200 mb-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
           <input
             type="text"
             placeholder="Search by location or title..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+            className="px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
           />
           
           <select
             value={selectedType}
             onChange={(e) => setSelectedType(e.target.value)}
-            className="px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+            className="px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
           >
             {roomTypes.map(type => (
               <option key={type} value={type} className="bg-gray-800">
@@ -347,7 +347,7 @@ const ExploreRooms = () => {
             placeholder="Min Price"
             value={priceRange.min}
             onChange={(e) => setPriceRange({...priceRange, min: Number(e.target.value)})}
-            className="px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+            className="px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
           />
           
           <input
@@ -355,19 +355,19 @@ const ExploreRooms = () => {
             placeholder="Max Price"
             value={priceRange.max}
             onChange={(e) => setPriceRange({...priceRange, max: Number(e.target.value)})}
-            className="px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300"
+            className="px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
           />
         </div>
         
         <div className="flex justify-between items-center">
-          <p className="text-gray-300">
-            Found <span className="text-white font-semibold">{filteredRooms.length}</span> rooms
+          <p className="text-gray-600">
+            Found <span className="text-gray-800 font-semibold">{filteredRooms.length}</span> rooms
           </p>
           <div className="flex gap-2">
-            <button className="px-4 py-2 bg-purple-500/20 text-purple-300 rounded-lg border border-purple-400/30 hover:bg-purple-500/30 transition-all duration-300">
+            <button className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg border border-blue-200 hover:bg-blue-200 transition-all duration-300">
               Sort by Price
             </button>
-            <button className="px-4 py-2 bg-purple-500/20 text-purple-300 rounded-lg border border-purple-400/30 hover:bg-purple-500/30 transition-all duration-300">
+            <button className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg border border-blue-200 hover:bg-blue-200 transition-all duration-300">
               Sort by Rating
             </button>
           </div>
@@ -384,8 +384,8 @@ const ExploreRooms = () => {
       {filteredRooms.length === 0 && (
         <div className="text-center py-16">
           <div className="text-6xl mb-4">🔍</div>
-          <h3 className="text-xl font-semibold text-white mb-2">No rooms found</h3>
-          <p className="text-gray-400">Try adjusting your search criteria or filters</p>
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">No rooms found</h3>
+          <p className="text-gray-500">Try adjusting your search criteria or filters</p>
         </div>
       )}
 

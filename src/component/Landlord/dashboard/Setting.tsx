@@ -59,8 +59,8 @@ const Settings = () => {
     <div className="p-6">
       {/* Header */}
       <div className="mb-6">
-        <h3 className="text-2xl font-bold text-white mb-2">Settings</h3>
-        <p className="text-emerald-200">Manage your account settings and preferences</p>
+        <h3 className="text-2xl font-bold text-gray-900 mb-2">Settings</h3>
+        <p className="text-gray-700">Manage your account settings and preferences</p>
       </div>
 
       <div className="flex gap-6">
@@ -75,7 +75,7 @@ const Settings = () => {
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
                     activeTab === tab.id
                       ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg border border-emerald-400/30'
-                      : 'text-emerald-200 hover:bg-emerald-800/50 hover:text-white border border-emerald-600/30 hover:border-emerald-500/50'
+                      : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300 hover:border-gray-400'
                   }`}
                 >
                   <span className="font-medium">{tab.label}</span>
@@ -91,86 +91,86 @@ const Settings = () => {
             <div className="space-y-6">
               {/* Profile Information */}
               <div className="bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 p-6">
-                <h4 className="text-lg font-bold text-white mb-4">Profile Information</h4>
+                <h4 className="text-lg font-bold text-gray-900 mb-4">Profile Information</h4>
                 <form onSubmit={handleProfileUpdate} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-emerald-200 text-sm font-medium mb-2">First Name</label>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">First Name</label>
                       <input
                         type="text"
                         value={formData.firstName}
                         onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-emerald-200/60 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
                       />
                     </div>
                     <div>
-                      <label className="block text-emerald-200 text-sm font-medium mb-2">Last Name</label>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">Last Name</label>
                       <input
                         type="text"
                         value={formData.lastName}
                         onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-emerald-200/60 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-emerald-200 text-sm font-medium mb-2">Email Address</label>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Email Address</label>
                     <input
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-emerald-200/60 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
+                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-emerald-200 text-sm font-medium mb-2">Phone Number</label>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Phone Number</label>
                     <input
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                      className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-emerald-200/60 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
+                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-emerald-200 text-sm font-medium mb-2">Address</label>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Address</label>
                     <input
                       type="text"
                       value={formData.address}
                       onChange={(e) => setFormData({...formData, address: e.target.value})}
-                      className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-emerald-200/60 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
+                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-emerald-200 text-sm font-medium mb-2">Bio</label>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Bio</label>
                     <textarea
                       value={formData.bio}
                       onChange={(e) => setFormData({...formData, bio: e.target.value})}
                       rows={3}
-                      className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-emerald-200/60 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
+                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-emerald-200 text-sm font-medium mb-2">Company</label>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">Company</label>
                       <input
                         type="text"
                         value={formData.company}
                         onChange={(e) => setFormData({...formData, company: e.target.value})}
-                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-emerald-200/60 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
                       />
                     </div>
                     <div>
-                      <label className="block text-emerald-200 text-sm font-medium mb-2">Website</label>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">Website</label>
                       <input
                         type="url"
                         value={formData.website}
                         onChange={(e) => setFormData({...formData, website: e.target.value})}
-                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-emerald-200/60 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
                       />
                     </div>
                   </div>
@@ -186,29 +186,29 @@ const Settings = () => {
 
               {/* Change Password */}
               <div className="bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 p-6">
-                <h4 className="text-lg font-bold text-white mb-4">Change Password</h4>
+                <h4 className="text-lg font-bold text-gray-900 mb-4">Change Password</h4>
                 <form onSubmit={handlePasswordChange} className="space-y-4">
                   <div>
-                    <label className="block text-emerald-200 text-sm font-medium mb-2">Current Password</label>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Current Password</label>
                     <input
                       type="password"
-                      className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-emerald-200/60 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
+                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
                       placeholder="Enter current password"
                     />
                   </div>
                   <div>
-                    <label className="block text-emerald-200 text-sm font-medium mb-2">New Password</label>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">New Password</label>
                     <input
                       type="password"
-                      className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-emerald-200/60 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
+                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
                       placeholder="Enter new password"
                     />
                   </div>
                   <div>
-                    <label className="block text-emerald-200 text-sm font-medium mb-2">Confirm New Password</label>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Confirm New Password</label>
                     <input
                       type="password"
-                      className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-emerald-200/60 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
+                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
                       placeholder="Confirm new password"
                     />
                   </div>
@@ -226,7 +226,7 @@ const Settings = () => {
           {activeTab === 'notifications' && (
             <div className="space-y-6">
               <div className="bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 p-6">
-                <h4 className="text-lg font-bold text-white mb-4">Notification Preferences</h4>
+                <h4 className="text-lg font-bold text-gray-900 mb-4">Notification Preferences</h4>
                 <div className="space-y-4">
                   {[
                     { key: 'emailNotifications', label: 'Email Notifications', description: 'Receive notifications via email' },
@@ -239,8 +239,8 @@ const Settings = () => {
                   ].map((item) => (
                     <div key={item.key} className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
                       <div>
-                        <h5 className="text-white font-medium">{item.label}</h5>
-                        <p className="text-emerald-200/60 text-sm">{item.description}</p>
+                        <h5 className="text-gray-900 font-medium">{item.label}</h5>
+                        <p className="text-gray-600 text-sm">{item.description}</p>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
@@ -261,7 +261,7 @@ const Settings = () => {
           {activeTab === 'security' && (
             <div className="space-y-6">
               <div className="bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 p-6">
-                <h4 className="text-lg font-bold text-white mb-4">Security Settings</h4>
+                <h4 className="text-lg font-bold text-gray-900 mb-4">Security Settings</h4>
                 <div className="space-y-4">
                   {[
                     { key: 'twoFactorAuth', label: 'Two-Factor Authentication', description: 'Add an extra layer of security to your account' },
@@ -269,8 +269,8 @@ const Settings = () => {
                   ].map((item) => (
                     <div key={item.key} className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
                       <div>
-                        <h5 className="text-white font-medium">{item.label}</h5>
-                        <p className="text-emerald-200/60 text-sm">{item.description}</p>
+                        <h5 className="text-gray-900 font-medium">{item.label}</h5>
+                        <p className="text-gray-600 text-sm">{item.description}</p>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
@@ -286,11 +286,11 @@ const Settings = () => {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-emerald-200 text-sm font-medium mb-2">Session Timeout (minutes)</label>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">Session Timeout (minutes)</label>
                       <select
                         value={securitySettings.sessionTimeout}
                         onChange={(e) => setSecuritySettings({...securitySettings, sessionTimeout: e.target.value})}
-                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
                       >
                         <option value="15" className="bg-gray-800">15 minutes</option>
                         <option value="30" className="bg-gray-800">30 minutes</option>
@@ -299,11 +299,11 @@ const Settings = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-emerald-200 text-sm font-medium mb-2">Password Expiry (days)</label>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">Password Expiry (days)</label>
                       <select
                         value={securitySettings.passwordExpiry}
                         onChange={(e) => setSecuritySettings({...securitySettings, passwordExpiry: e.target.value})}
-                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
                       >
                         <option value="30" className="bg-gray-800">30 days</option>
                         <option value="60" className="bg-gray-800">60 days</option>
@@ -321,15 +321,15 @@ const Settings = () => {
           {activeTab === 'preferences' && (
             <div className="space-y-6">
               <div className="bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 p-6">
-                <h4 className="text-lg font-bold text-white mb-4">Preferences</h4>
+                <h4 className="text-lg font-bold text-gray-900 mb-4">Preferences</h4>
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-emerald-200 text-sm font-medium mb-2">Language</label>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">Language</label>
                       <select
                         value={preferences.language}
                         onChange={(e) => setPreferences({...preferences, language: e.target.value})}
-                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
                       >
                         <option value="english" className="bg-gray-800">English</option>
                         <option value="nepali" className="bg-gray-800">नेपाली</option>
@@ -337,11 +337,11 @@ const Settings = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-emerald-200 text-sm font-medium mb-2">Timezone</label>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">Timezone</label>
                       <select
                         value={preferences.timezone}
                         onChange={(e) => setPreferences({...preferences, timezone: e.target.value})}
-                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
                       >
                         <option value="Asia/Kathmandu" className="bg-gray-800">Asia/Kathmandu</option>
                         <option value="Asia/Delhi" className="bg-gray-800">Asia/Delhi</option>
@@ -353,11 +353,11 @@ const Settings = () => {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-emerald-200 text-sm font-medium mb-2">Currency</label>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">Currency</label>
                       <select
                         value={preferences.currency}
                         onChange={(e) => setPreferences({...preferences, currency: e.target.value})}
-                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
                       >
                         <option value="NPR" className="bg-gray-800">NPR - Nepalese Rupee</option>
                         <option value="USD" className="bg-gray-800">USD - US Dollar</option>
@@ -366,11 +366,11 @@ const Settings = () => {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-emerald-200 text-sm font-medium mb-2">Date Format</label>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">Date Format</label>
                       <select
                         value={preferences.dateFormat}
                         onChange={(e) => setPreferences({...preferences, dateFormat: e.target.value})}
-                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
                       >
                         <option value="DD/MM/YYYY" className="bg-gray-800">DD/MM/YYYY</option>
                         <option value="MM/DD/YYYY" className="bg-gray-800">MM/DD/YYYY</option>
@@ -381,8 +381,8 @@ const Settings = () => {
 
                   <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl">
                     <div>
-                      <h5 className="text-white font-medium">Dark Mode</h5>
-                      <p className="text-emerald-200/60 text-sm">Use dark theme across the application</p>
+                      <h5 className="text-gray-900 font-medium">Dark Mode</h5>
+                      <p className="text-gray-600 text-sm">Use dark theme across the application</p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input

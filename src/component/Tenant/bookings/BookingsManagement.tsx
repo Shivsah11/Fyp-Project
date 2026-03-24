@@ -152,12 +152,12 @@ const BookingsManagement: React.FC = () => {
     <div className="p-6">
       {/* Header */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-white mb-2">My Bookings</h2>
-        <p className="text-emerald-100">Manage your property bookings and reservations</p>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">My Bookings</h2>
+        <p className="text-gray-700">Manage your property bookings and reservations</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6 bg-white/5 backdrop-blur-sm rounded-xl p-1 border border-white/10">
+      <div className="flex gap-2 mb-6 bg-white rounded-xl p-1 border border-gray-200 shadow-sm">
         {(['active', 'upcoming', 'past', 'cancelled'] as const).map((tab) => (
           <button
             key={tab}
@@ -165,7 +165,7 @@ const BookingsManagement: React.FC = () => {
             className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
               activeTab === tab
                 ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
-                : 'text-emerald-200 hover:bg-emerald-800/50 hover:text-white'
+                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
             }`}
           >
             {tab.charAt(0).toUpperCase() + tab.slice(1)} ({bookings.filter(b => 
@@ -181,7 +181,7 @@ const BookingsManagement: React.FC = () => {
       {/* Bookings Grid */}
       <div className="grid gap-6">
         {filteredBookings.map((booking) => (
-          <div key={booking.id} className="bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 overflow-hidden hover:bg-white/15 transition-all duration-300">
+          <div key={booking.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:bg-gray-50 transition-all duration-300 shadow-sm">
             <div className="grid md:grid-cols-3 gap-6">
               {/* Property Image */}
               <div className="relative h-48 md:h-auto">
@@ -202,38 +202,38 @@ const BookingsManagement: React.FC = () => {
               <div className="md:col-span-2 p-6">
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <h3 className="text-xl font-bold text-white mb-1">{booking.propertyName}</h3>
-                    <p className="text-emerald-200 text-sm mb-2">📍 {booking.location}</p>
+                    <h3 className="text-xl font-bold text-gray-900 mb-1">{booking.propertyName}</h3>
+                    <p className="text-gray-600 text-sm mb-2">📍 {booking.location}</p>
                     <div className="flex flex-wrap gap-2 mb-3">
                       {booking.amenities.map((amenity, index) => (
-                        <span key={index} className="px-2 py-1 bg-white/10 rounded-lg text-xs text-emerald-100">
+                        <span key={index} className="px-2 py-1 bg-gray-100 rounded-lg text-xs text-gray-700">
                           {amenity}
                         </span>
                       ))}
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-bold text-white">NPR {booking.price.toLocaleString()}</p>
-                    <p className="text-emerald-200 text-sm">per month</p>
+                    <p className="text-2xl font-bold text-gray-900">NPR {booking.price.toLocaleString()}</p>
+                    <p className="text-gray-600 text-sm">per month</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 mb-4">
                   <div>
-                    <p className="text-emerald-200 text-sm">Check-in</p>
-                    <p className="text-white font-medium">{formatDate(booking.checkIn)}</p>
+                    <p className="text-gray-600 text-sm">Check-in</p>
+                    <p className="text-gray-900 font-medium">{formatDate(booking.checkIn)}</p>
                   </div>
                   <div>
-                    <p className="text-emerald-200 text-sm">Check-out</p>
-                    <p className="text-white font-medium">{formatDate(booking.checkOut)}</p>
+                    <p className="text-gray-600 text-sm">Check-out</p>
+                    <p className="text-gray-900 font-medium">{formatDate(booking.checkOut)}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                   <div>
-                    <p className="text-emerald-200 text-sm">Landlord</p>
-                    <p className="text-white font-medium">{booking.landlord}</p>
-                    <p className="text-emerald-300 text-sm">{booking.landlordContact}</p>
+                    <p className="text-gray-600 text-sm">Landlord</p>
+                    <p className="text-gray-900 font-medium">{booking.landlord}</p>
+                    <p className="text-gray-700 text-sm">{booking.landlordContact}</p>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getPaymentStatusColor(booking.paymentStatus)}`}>
@@ -265,8 +265,8 @@ const BookingsManagement: React.FC = () => {
       {filteredBookings.length === 0 && (
         <div className="text-center py-16">
           <div className="text-6xl mb-4">📅</div>
-          <h3 className="text-xl font-bold text-white mb-2">No {activeTab} bookings</h3>
-          <p className="text-emerald-100">
+          <h3 className="text-xl font-bold text-gray-900 mb-2">No {activeTab} bookings</h3>
+          <p className="text-gray-700">
             {activeTab === 'active' ? 'You currently have no active bookings' :
              activeTab === 'upcoming' ? 'You have no upcoming bookings' :
              activeTab === 'past' ? 'You have no past bookings' :
@@ -283,19 +283,19 @@ const BookingsManagement: React.FC = () => {
       {/* Booking Detail Modal */}
       {selectedBooking && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gradient-to-br from-emerald-900 to-teal-900 rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-white/20">
+          <div className="bg-white rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200 shadow-lg">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-2xl font-bold text-white">Booking Details</h3>
+              <h3 className="text-2xl font-bold text-gray-900">Booking Details</h3>
               <button
                 onClick={() => setSelectedBooking(null)}
-                className="text-white hover:text-emerald-200 text-2xl"
+                className="text-gray-600 hover:text-gray-900 text-2xl"
               >
                 ×
               </button>
             </div>
             {/* Booking details content would go here */}
             <div className="text-center py-8">
-              <p className="text-emerald-100">Detailed booking information</p>
+              <p className="text-gray-700">Detailed booking information</p>
             </div>
           </div>
         </div>

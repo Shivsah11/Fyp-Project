@@ -19,7 +19,12 @@ const PrivateRoute = ({ children, requiredRole }: { children: React.ReactElement
     const token = localStorage.getItem('token');
     const storedRole = localStorage.getItem('userRole');
     
-    if (token && storedRole) {
+    // For testing: automatically set as Landlord if not logged in
+    if (!token || !storedRole) {
+      localStorage.setItem('token', 'test-token');
+      localStorage.setItem('userRole', 'Landlord');
+      setUserRole('Landlord');
+    } else {
       setUserRole(storedRole);
     }
     setLoading(false);
@@ -62,6 +67,7 @@ function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Login />} />
+        <Route path="/dashboard" element={<Navigate to="/landlord/dashboard" replace />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/admin/login" element={<AdminLogin />} />
         

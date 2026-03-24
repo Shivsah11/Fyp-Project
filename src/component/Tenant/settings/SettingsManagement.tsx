@@ -154,15 +154,15 @@ const SettingsManagement: React.FC = () => {
         return (
           <div className="flex items-center justify-between">
             <div className="flex-1">
-              <label className="text-white font-medium">{item.label}</label>
+              <label className="text-gray-700 font-medium">{item.label}</label>
               {item.description && (
-                <p className="text-emerald-200/60 text-sm mt-1">{item.description}</p>
+                <p className="text-gray-600/60 text-sm mt-1">{item.description}</p>
               )}
             </div>
             <button
               onClick={() => handleInputChange(item.id, !item.value)}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                item.value ? 'bg-emerald-500' : 'bg-gray-600'
+                item.value ? 'bg-blue-500' : 'bg-gray-300'
               }`}
             >
               <span
@@ -177,14 +177,14 @@ const SettingsManagement: React.FC = () => {
       case 'select':
         return (
           <div>
-            <label className="block text-white font-medium mb-2">{item.label}</label>
+            <label className="block text-gray-700 font-medium mb-2">{item.label}</label>
             <select
               value={(item.value as string) || ''}
               onChange={(e) => handleInputChange(item.id, e.target.value)}
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 text-white hover:bg-white/15"
+              className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-700 hover:bg-gray-50"
             >
               {item.options?.map((option) => (
-                <option key={option.value} value={option.value} className="bg-gray-800">
+                <option key={option.value} value={option.value} className="bg-white">
                   {option.label}
                 </option>
               ))}
@@ -195,13 +195,13 @@ const SettingsManagement: React.FC = () => {
       case 'textarea':
         return (
           <div>
-            <label className="block text-white font-medium mb-2">{item.label}</label>
+            <label className="block text-gray-700 font-medium mb-2">{item.label}</label>
             <textarea
               value={(item.value as string) || ''}
               onChange={(e) => handleInputChange(item.id, e.target.value)}
               placeholder={item.placeholder}
               rows={3}
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 text-white placeholder-emerald-200/60 hover:bg-white/15 resize-none"
+              className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-700 placeholder-gray-400/60 hover:bg-gray-50 resize-none"
             />
           </div>
         );
@@ -209,13 +209,13 @@ const SettingsManagement: React.FC = () => {
       default: // input
         return (
           <div>
-            <label className="block text-white font-medium mb-2">{item.label}</label>
+            <label className="block text-gray-700 font-medium mb-2">{item.label}</label>
             <input
               type={item.id.includes('Password') ? 'password' : 'text'}
               value={(item.value as string) || ''}
               onChange={(e) => handleInputChange(item.id, e.target.value)}
               placeholder={item.placeholder}
-              className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 text-white placeholder-emerald-200/60 hover:bg-white/15"
+              className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-700 placeholder-gray-400/60 hover:bg-gray-50"
             />
           </div>
         );
@@ -226,14 +226,14 @@ const SettingsManagement: React.FC = () => {
     <div className="p-6">
       {/* Header */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-white mb-2">Settings</h2>
-        <p className="text-emerald-100">Manage your account settings and preferences</p>
+        <h2 className="text-2xl font-bold text-gray-700 mb-2">Settings</h2>
+        <p className="text-gray-600">Manage your account settings and preferences</p>
       </div>
 
       <div className="grid md:grid-cols-4 gap-6">
         {/* Sidebar */}
         <div className="md:col-span-1">
-          <div className="bg-white/10 backdrop-blur-xl rounded-xl border border-white/20">
+          <div className="bg-white rounded-xl border border-gray-200">
             <nav className="p-4">
               <ul className="space-y-2">
                 {settingsSections.map((section) => (
@@ -242,8 +242,8 @@ const SettingsManagement: React.FC = () => {
                       onClick={() => setActiveSection(section.id)}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
                         activeSection === section.id
-                          ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
-                          : 'text-emerald-200 hover:bg-emerald-800/50 hover:text-white'
+                          ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
+                          : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'
                       }`}
                     >
                       <span className="text-xl">{section.icon}</span>
@@ -258,14 +258,14 @@ const SettingsManagement: React.FC = () => {
 
         {/* Main Content */}
         <div className="md:col-span-3">
-          <div className="bg-white/10 backdrop-blur-xl rounded-xl border border-white/20">
+          <div className="bg-white rounded-xl border border-gray-200">
             <div className="p-6">
               {/* Section Header */}
               <div className="mb-6">
-                <h3 className="text-xl font-bold text-white mb-2">
+                <h3 className="text-xl font-bold text-gray-700 mb-2">
                   {settingsSections.find(s => s.id === activeSection)?.title}
                 </h3>
-                <p className="text-emerald-100/80 text-sm">
+                <p className="text-gray-600/80 text-sm">
                   {activeSection === 'profile' && 'Update your personal information and profile details'}
                   {activeSection === 'security' && 'Manage your password and security settings'}
                   {activeSection === 'notifications' && 'Control how you receive notifications and alerts'}
@@ -278,17 +278,17 @@ const SettingsManagement: React.FC = () => {
                 {settingsSections
                   .find(s => s.id === activeSection)
                   ?.items.map((item) => (
-                    <div key={item.id} className="pb-6 border-b border-white/10 last:border-0">
+                    <div key={item.id} className="pb-6 border-b border-gray-200 last:border-0">
                       {renderSettingItem(item)}
                     </div>
                   ))}
 
                 {/* Section-specific actions */}
                 {activeSection === 'security' && (
-                  <div className="pt-6 border-t border-white/10">
+                  <div className="pt-6 border-t border-gray-200">
                     <button
                       onClick={handlePasswordChange}
-                      className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg"
+                      className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg"
                     >
                       Change Password
                     </button>
@@ -296,10 +296,10 @@ const SettingsManagement: React.FC = () => {
                 )}
 
                 {activeSection === 'profile' && (
-                  <div className="pt-6 border-t border-white/10">
+                  <div className="pt-6 border-t border-gray-200">
                     <button
                       onClick={() => handleSaveSection('profile')}
-                      className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg"
+                      className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg"
                     >
                       Save Profile Changes
                     </button>
@@ -307,10 +307,10 @@ const SettingsManagement: React.FC = () => {
                 )}
 
                 {activeSection === 'notifications' && (
-                  <div className="pt-6 border-t border-white/10">
+                  <div className="pt-6 border-t border-gray-200">
                     <button
                       onClick={() => handleSaveSection('notifications')}
-                      className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg"
+                      className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg"
                     >
                       Save Notification Settings
                     </button>
@@ -318,10 +318,10 @@ const SettingsManagement: React.FC = () => {
                 )}
 
                 {activeSection === 'preferences' && (
-                  <div className="pt-6 border-t border-white/10">
+                  <div className="pt-6 border-t border-gray-200">
                     <button
                       onClick={() => handleSaveSection('preferences')}
-                      className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg"
+                      className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg"
                     >
                       Save Preferences
                     </button>
@@ -333,9 +333,9 @@ const SettingsManagement: React.FC = () => {
 
           {/* Danger Zone */}
           {activeSection === 'security' && (
-            <div className="mt-6 bg-red-500/10 backdrop-blur-xl rounded-xl border border-red-400/30 p-6">
-              <h4 className="text-red-300 font-bold text-lg mb-3">Danger Zone</h4>
-              <p className="text-red-200/80 text-sm mb-4">
+            <div className="mt-6 bg-red-100 rounded-xl border border-red-200 p-6">
+              <h4 className="text-red-800 font-bold text-lg mb-3">Danger Zone</h4>
+              <p className="text-red-600 text-sm mb-4">
                 Irreversible and destructive actions. Please be careful.
               </p>
               <button
