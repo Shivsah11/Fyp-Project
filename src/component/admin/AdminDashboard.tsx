@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import Properties from './Properties';
+import Booking from './Booking';
+import Analytics from './Analytics';
+import System from './System';
 
 // Define types for user data
 interface User {
@@ -167,10 +171,10 @@ const AdminDashboard = () => {
               <button
                 key={item.id}
                 onClick={() => setActiveSection(item.id)}
-                className={`w-full flex items-center gap-3 px-4 py-3 text-sm font-bold transition-all duration-200 rounded-lg border-4 border-black bg-white hover:border-green-500 hover:bg-green-50 hover:text-green-700 ${
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
                   activeSection === item.id
-                    ? 'text-white bg-gradient-to-r from-green-600 to-green-700 border-black shadow-lg'
-                    : 'text-gray-800'
+                    ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg transform scale-[1.02] border border-blue-400/30'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-blue-600 border border-gray-300/30 hover:border-blue-500/50'
                 }`}
               >
                 <span className="w-5 h-5 flex items-center justify-center text-gray-500">
@@ -408,31 +412,19 @@ const AdminDashboard = () => {
           )}
 
           {activeSection === 'properties' && (
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">Properties Management</h3>
-              <p className="text-gray-600 font-medium">Properties management coming soon...</p>
-            </div>
+            <Properties />
           )}
 
           {activeSection === 'bookings' && (
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">Bookings Management</h3>
-              <p className="text-gray-600 font-medium">Bookings management coming soon...</p>
-            </div>
+            <Booking />
           )}
 
           {activeSection === 'analytics' && (
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">Analytics Dashboard</h3>
-              <p className="text-gray-600 font-medium">Advanced analytics coming soon...</p>
-            </div>
+            <Analytics />
           )}
 
           {activeSection === 'settings' && (
-            <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4">System Settings</h3>
-              <p className="text-gray-600 font-medium">System settings coming soon...</p>
-            </div>
+            <System />
           )}
         </div>
       </div>

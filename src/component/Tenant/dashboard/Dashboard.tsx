@@ -9,6 +9,15 @@ import BookingsManagement from '../bookings/BookingsManagement';
 import MessagesManagement from '../messages/MessagesManagement';
 import SettingsManagement from '../settings/SettingsManagement';
 
+interface Payment {
+  id: string;
+  amount: number;
+  method: string;
+  date: string;
+  status: 'completed' | 'pending' | 'failed';
+  description: string;
+}
+
 const Dashboard = () => {
   const location = useLocation();
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -18,6 +27,32 @@ const Dashboard = () => {
   const [friendEmail, setFriendEmail] = useState('');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [payments, setPayments] = useState<Payment[]>([
+    {
+      id: '1',
+      amount: 850,
+      method: 'Credit Card',
+      date: '2025-02-15',
+      status: 'completed',
+      description: 'Monthly Rent - Studio A'
+    },
+    {
+      id: '2',
+      amount: 50,
+      method: 'PayPal',
+      date: '2025-02-10',
+      status: 'completed',
+      description: 'Maintenance Fee'
+    },
+    {
+      id: '3',
+      amount: 1200,
+      method: 'Bank Transfer',
+      date: '2025-03-01',
+      status: 'pending',
+      description: 'Monthly Rent - Studio A'
+    }
+  ]);
 
   // Check if we should navigate to messages from bookings
   useEffect(() => {
@@ -50,6 +85,22 @@ const Dashboard = () => {
     setFriendEmail('');
   };
 
+  const handleAddPayment = (amount: string, esewaNumber: string) => {
+    const newPayment: Payment = {
+      id: (payments.length + 1).toString(),
+      amount: parseFloat(amount),
+      method: 'eSewa',
+      date: new Date().toISOString().split('T')[0],
+      status: 'completed',
+      description: `Payment via eSewa (${esewaNumber})`
+    };
+    setPayments([newPayment, ...payments]);
+  };
+
+  const handleDeletePayment = (id: string) => {
+    setPayments(payments.filter(payment => payment.id !== id));
+  };
+
   return (
     <div className="min-h-screen w-screen bg-gray-50 flex relative overflow-hidden">
 
@@ -70,11 +121,10 @@ const Dashboard = () => {
               <li key={item.id}>
                 <button
                   onClick={() => setActiveSection(item.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-                    activeSection === item.id
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeSection === item.id
                       ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg transform scale-[1.02] border border-emerald-400/30'
                       : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300 hover:border-gray-400'
-                  }`}
+                    }`}
                 >
                   <span className="font-medium">{item.label}</span>
                 </button>
@@ -101,7 +151,7 @@ const Dashboard = () => {
         <div className="absolute bottom-6 left-6 right-6">
           <Link
             to="/"
-            className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white py-3 rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-emerald-400/30 flex items-center justify-center gap-2"
+            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl font-medium transition-all duration-300 border border-gray-300 flex items-center justify-center gap-2"
           >
             <span>Logout</span>
           </Link>
@@ -115,20 +165,20 @@ const Dashboard = () => {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-extrabold text-gray-900 mb-1 tracking-wide drop-shadow-lg">
-                {activeSection === 'dashboard' ? 'Welcome Back, Alex' : 
-                 activeSection === 'rooms' ? 'Explore Rooms' :
-                 activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
+                {activeSection === 'dashboard' ? 'Welcome Back, Alex' :
+                  activeSection === 'rooms' ? 'Explore Rooms' :
+                    activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
               </h2>
             </div>
             {activeSection === 'dashboard' && (
               <div className="flex gap-3">
-                <button 
+                <button
                   onClick={() => setIsPaymentModalOpen(true)}
                   className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-4 py-2 rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-emerald-400/30"
                 >
                   Make Payment
                 </button>
-                <button 
+                <button
                   onClick={() => setIsRequestModalOpen(true)}
                   className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-4 py-2 rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-emerald-400/30"
                 >
@@ -151,7 +201,7 @@ const Dashboard = () => {
                     <p className="text-3xl font-bold text-gray-900 mt-2">24</p>
                   </div>
                   <div className="bg-emerald-500/20 rounded-full h-2 overflow-hidden">
-                    <div className="bg-gradient-to-r from-emerald-500 to-teal-600 h-full rounded-full" style={{width: '80%'}}></div>
+                    <div className="bg-gradient-to-r from-emerald-500 to-teal-600 h-full rounded-full" style={{ width: '80%' }}></div>
                   </div>
                 </div>
               </div>
@@ -203,7 +253,7 @@ const Dashboard = () => {
 
             <div className="grid grid-cols-3 gap-6">
               {/* Recommended Rooms */}
-              <div className="col-span-2">
+              <div className="col-span-2 bg-white rounded-3xl p-6 border border-gray-200 shadow-sm">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Recommended Rooms for you</h3>
                 <div className="grid grid-cols-2 gap-4">
                   {recommendedRooms.map((room) => (
@@ -218,13 +268,13 @@ const Dashboard = () => {
               </div>
 
               {/* Invite Friend Section */}
-              <div>
+              <div className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Invite a Friend</h3>
-                <form onSubmit={handleInviteFriend} className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm">
+                <form onSubmit={handleInviteFriend}>
                   <div className="text-center mb-6">
                     <p className="text-gray-600 text-sm mb-2">Get 50 bonus points for each successful referral!</p>
                   </div>
-                  
+
                   <div className="mb-4">
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Friend's Email</label>
                     <input
@@ -285,7 +335,7 @@ const Dashboard = () => {
 
             {/* Payment History */}
             <div className="mt-6">
-              <PaymentHistory />
+              <PaymentHistory payments={payments} onDeletePayment={handleDeletePayment} />
             </div>
 
             {/* Request List */}
@@ -313,15 +363,16 @@ const Dashboard = () => {
       </div>
 
       {/* Payment Modal */}
-      <PaymentModal 
-        isOpen={isPaymentModalOpen} 
-        onClose={() => setIsPaymentModalOpen(false)} 
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        onPaymentSuccess={handleAddPayment}
       />
 
       {/* Request Modal */}
-      <RequestModal 
-        isOpen={isRequestModalOpen} 
-        onClose={() => setIsRequestModalOpen(false)} 
+      <RequestModal
+        isOpen={isRequestModalOpen}
+        onClose={() => setIsRequestModalOpen(false)}
       />
     </div>
   );

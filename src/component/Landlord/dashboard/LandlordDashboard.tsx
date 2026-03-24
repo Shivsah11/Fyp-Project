@@ -188,7 +188,7 @@ const LandlordDashboard = () => {
       <div className="relative z-10 w-64 bg-white border-r border-gray-200 min-h-screen">
         {/* Logo */}
         <div className="px-6 py-6 border-b border-gray-200">
-          <h1 className="text-2xl font-extrabold text-blue-600 tracking-wide">
+          <h1 className="text-[20px] font-extrabold text-blue-600 tracking-wide">
             SUITE DREAMS
           </h1>
           <p className="text-gray-600 text-sm mt-1">Landlord Portal</p>
@@ -232,7 +232,7 @@ const LandlordDashboard = () => {
         <div className="absolute bottom-6 left-6 right-6">
           <Link
             to="/"
-            className="w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white py-3 rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-blue-400/30 flex items-center justify-center gap-2"
+            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl font-medium transition-all duration-300 border border-gray-300 flex items-center justify-center gap-2"
           >
             <span>Logout</span>
           </Link>

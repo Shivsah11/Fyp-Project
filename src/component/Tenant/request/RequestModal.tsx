@@ -61,12 +61,12 @@ const RequestModal = ({ isOpen, onClose }: RequestModalProps) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white/10 backdrop-blur-xl rounded-3xl p-8 border border-white/20 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-3xl p-8 border border-gray-200 w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-white">Submit New Request</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Submit New Request</h2>
           <button
             onClick={onClose}
-            className="text-white/60 hover:text-white text-2xl"
+            className="text-gray-400 hover:text-gray-600 text-2xl"
           >
             ×
           </button>
@@ -75,7 +75,7 @@ const RequestModal = ({ isOpen, onClose }: RequestModalProps) => {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Request Type */}
           <div>
-            <label className="block text-sm font-semibold text-gray-600 mb-3">Request Type</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-3">Request Type</label>
             <div className="grid grid-cols-2 gap-3">
               {requestTypes.map((type) => (
                 <button
@@ -97,7 +97,7 @@ const RequestModal = ({ isOpen, onClose }: RequestModalProps) => {
 
           {/* Subject */}
           <div>
-            <label className="block text-sm font-semibold text-gray-600 mb-2">Subject</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Subject</label>
             <input
               type="text"
               value={subject}
@@ -110,7 +110,7 @@ const RequestModal = ({ isOpen, onClose }: RequestModalProps) => {
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-semibold text-gray-600 mb-2">Description</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -123,7 +123,7 @@ const RequestModal = ({ isOpen, onClose }: RequestModalProps) => {
 
           {/* Priority */}
           <div>
-            <label className="block text-sm font-semibold text-gray-600 mb-2">Priority Level</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Priority Level</label>
             <div className="flex gap-3">
               {[
                 { value: 'low', label: 'Low', color: 'green' },
@@ -138,7 +138,7 @@ const RequestModal = ({ isOpen, onClose }: RequestModalProps) => {
                   className={`flex-1 py-2 px-3 rounded-lg border transition-all duration-300 ${
                     priority === level.value
                       ? `bg-${level.color}-500/20 text-${level.color}-300 border-${level.color}-400/50`
-                      : 'bg-white/10 text-gray-300 border-white/20 hover:bg-white/20'
+                      : 'bg-white border border-gray-300 text-gray-600 hover:bg-gray-100'
                   }`}
                 >
                   {level.label}

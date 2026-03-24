@@ -3,11 +3,13 @@ import "./styles/admin-animations.css";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Login from "./component/auth/Login";
-import Signup from "./component/auth/SignUp";
+import Signup from "./component/auth/Signup";
 import AdminLogin from "./component/admin/AdminLogin";
 import AdminDashboard from "./component/admin/AdminDashboard";
 import TenantDashboard from "./component/Tenant/dashboard/Dashboard";
 import LandlordDashboard from "./component/Landlord/dashboard/LandlordDashboard";
+import MockEsewaGateway from "./component/Payment/MockEsewaGateway";
+import PaymentSuccess from "./component/Payment/PaymentSuccess";
 
 // Route Guard Component
 const PrivateRoute = ({ children, requiredRole }: { children: React.ReactElement, requiredRole: string }) => {
@@ -100,6 +102,10 @@ function App() {
             </PrivateRoute>
           } 
         />
+        
+        {/* Payment / eSewa Mock Routes */}
+        <Route path="/esewa-checkout" element={<MockEsewaGateway />} />
+        <Route path="/payment/success" element={<PaymentSuccess />} />
         
         {/* Default dashboard route - redirect based on stored role */}
         <Route 
