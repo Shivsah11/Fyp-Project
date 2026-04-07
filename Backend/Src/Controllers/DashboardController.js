@@ -1,64 +1,160 @@
 import User from "../Models/User.js";
+import Tenant from "../Models/Tenant.js";
+import Landlord from "../Models/Landlord.js";
+import Admin from "../Models/Admin.js";
+import Property from "../Models/Property.js";
+import Booking from "../Models/Booking.js";
+import Payment from "../Models/Payment.js";
 
 export const getDashboardData = async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId).select('-password');
-    
+    const userId = req.user.userId;
+    const userRole = req.user.role;
+
+    // 1. Find the user in collections
+    let user = await Tenant.findById(userId).select('-password');
+    if (!user) user = await Landlord.findById(userId).select('-password');
+    if (!user) user = await Admin.findById(userId).select('-password');
+    if (!user) user = await User.findById(userId).select('-password');
+
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // Mock dashboard data - you can replace this with real data from your database
+    // --- ADMIN DASHBOARD ---
+    if (userRole === 'Admin') {
+      const [totalUsers, totalTenants, totalLandlords, totalProperties, totalBookings, totalPayments] = await Promise.all([
+        User.countDocuments() + Tenant.countDocuments() + Landlord.countDocuments() + Admin.countDocuments(),
+        Tenant.countDocuments(),
+        Landlord.countDocuments(),
+        Property.countDocuments(),
+        Booking.countDocuments(),
+        Payment.find()
+      ]);
+
+      const totalRevenue = totalPayments.reduce((sum, p) => sum + (p.amount || 0), 0);
+      const recentUsers = await User.find().sort({ createdAt: -1 }).limit(5).select('firstName lastName email role');
+
+      return res.status(200).json({
+        success: true,
+        message: "Admin dashboard data retrieved",
+        data: {
+          user,
+          stats: {
+            totalUsers,
+            totalTenants,
+            totalLandlords,
+            totalProperties,
+            totalBookings,
+            totalRevenue
+          },
+          recentUsers,
+          recommendedRooms: await Property.find().sort({ rating: -1 }).limit(4) // Admins see highest rated
+        }
+      });
+    }
+
+    // --- LANDLORD DASHBOARD ---
+    if (userRole === 'Landlord') {
+      const landlordProperties = await Property.find({ landlordId: userId });
+      const propertyIds = landlordProperties.map(p => p._id);
+
+      const allBookings = await Booking.find({ propertyId: { $in: propertyIds } })
+        .populate('tenantId', 'firstName lastName email')
+        .populate('propertyId', 'title')
+        .sort({ createdAt: -1 });
+
+      const confirmedBookings = allBookings.filter(b => b.status === 'Confirmed' || b.status === 'confirmed');
+      const pendingBookings = allBookings.filter(b => b.status === 'Pending' || b.status === 'pending');
+
+      const totalIncome = confirmedBookings.reduce((sum, b) => {
+        const priceNum = typeof b.price === 'string' ? parseInt(b.price.replace(/[^0-9]/g, "")) || 0 : b.price;
+        return sum + priceNum;
+      }, 0);
+
+      const analytics = {
+        totalIncome,
+        activeTenants: confirmedBookings.length,
+        pendingRequests: pendingBookings.length,
+        totalProperties: landlordProperties.length,
+        occupancyRate: landlordProperties.length > 0 ? Math.round((confirmedBookings.length / landlordProperties.length) * 100) : 0,
+        averageRent: confirmedBookings.length > 0 ? Math.round(totalIncome / confirmedBookings.length) : 0,
+        monthlyRevenue: [0, 0, 0, 0, 0, totalIncome] // Simplified for now
+      };
+
+      return res.status(200).json({
+        success: true,
+        message: "Landlord dashboard data retrieved",
+        data: {
+          user,
+          analytics,
+          recentBookings: allBookings.slice(0, 5),
+          properties: landlordProperties
+        }
+      });
+    }
+
+    // --- TENANT DASHBOARD ---
+    // Calculate Days until Rent (1st of next month)
+    const now = new Date();
+    const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+    const diffTime = Math.abs(nextMonth.getTime() - now.getTime());
+    const daysUntilRent = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    // Count Active Requests (Pending Bookings)
+    const activeRequestsCount = await Booking.countDocuments({ 
+      tenantId: userId, 
+      status: { $in: ['Pending', 'pending'] } 
+    });
+
+    const recommendedRoomsRaw = await Property.find({ status: { $in: ['Available', 'available', 'active'] } })
+      .sort({ rating: -1 })
+      .limit(4);
+
+    const recentBookingsRaw = await Booking.find({ tenantId: userId })
+      .populate('propertyId')
+      .sort({ createdAt: -1 })
+      .limit(5);
+
+    const payments = await Payment.find({ tenantId: userId })
+      .sort({ createdAt: -1 })
+      .limit(10);
+
     const dashboardData = {
-      user: {
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        role: user.role
-      },
+      user,
       stats: {
-        daysUntilRent: 24,
-        activeRequests: 1,
-        currentRoom: "Studio A"
+        daysUntilRent,
+        activeRequests: activeRequestsCount,
+        currentRoom: recentBookingsRaw.length > 0 && recentBookingsRaw[0].status.toLowerCase() === 'confirmed' 
+          ? (recentBookingsRaw[0].propertyId ? recentBookingsRaw[0].propertyId.title : 'Owned') 
+          : "No active room"
       },
-      recentBookings: [
-        {
-          id: 1,
-          room: "2 BHK",
-          checkIn: "23 Jun 2025",
-          status: "Confirmed",
-          price: "NPR 30000"
-        }
-      ],
-      recommendedRooms: [
-        {
-          id: 1,
-          title: "Cozy Studio Apartment",
-          price: "$850/month",
-          location: "Downtown",
-          rating: 4.5,
-          beds: 1,
-          baths: 1
-        },
-        {
-          id: 2,
-          title: "Modern 2BR Apartment", 
-          price: "$1,200/month",
-          location: "Uptown",
-          rating: 4.8,
-          beds: 2,
-          baths: 2
-        }
-      ]
+      recentBookings: recentBookingsRaw.map(b => ({
+        id: b._id,
+        room: b.propertyId ? b.propertyId.title : 'Unknown Property',
+        checkIn: b.checkInDate,
+        status: b.status,
+        price: b.price
+      })),
+      recommendedRooms: recommendedRoomsRaw.map(r => ({
+        id: r._id,
+        title: r.title,
+        price: r.price,
+        location: r.location,
+        rating: r.rating,
+        image: r.image || ''
+      })),
+      payments
     };
 
     res.status(200).json({
-      message: "Dashboard data retrieved successfully",
+      success: true,
+      message: "Tenant dashboard data retrieved",
       data: dashboardData
     });
+
   } catch (error) {
-    console.error("Dashboard error:", error);
-    res.status(500).json({ message: "Server error retrieving dashboard data" });
+    console.error("Dashboard controller error:", error);
+    res.status(500).json({ success: false, message: "Server error fetching dashboard data" });
   }
 };

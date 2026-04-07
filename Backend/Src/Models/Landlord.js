@@ -6,6 +6,8 @@ const landlordSchema = new mongoose.Schema({
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   role: { type: String, default: "Landlord" },
+  phone: { type: String, default: '' },
+  isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now }
 });
 

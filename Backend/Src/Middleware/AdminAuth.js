@@ -11,7 +11,7 @@ export const authenticateAdmin = async (req, res, next) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "your-secret-key");
-    
+
     const admin = await Admin.findOne({ _id: decoded.userId });
     if (!admin || !admin.isActive) {
       return res.status(403).json({ message: "Admin access required" });

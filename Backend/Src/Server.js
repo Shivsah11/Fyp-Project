@@ -6,6 +6,11 @@ import authRoutes from "./Routes/AuthRoutes.js";
 import dashboardRoutes from "./Routes/DashboardRoutes.js";
 import deleteRoutes from "./Routes/DeleteRoutes.js";
 import userRoutes from "./Routes/UserRoutes.js";
+import adminRoutes from "./Routes/AdminRoutes.js";
+import bookingRoutes from "./Routes/BookingRoutes.js";
+import propertyRoutes from "./Routes/PropertyRoutes.js";
+import messageRoutes from "./Routes/MessageRoutes.js";
+import paymentRoutes from "./Routes/PaymentRoutes.js";
 
 dotenv.config();
 connectDB();
@@ -13,13 +18,19 @@ connectDB();
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/delete", deleteRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/bookings", bookingRoutes);
+app.use("/api/properties", propertyRoutes);
+app.use("/api/messages", messageRoutes);
+app.use("/api/payments", paymentRoutes);
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {
