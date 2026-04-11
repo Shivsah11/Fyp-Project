@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import PropertyMap from '../../Shared/PropertyMap';
+import { useDarkMode } from '../../../context/DarkModeContext';
 
 interface Room {
   id: number;
@@ -24,6 +25,7 @@ interface Room {
 }
 
 const RoomDetailPage = () => {
+  const { isDarkMode } = useDarkMode();
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
   const [room, setRoom] = useState<Room | null>(null);
@@ -49,20 +51,20 @@ const RoomDetailPage = () => {
             'Authorization': `Bearer ${token}`
           }
         });
-        
+
         if (!response.ok) {
           throw new Error('Failed to fetch room details');
         }
 
         const result = await response.json();
-        
+
         if (result.success) {
           const mappedRoom = {
             id: result.data._id,
             title: result.data.title,
-            type: result.data.type === 'apartment' ? 'Apartment' : 
-                  result.data.type === 'house' ? 'House' : 
-                  result.data.type === 'studio' ? 'Studio' : 
+            type: result.data.type === 'apartment' ? 'Apartment' :
+              result.data.type === 'house' ? 'House' :
+                result.data.type === 'studio' ? 'Studio' :
                   result.data.type === 'room' ? '1 Bedroom' : result.data.type,
             price: Number(typeof result.data.price === 'string' ? result.data.price.replace(/[^0-9]/g, '') : result.data.price),
             location: result.data.location,
@@ -77,7 +79,6 @@ const RoomDetailPage = () => {
             landlordId: result.data.landlordId ? result.data.landlordId._id : '',
             landlord: result.data.landlordId ? `${result.data.landlordId.firstName} ${result.data.landlordId.lastName}` : 'Unknown Landlord',
             contactInfo: result.data.landlordId ? result.data.landlordId.email : '',
-            // Add coordinates - for demo, use Kathmandu coordinates with some randomization
             lat: result.data.lat || 27.7172 + (Math.random() - 0.5) * 0.05,
             lng: result.data.lng || 85.3240 + (Math.random() - 0.5) * 0.05
           };
@@ -104,9 +105,9 @@ const RoomDetailPage = () => {
       alert("Landlord information is not available for this room.");
       return;
     }
-    
+
     setIsSendingMessage(true);
-    
+
     try {
       const response = await fetch(`http://localhost:5000/api/messages/send`, {
         method: 'POST',
@@ -121,9 +122,9 @@ const RoomDetailPage = () => {
           message: contactMessage,
         }),
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         alert('Message sent successfully!');
         setContactSubject('');
@@ -146,46 +147,80 @@ const RoomDetailPage = () => {
       alert("Room information is not available.");
       return;
     }
-    
+
     if (!checkInDate || !checkOutDate) {
       alert("Please select check-in and check-out dates.");
       return;
     }
-    
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Please login to book a room.');
+      return;
+    }
+
     try {
-      const response = await fetch(`http://localhost:5000/api/bookings/create`, {
+      const bookingPayload = {
+        propertyId: room.id,
+        checkInDate: checkInDate,
+        checkOutDate: checkOutDate,
+        numberOfGuests: 1,
+        specialRequests: specialRequests
+      };
+
+      const response = await fetch('http://localhost:5000/api/bookings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          roomId: room.id,
-          landlordId: room.landlordId,
+        body: JSON.stringify(bookingPayload),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        const userId = JSON.parse(atob(token.split('.')[1])).userId;
+        const newBookingKey = `newBooking_${userId}`;
+
+        const displayBookingData = {
+          id: data.data._id,
           propertyName: room.title,
           propertyType: room.type,
           location: room.location,
-          price: room.price,
           checkIn: checkInDate,
           checkOut: checkOutDate,
-          specialRequests: specialRequests,
-        }),
-      });
-      
-      const data = await response.json();
-      
-      if (data.success) {
-        alert('Room booked successfully! The landlord will review your booking request.');
+          price: room.price,
+          status: 'pending',
+          paymentStatus: 'pending',
+          image: room.images?.[0] || '',
+          amenities: room.amenities || [],
+          landlord: room.landlord,
+          landlordContact: room.contactInfo
+        };
+
+        const existingNewBooking = localStorage.getItem(newBookingKey);
+        if (!existingNewBooking) {
+          localStorage.setItem(newBookingKey, JSON.stringify(displayBookingData));
+          window.dispatchEvent(new StorageEvent('storage', {
+            key: newBookingKey,
+            newValue: JSON.stringify(displayBookingData)
+          }));
+        }
+
+        alert('Room booked successfully! Your booking request has been sent to the landlord.');
         navigate('/tenant/dashboard?tab=bookings');
       } else {
         alert(data.message || 'Failed to book room');
       }
     } catch (error) {
       console.error('Error booking room:', error);
-      // Save to localStorage for demo and cross-component communication
+      const userId = JSON.parse(atob(token.split('.')[1])).userId;
+      const userBookingsKey = `userBookings_${userId}`;
+      const newBookingKey = `newBooking_${userId}`;
+
       const bookingData = {
         id: Date.now().toString(),
-        propertyId: room.id,
         propertyName: room.title,
         propertyType: room.type,
         location: room.location,
@@ -198,257 +233,325 @@ const RoomDetailPage = () => {
         amenities: room.amenities || [],
         requestDate: new Date().toISOString(),
         specialRequests: specialRequests,
-        userName: localStorage.getItem('userName') || 'Tenant User',
-        userEmail: localStorage.getItem('userEmail') || 'tenant@example.com',
-        userPhone: localStorage.getItem('userPhone') || '+977-9840000000',
         landlord: room.landlord,
         landlordContact: room.contactInfo
       };
 
-      // Get existing bookings and check for duplicates
-      const existingBookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
-      
-      // Check if user already booked this property
-      const existingBooking = existingBookings.find((b: any) => 
-        b.propertyId === room.id
+      const existingBookings = JSON.parse(localStorage.getItem(userBookingsKey) || '[]');
+      const existingBooking = existingBookings.find((b: any) =>
+        b.propertyName === room.title || b.id === room.id
       );
-      
+
       if (existingBooking) {
         alert('You have already booked this property! Check your bookings section.');
         return;
       }
-      
+
       const updatedBookings = [bookingData, ...existingBookings];
-      
-      // Save to multiple localStorage keys for reliability
-      localStorage.setItem('userBookings', JSON.stringify(updatedBookings));
-      localStorage.setItem('newBooking', JSON.stringify(bookingData));
-      
-      // Trigger storage event for BookingsManagement component
+      localStorage.setItem(userBookingsKey, JSON.stringify(updatedBookings));
+      localStorage.setItem(newBookingKey, JSON.stringify(bookingData));
       window.dispatchEvent(new StorageEvent('storage', {
-        key: 'newBooking',
+        key: newBookingKey,
         newValue: JSON.stringify(bookingData)
       }));
 
-      alert('Booking request submitted! (Demo mode - saved locally)');
+      alert('Booking request submitted! (Offline mode - will sync when online)');
       navigate('/tenant/dashboard?tab=bookings');
     }
   };
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 space-y-4">
-        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-gray-500 font-bold text-xl animate-pulse">Loading room details...</p>
+      <div className={`flex flex-col items-center justify-center py-32 space-y-6 min-h-screen ${isDarkMode ? 'bg-[#0f172a]' : 'bg-gray-50'}`}>
+        <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+        <p className={`font-black text-xl animate-pulse uppercase tracking-widest ${isDarkMode ? 'text-emerald-500' : 'text-emerald-600'}`}>Synchronizing Details...</p>
       </div>
     );
   }
 
   if (error || !room) {
     return (
-      <div className="text-center py-20 bg-red-50 rounded-2xl border border-red-200">
-        <div className="text-5xl mb-4">⚠️</div>
-        <h3 className="text-2xl font-bold text-red-700 mb-2">Room Not Found</h3>
-        <p className="text-red-600 mb-4">{error || 'The room you are looking for does not exist.'}</p>
-        <button 
-          onClick={() => navigate('/tenant/dashboard?tab=rooms')}
-          className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
-        >
-          Back to Rooms
-        </button>
+      <div className={`min-h-screen flex items-center justify-center p-6 ${isDarkMode ? 'bg-[#0f172a]' : 'bg-gray-50'}`}>
+        <div className={`max-w-md w-full p-10 text-center rounded-[32px] border shadow-2xl ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-red-100'}`}>
+          <div className="text-6xl mb-6 grayscale h-20">⚠️</div>
+          <h3 className={`text-2xl font-black mb-2 ${isDarkMode ? 'text-white' : 'text-red-700'}`}>Estate Not Found</h3>
+          <p className={`font-bold italic mb-8 ${isDarkMode ? 'text-gray-500' : 'text-red-900/60'}`}>{error || 'The requested property has been Delisted.'}</p>
+          <button
+            onClick={() => navigate('/tenant/dashboard?tab=rooms')}
+            className="w-full px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl transition-all hover:scale-[1.05]"
+          >
+            Back to Directory
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      {/* Back Button */}
-      <button 
-        onClick={() => navigate('/tenant/dashboard?tab=rooms')}
-        className="mb-6 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors flex items-center gap-2"
-      >
-        ← Back to Rooms
-      </button>
+    <div className={`min-h-screen py-8 transition-colors duration-500 ${isDarkMode ? 'bg-[#0f172a] text-white' : 'bg-gray-50 text-gray-900'}`}>
+      <div className="max-w-6xl mx-auto px-6">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate('/tenant/dashboard?tab=rooms')}
+          className={`mb-8 px-6 py-3 rounded-2xl font-black text-sm uppercase tracking-widest transition-all duration-300 transform hover:scale-[1.02] flex items-center gap-3 shadow-xl ${
+            isDarkMode
+              ? 'bg-gray-800 text-emerald-400 hover:bg-gray-700 border border-emerald-500/30'
+              : 'bg-white text-emerald-600 hover:bg-emerald-50 border border-emerald-100'
+          }`}
+        >
+          <span className="text-xl">←</span>
+          Back to Rooms
+        </button>
 
-      {/* Room Details */}
-      <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-lg">
-        {/* Image Section */}
-        {room.images && room.images.length > 0 && room.images[0] && room.images[0].trim() !== '' ? (
-          <div className="relative h-64 bg-gray-100 rounded-t-2xl overflow-hidden">
-            <img src={room.images[0]} alt={room.title} className="w-full h-full object-cover" />
-            <button
-              onClick={() => setShowGalleryModal(true)}
-              className="absolute top-4 right-4 bg-blue-600 hover:bg-blue-700 text-white text-sm px-4 py-2 rounded-lg shadow-lg transition-all duration-300 flex items-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              View All Images ({room.images.length})
-            </button>
-          </div>
-        ) : (
-          <div className="h-64 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-t-2xl">
-            <div className="flex items-center justify-center h-full">
-              <div className="text-white text-center">
-                <div className="w-24 h-24 bg-white/20 rounded-xl mx-auto mb-2 flex items-center justify-center text-4xl">📷</div>
-                <p className="text-lg">No Image Available</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Content Section */}
-        <div className="p-6">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h1 className="text-xl font-bold text-gray-900 mb-1">{room.title}</h1>
-              <p className="text-sm text-gray-600 flex items-center gap-2">
-                📍 {room.location}
-                <span className={`px-2 py-1 text-xs rounded-full ${room.available
-                  ? 'bg-green-200 text-green-600 border-green-300'
-                  : 'bg-red-200 text-red-600 border-red-300'
-                  }`}>
-                  {room.available ? 'Available' : 'Occupied'}
-                </span>
-              </p>
-            </div>
-            <div className="text-right">
-              <div className="text-xl font-bold text-gray-900">${room.price}</div>
-              <div className="text-sm text-gray-600">/month</div>
-              <div className="flex items-center gap-1 mt-1">
-                <span className="text-yellow-400 text-sm">⭐</span>
-                <span className="text-sm text-gray-900">{room.rating} (24 reviews)</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Features Grid */}
-          <div className="grid grid-cols-4 gap-3 mb-4">
-            <div className="bg-gray-100 rounded-lg p-2 text-center">
-              <div className="text-lg mb-1">🛏️</div>
-              <div className="text-sm text-gray-900 font-semibold">{room.beds}</div>
-              <div className="text-xs text-gray-600">Bedrooms</div>
-            </div>
-            <div className="bg-gray-100 rounded-lg p-2 text-center">
-              <div className="text-lg mb-1">🚿</div>
-              <div className="text-sm text-gray-900 font-semibold">{room.baths}</div>
-              <div className="text-xs text-gray-600">Bathrooms</div>
-            </div>
-            <div className="bg-gray-100 rounded-lg p-2 text-center">
-              <div className="text-lg mb-1">📐</div>
-              <div className="text-sm text-gray-900 font-semibold">{room.sqft}</div>
-              <div className="text-xs text-gray-600">Sq Ft</div>
-            </div>
-            <div className="bg-gray-100 rounded-lg p-2 text-center">
-              <div className="text-lg mb-1">🏠</div>
-              <div className="text-sm text-gray-900 font-semibold">{room.type}</div>
-              <div className="text-xs text-gray-600">Type</div>
-            </div>
-          </div>
-
-          {/* Description */}
-          <div className="mb-4">
-            <h2 className="text-lg font-bold text-gray-900 mb-2">Description</h2>
-            <p className="text-sm text-gray-600 leading-relaxed">{room.description}</p>
-          </div>
-
-          {/* Location Map */}
-          <div className="mb-4">
-            <h2 className="text-lg font-bold text-gray-900 mb-2">Location</h2>
-            <div className="bg-gray-50 rounded-xl p-3 border border-gray-200">
-              <p className="text-sm text-gray-600 mb-3">📍 {room.location}</p>
-              <PropertyMap
-                properties={[{
-                  id: room.id,
-                  title: room.title,
-                  type: room.type,
-                  price: room.price,
-                  location: room.location,
-                  lat: room.lat || 27.7172,
-                  lng: room.lng || 85.3240,
-                  available: room.available,
-                  rating: room.rating
-                }]}
-                height="250px"
-                center={[room.lat || 27.7172, room.lng || 85.3240]}
-                zoom={15}
-                showPopups={true}
+        {/* Room Details Card */}
+        <div className={`rounded-[32px] border overflow-hidden shadow-2xl transition-all duration-500 ${
+          isDarkMode 
+            ? 'bg-gray-800/50 border-gray-700/50 backdrop-blur-xl' 
+            : 'bg-white border-gray-100'
+        }`}>
+          {/* Image Section */}
+          {room.images && room.images.length > 0 && room.images[0] && room.images[0].trim() !== '' ? (
+            <div className="relative h-96 group overflow-hidden">
+              <img 
+                src={room.images[0]} 
+                alt={room.title} 
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" 
               />
+              <div className={`absolute inset-0 bg-gradient-to-t ${isDarkMode ? 'from-[#0f172a] via-transparent' : 'from-black/60 via-transparent'} to-transparent opacity-60`}></div>
+              <button
+                onClick={() => setShowGalleryModal(true)}
+                className="absolute top-6 right-6 bg-white/20 hover:bg-white/40 backdrop-blur-md text-white px-6 py-3 rounded-2xl shadow-xl transition-all duration-300 flex items-center gap-3 border border-white/30 font-black uppercase text-xs tracking-widest"
+              >
+                <span>🖼️</span>
+                View All Photos ({room.images.length})
+              </button>
             </div>
-          </div>
+          ) : (
+            <div className={`h-96 ${isDarkMode ? 'bg-gray-800' : 'bg-gradient-to-br from-blue-500 to-teal-600'}`}>
+              <div className="flex items-center justify-center h-full">
+                <div className="text-white text-center">
+                  <div className="w-32 h-32 bg-white/20 rounded-[32px] mx-auto mb-6 flex items-center justify-center text-5xl backdrop-blur-md">📷</div>
+                  <p className="text-2xl font-black italic">Portrait Missing</p>
+                </div>
+              </div>
+            </div>
+          )}
 
-          {/* Amenities */}
-          <div className="mb-4">
-            <h2 className="text-lg font-bold text-gray-900 mb-2">Amenities</h2>
-            <div className="grid grid-cols-3 gap-2">
-              {room.amenities.map((amenity, index) => (
-                <div key={index} className="flex items-center gap-2 text-sm text-gray-600">
-                  <span className="text-green-400 text-sm">✓</span>
-                  <span>{amenity}</span>
+          {/* Content Section */}
+          <div className="p-8 md:p-12">
+            <div className="flex flex-col md:flex-row justify-between items-start gap-8 mb-12">
+              <div className="flex-1">
+                <div className="flex items-center gap-3 mb-4">
+                  <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+                    room.available
+                      ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                      : 'bg-red-500/20 text-red-400 border-red-500/30'
+                  }`}>
+                    ● {room.available ? 'Immediate Housing' : 'Occupied'}
+                  </span>
+                  <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+                    isDarkMode ? 'bg-gray-700/50 text-gray-400 border-gray-600' : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    {room.type}
+                  </span>
+                </div>
+                <h1 className={`text-4xl md:text-5xl font-black italic mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  {room.title}
+                </h1>
+                <p className={`text-lg font-bold flex items-center gap-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                  <span className="text-2xl">📍</span> {room.location}
+                </p>
+              </div>
+              
+              <div className="flex flex-col items-end text-right">
+                <div className={`text-4xl md:text-5xl font-black mb-1 ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                  NPR {room.price.toLocaleString()}
+                </div>
+                <div className={`text-sm font-black uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                  Monthly Commitment
+                </div>
+                <div className={`mt-4 flex items-center gap-2 px-4 py-2 rounded-xl border ${
+                  isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-yellow-50 border-yellow-100'
+                }`}>
+                  <span className="text-xl">⭐</span>
+                  <span className={`font-black ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{room.rating}</span>
+                  <span className={`text-xs font-bold ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>(24 reviews)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Features Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+              {[
+                { label: 'Bedrooms', val: room.beds, icon: '🛏️' },
+                { label: 'Bathrooms', val: room.baths, icon: '🚿' },
+                { label: 'Surface Area', val: `${room.sqft} sqft`, icon: '📐' },
+                { label: 'Property Type', val: room.type, icon: '🏠' }
+              ].map((feat, i) => (
+                <div key={i} className={`p-6 rounded-[24px] border transition-all duration-300 hover:-translate-y-1 ${
+                  isDarkMode ? 'bg-gray-800/30 border-gray-700 hover:border-emerald-500/30' : 'bg-gray-50 border-gray-100 hover:border-emerald-200 shadow-sm'
+                }`}>
+                  <div className="text-3xl mb-4">{feat.icon}</div>
+                  <div className={`text-lg font-black italic mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{feat.val}</div>
+                  <div className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>{feat.label}</div>
                 </div>
               ))}
             </div>
-          </div>
 
-          {/* Landlord Information */}
-          <div className="mb-4">
-            <h2 className="text-lg font-bold text-gray-900 mb-2">Landlord Information</h2>
-            <div className="bg-gray-100 rounded-lg p-3">
-              <p className="text-sm text-gray-900 font-semibold mb-1">{room.landlord}</p>
-              <p className="text-xs text-gray-500">📧 {room.contactInfo}</p>
+            {/* Grid Layout for Details */}
+            <div className="grid lg:grid-cols-3 gap-12">
+              <div className="lg:col-span-2 space-y-12">
+                {/* Description */}
+                <section>
+                  <h2 className={`text-2xl font-black italic mb-6 flex items-center gap-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    The Narrative
+                    <div className="flex-1 h-px bg-current opacity-10"></div>
+                  </h2>
+                  <p className={`text-lg leading-relaxed font-bold ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                    {room.description}
+                  </p>
+                </section>
+
+                {/* Amenities */}
+                <section>
+                  <h2 className={`text-2xl font-black italic mb-6 flex items-center gap-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    Key Features
+                    <div className="flex-1 h-px bg-current opacity-10"></div>
+                  </h2>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {room.amenities.map((amenity, index) => (
+                      <div key={index} className={`flex items-center gap-3 p-4 rounded-2xl border ${
+                        isDarkMode ? 'bg-gray-800/20 border-gray-700' : 'bg-gray-50 border-gray-100'
+                      }`}>
+                        <span className="text-emerald-500">✓</span>
+                        <span className={`text-sm font-black italic ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{amenity}</span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                {/* Location Map */}
+                <section>
+                  <h2 className={`text-2xl font-black italic mb-6 flex items-center gap-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                    Neighborhood Experience
+                    <div className="flex-1 h-px bg-current opacity-10"></div>
+                  </h2>
+                  <div className={`rounded-[32px] overflow-hidden border p-4 shadow-xl ${
+                    isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-white border-gray-100'
+                  }`}>
+                    <p className={`text-sm font-bold mb-6 flex items-center gap-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      <span>📍</span> {room.location}
+                    </p>
+                    <PropertyMap
+                      properties={[{
+                        id: room.id,
+                        title: room.title,
+                        type: room.type,
+                        price: room.price,
+                        location: room.location,
+                        lat: room.lat || 27.7172,
+                        lng: room.lng || 85.3240,
+                        available: room.available,
+                        rating: room.rating
+                      }]}
+                      height="400px"
+                      center={[room.lat || 27.7172, room.lng || 85.3240]}
+                      zoom={15}
+                      showPopups={true}
+                    />
+                  </div>
+                </section>
+              </div>
+
+              {/* Sidebar with Host & Action */}
+              <div className="space-y-8">
+                {/* Landlord Information */}
+                <div className={`p-8 rounded-[32px] border ${
+                  isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-emerald-100'
+                }`}>
+                  <h3 className={`text-sm font-black uppercase tracking-widest mb-6 ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>Meet Your Host</h3>
+                  <div className="flex items-center gap-5 mb-8">
+                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-black text-3xl border transform rotate-3 ${
+                      isDarkMode ? 'bg-gray-700 border-gray-600 text-emerald-400' : 'bg-emerald-100 border-emerald-200 text-emerald-700'
+                    }`}>
+                      {room.landlord.charAt(0)}
+                    </div>
+                    <div>
+                      <p className={`text-xl font-black italic mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{room.landlord}</p>
+                      <p className={`text-xs font-bold ${isDarkMode ? 'text-gray-500' : 'text-gray-500 italic'}`}>Verified Professional Host</p>
+                    </div>
+                  </div>
+                  <div className={`flex flex-col gap-3 p-4 rounded-2xl ${isDarkMode ? 'bg-gray-900/50' : 'bg-white/50 border border-emerald-100'}`}>
+                     <p className="text-xs font-black uppercase tracking-tighter text-emerald-500">Contact Point</p>
+                     <p className={`text-sm font-black truncate ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{room.contactInfo}</p>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col gap-4">
+                  <button
+                    onClick={() => setShowBookingModal(true)}
+                    className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white py-5 rounded-[24px] font-black uppercase tracking-widest shadow-2xl shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:-translate-y-1 transition-all duration-500 text-lg"
+                  >
+                    Apply to Book
+                  </button>
+                  <button
+                    onClick={() => setShowContactModal(true)}
+                    className={`w-full py-5 rounded-[24px] font-black uppercase tracking-widest transition-all duration-500 border-2 ${
+                      isDarkMode 
+                        ? 'bg-transparent border-gray-700 text-white hover:bg-gray-800' 
+                        : 'bg-white border-emerald-100 text-gray-900 hover:bg-emerald-50 shadow-sm'
+                    }`}
+                  >
+                    Send Inquiry
+                  </button>
+                </div>
+              </div>
             </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-4">
-            <button 
-              onClick={() => setShowBookingModal(true)}
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-bold transition-all duration-300 shadow-md"
-            >
-              Book Room
-            </button>
-            <button 
-              onClick={() => setShowContactModal(true)}
-              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-3 rounded-xl font-bold transition-all duration-300 border border-gray-300 shadow-sm"
-            >
-              Contact Landlord
-            </button>
           </div>
         </div>
       </div>
 
       {/* Gallery Modal */}
       {showGalleryModal && room && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-4xl max-h-[90vh] overflow-hidden shadow-2xl relative">
-            <button 
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[70] p-4 transition-all duration-500">
+          <div className={`rounded-[40px] p-8 w-full max-w-5xl max-h-[90vh] overflow-hidden shadow-2xl relative border ${
+            isDarkMode ? 'bg-gray-900/90 border-gray-700' : 'bg-white border-gray-100'
+          }`}>
+            <button
               onClick={() => setShowGalleryModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full w-10 h-10 flex items-center justify-center font-bold text-xl transition-colors z-10"
+              className={`absolute top-6 right-6 w-12 h-12 flex items-center justify-center rounded-2xl font-black text-2xl transition-all duration-300 z-10 ${
+                isDarkMode ? 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700' : 'bg-gray-100 text-gray-400 hover:text-gray-900 shadow-sm'
+              }`}
             >
               ×
             </button>
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">Property Photos</h3>
-            
-            <div className="overflow-y-auto max-h-[70vh]">
+            <h3 className={`text-3xl font-black italic mb-8 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              Visual Index
+            </h3>
+
+            <div className="overflow-y-auto max-h-[70vh] no-scrollbar pb-8">
               {room.images && room.images.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {room.images.map((image, index) => (
-                    <div key={index} className="relative group">
-                      <img 
-                        src={image} 
-                        alt={`${room.title} - Photo ${index + 1}`} 
-                        className="w-full h-64 object-cover rounded-xl border border-gray-200"
+                    <div key={index} className="relative group rounded-[32px] overflow-hidden border border-transparent hover:border-emerald-500/50 transition-all duration-500">
+                      <img
+                        src={image}
+                        alt={`${room.title} - Photo ${index + 1}`}
+                        className="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110"
                       />
-                      <div className="absolute bottom-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
-                        Photo {index + 1} of {room.images.length}
+                      <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md text-white px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest border border-white/20">
+                        Capture {index + 1}
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12">
-                  <div className="w-32 h-32 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center text-4xl">📷</div>
-                  <p className="text-gray-500 text-lg">No photos available</p>
+                <div className="text-center py-24">
+                  <div className={`w-40 h-40 rounded-[32px] mx-auto mb-8 flex items-center justify-center text-6xl ${
+                    isDarkMode ? 'bg-gray-800 text-gray-600' : 'bg-gray-100 text-gray-300'
+                  }`}>📷</div>
+                  <p className={`text-xl font-black italic ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>No photographic evidence</p>
                 </div>
               )}
             </div>
@@ -458,47 +561,57 @@ const RoomDetailPage = () => {
 
       {/* Contact Landlord Modal */}
       {showContactModal && room && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
-          <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-2xl relative">
-            <button 
+        <div className="fixed inset-0 bg-[#0f172a]/80 backdrop-blur-xl flex items-center justify-center z-[80] p-4">
+          <div className={`rounded-[40px] p-10 w-full max-w-lg shadow-2xl relative border ${
+            isDarkMode ? 'bg-gray-900/40 border-gray-700' : 'bg-white border-gray-100'
+          }`}>
+            <button
               onClick={() => setShowContactModal(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-full w-8 h-8 flex items-center justify-center font-bold transition-colors"
+              className={`absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-xl font-black text-xl transition-all duration-300 ${
+                isDarkMode ? 'bg-gray-800 text-gray-500 hover:text-white' : 'bg-gray-100 text-gray-400 hover:text-gray-900 shadow-sm'
+              }`}
             >
               ×
             </button>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">Message Landlord</h3>
-            <p className="text-gray-500 mb-6 text-sm">You are messaging {room.landlord} regarding {room.title}</p>
-            
-            <form onSubmit={handleSendMessage} className="space-y-4">
+            <h3 className={`text-3xl font-black italic mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Direct Inquiry</h3>
+            <p className={`text-sm font-bold mb-10 ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>
+              Brief the host regarding <span className="text-emerald-500 italic">{room.title}</span>
+            </p>
+
+            <form onSubmit={handleSendMessage} className="space-y-6">
               <div>
-                <label className="block text-gray-700 text-sm font-semibold mb-2">Subject</label>
+                <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-700'}`}>Topic of Interest</label>
                 <input
                   type="text"
                   required
                   value={contactSubject}
                   onChange={(e) => setContactSubject(e.target.value)}
                   placeholder="I am interested in..."
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                  className={`w-full px-6 py-4 rounded-2xl font-bold transition-all duration-300 border focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none ${
+                    isDarkMode ? 'bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-600' : 'bg-gray-50 border-gray-200 text-gray-900 shadow-sm'
+                  }`}
                 />
               </div>
               <div>
-                <label className="block text-gray-700 text-sm font-semibold mb-2">Message</label>
+                <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-700'}`}>Communication Content</label>
                 <textarea
                   required
                   rows={4}
                   value={contactMessage}
                   onChange={(e) => setContactMessage(e.target.value)}
                   placeholder="Hello, I would like to know if..."
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"
+                  className={`w-full px-6 py-4 rounded-2xl font-bold transition-all duration-300 border focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none resize-none ${
+                    isDarkMode ? 'bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-600' : 'bg-gray-50 border-gray-200 text-gray-900 shadow-sm'
+                  }`}
                 ></textarea>
               </div>
-              
+
               <button
                 type="submit"
                 disabled={isSendingMessage}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-bold py-3 px-4 rounded-xl transition-all duration-300 shadow-md mt-4"
+                className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:shadow-emerald-500/40 text-white font-black uppercase tracking-widest py-5 rounded-2xl transition-all duration-500 shadow-xl"
               >
-                {isSendingMessage ? 'Sending...' : 'Send Message'}
+                {isSendingMessage ? 'Transmitting...' : 'Dispatch Message'}
               </button>
             </form>
           </div>
@@ -507,65 +620,79 @@ const RoomDetailPage = () => {
 
       {/* Booking Modal */}
       {showBookingModal && room && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-3xl p-8 max-w-md w-full border border-gray-200 shadow-xl">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-bold text-gray-900">Book Room</h3>
-              <button
-                onClick={() => setShowBookingModal(false)}
-                className="text-gray-400 hover:text-gray-600 text-2xl transition-colors"
-              >
-                ×
-              </button>
-            </div>
-            
-            <div className="mb-6">
-              <div className="bg-gray-50 rounded-xl p-4 mb-4">
-                <h4 className="font-bold text-gray-900 mb-2">{room.title}</h4>
-                <p className="text-gray-600 text-sm">{room.location}</p>
-                <p className="text-2xl font-bold text-green-600 mt-2">NPR {room.price.toLocaleString()}/month</p>
+        <div className="fixed inset-0 bg-[#0f172a]/90 backdrop-blur-2xl flex items-center justify-center z-[90] p-4">
+          <div className={`rounded-[48px] p-12 max-w-xl w-full border shadow-2xl relative ${
+            isDarkMode ? 'bg-gray-900/60 border-gray-700' : 'bg-white border-gray-100'
+          }`}>
+            <button
+              onClick={() => setShowBookingModal(false)}
+              className={`absolute top-8 right-8 w-12 h-12 flex items-center justify-center rounded-2xl font-black text-2xl transition-all duration-300 ${
+                isDarkMode ? 'bg-gray-800 text-gray-500 hover:text-white' : 'bg-gray-100 text-gray-400 hover:text-gray-900 shadow-sm'
+              }`}
+            >
+              ×
+            </button>
+
+            <div className="mb-10 text-center">
+              <h3 className={`text-4xl font-black italic mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Reservation Protocol</h3>
+              <div className={`inline-block p-6 rounded-[32px] border ${
+                isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-emerald-50 border-emerald-100 shadow-sm'
+              }`}>
+                <h4 className="font-black italic text-emerald-500 text-xl mb-1">{room.title}</h4>
+                <p className={`text-xs font-black uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-emerald-700'}`}>{room.location}</p>
+                <div className={`mt-4 text-3xl font-black ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  NPR {room.price.toLocaleString()}
+                </div>
               </div>
             </div>
 
-            <form onSubmit={handleBookRoom}>
-              <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-semibold mb-2">Check-in Date</label>
-                <input
-                  type="date"
-                  required
-                  value={checkInDate}
-                  onChange={(e) => setCheckInDate(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-                />
+            <form onSubmit={handleBookRoom} className="space-y-8">
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-700'}`}>Arrival Cycle</label>
+                  <input
+                    type="date"
+                    required
+                    value={checkInDate}
+                    onChange={(e) => setCheckInDate(e.target.value)}
+                    className={`w-full px-6 py-4 rounded-2xl font-bold border outline-none focus:ring-2 focus:ring-emerald-500 ${
+                      isDarkMode ? 'bg-gray-800/50 border-gray-700 text-white color-scheme-dark' : 'bg-gray-50 border-gray-200 shadow-sm'
+                    }`}
+                  />
+                </div>
+
+                <div>
+                  <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-700'}`}>Departure Cycle</label>
+                  <input
+                    type="date"
+                    required
+                    value={checkOutDate}
+                    onChange={(e) => setCheckOutDate(e.target.value)}
+                    className={`w-full px-6 py-4 rounded-2xl font-bold border outline-none focus:ring-2 focus:ring-emerald-500 ${
+                      isDarkMode ? 'bg-gray-800/50 border-gray-700 text-white color-scheme-dark' : 'bg-gray-50 border-gray-200 shadow-sm'
+                    }`}
+                  />
+                </div>
               </div>
-              
-              <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-semibold mb-2">Check-out Date</label>
-                <input
-                  type="date"
-                  required
-                  value={checkOutDate}
-                  onChange={(e) => setCheckOutDate(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-                />
-              </div>
-              
-              <div className="mb-6">
-                <label className="block text-gray-700 text-sm font-semibold mb-2">Special Requests (Optional)</label>
+
+              <div>
+                <label className={`block text-[10px] font-black uppercase tracking-widest mb-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-700'}`}>Custom Requirements</label>
                 <textarea
                   rows={3}
                   value={specialRequests}
                   onChange={(e) => setSpecialRequests(e.target.value)}
-                  placeholder="Any special requirements or requests..."
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none"
+                  placeholder="Specify any stay preferences..."
+                  className={`w-full px-6 py-4 rounded-2xl font-bold border outline-none focus:ring-2 focus:ring-emerald-500 resize-none ${
+                    isDarkMode ? 'bg-gray-800/50 border-gray-700 text-white placeholder:text-gray-600' : 'bg-gray-50 border-gray-200 shadow-sm'
+                  }`}
                 ></textarea>
               </div>
-              
+
               <button
                 type="submit"
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-xl transition-all duration-300 shadow-md"
+                className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black uppercase tracking-widest py-6 rounded-3xl transition-all duration-500 shadow-2xl shadow-emerald-500/30 hover:shadow-emerald-500/50 text-xl"
               >
-                Book Room
+                Confirm Intent
               </button>
             </form>
           </div>

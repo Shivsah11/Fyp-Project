@@ -126,15 +126,15 @@ const PaymentHistory = () => {
   const getMethodIcon = (method: string) => {
     switch (method.toLowerCase()) {
       case 'esewa':
-        return '💰';
+        return '';
       case 'bank transfer':
-        return '🏦';
+        return '';
       case 'credit card':
-        return '💳';
+        return '';
       case 'paypal':
-        return '🌐';
+        return '';
       default:
-        return '💵';
+        return '';
     }
   };
 
@@ -355,14 +355,14 @@ const PaymentHistory = () => {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>👤</span>
+                        <span className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}></span>
                         <div>
                           <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{payment.tenantName}</span>
                           <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>{payment.tenantEmail}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>🏠</span>
+                        <span className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}></span>
                         <div>
                           <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>{payment.propertyName}</span>
                           <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>{payment.propertyLocation}</p>
@@ -371,11 +371,11 @@ const PaymentHistory = () => {
                     </div>
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>💳</span>
+                        <span className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}></span>
                         <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>{payment.method}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>📅</span>
+                        <span className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}></span>
                         <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>{payment.date}</span>
                       </div>
                     </div>
@@ -420,7 +420,7 @@ const PaymentHistory = () => {
                 {paymentList.filter(p => p.status === 'completed').length}
               </p>
             </div>
-            <div className={`text-2xl ${isDarkMode ? 'text-green-400' : 'text-green-500'}`}>✅</div>
+            <div className={`text-2xl ${isDarkMode ? 'text-green-400' : 'text-green-500'}`}></div>
           </div>
         </div>
 
@@ -432,7 +432,7 @@ const PaymentHistory = () => {
                 {paymentList.filter(p => p.status === 'pending').length}
               </p>
             </div>
-            <div className={`text-2xl ${isDarkMode ? 'text-yellow-400' : 'text-yellow-500'}`}>⏳</div>
+            <div className={`text-2xl ${isDarkMode ? 'text-yellow-400' : 'text-yellow-500'}`}></div>
           </div>
         </div>
 
@@ -444,7 +444,7 @@ const PaymentHistory = () => {
                 {paymentList.filter(p => p.status === 'failed').length}
               </p>
             </div>
-            <div className={`text-2xl ${isDarkMode ? 'text-red-400' : 'text-red-500'}`}>❌</div>
+            <div className={`text-2xl ${isDarkMode ? 'text-red-400' : 'text-red-500'}`}></div>
           </div>
         </div>
       </div>

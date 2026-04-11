@@ -1,3 +1,6 @@
+import React from 'react';
+import { useDarkMode } from '../../../context/DarkModeContext';
+
 interface Payment {
   id: string;
   amount: number;
@@ -13,64 +16,89 @@ const PaymentHistory = ({ payments, onDeletePayment, onViewAllPayments, limit }:
   onViewAllPayments?: () => void,
   limit?: number
 }) => {
+  const { isDarkMode } = useDarkMode();
   const displayPayments = limit ? payments.slice(0, limit) : payments;
 
   const getStatusColor = (status: Payment['status']) => {
     switch (status) {
       case 'completed':
-        return 'bg-green-100 text-green-700 border-green-200';
+        return isDarkMode 
+          ? 'bg-emerald-900/30 text-emerald-400 border-emerald-700'
+          : 'bg-emerald-50 text-emerald-600 border-emerald-200';
       case 'pending':
-        return 'bg-yellow-100 text-yellow-700 border-yellow-200';
+        return isDarkMode
+          ? 'bg-yellow-900/30 text-yellow-500 border-yellow-700'
+          : 'bg-yellow-50 text-yellow-600 border-yellow-200';
       case 'failed':
-        return 'bg-red-100 text-red-700 border-red-200';
+        return isDarkMode
+          ? 'bg-red-900/30 text-red-400 border-red-700'
+          : 'bg-red-50 text-red-600 border-red-200';
       default:
-        return 'bg-gray-100 text-gray-700 border-gray-200';
+        return isDarkMode
+          ? 'bg-gray-700 text-gray-300 border-gray-600'
+          : 'bg-gray-100 text-gray-700 border-gray-200';
     }
   };
 
   return (
-    <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-      <h3 className="text-lg font-bold text-gray-800 mb-6">Payment History</h3>
+    <div className={`rounded-3xl p-8 shadow-sm border h-full flex flex-col ${
+      isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+    }`}>
+      <div className="flex items-center justify-between mb-6">
+        <h3 className={`text-xl font-black ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Payment History</h3>
+        {onViewAllPayments && (!limit || payments.length > limit) && (
+          <button 
+            onClick={onViewAllPayments}
+            className={`text-sm font-bold transition-all duration-300 ${
+              isDarkMode ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-700'
+            }`}
+          >
+            See All
+          </button>
+        )}
+      </div>
       
-      <div className="space-y-4">
+      <div className="space-y-4 flex-1">
         {displayPayments.length > 0 ? (
           displayPayments.map((payment) => (
-            <div key={payment.id} className="bg-gray-50 rounded-xl p-4 border border-gray-100 hover:bg-gray-100 transition-all duration-300">
+            <div key={payment.id} className={`rounded-2xl p-4 border transition-all duration-300 hover:scale-[1.01] ${
+              isDarkMode
+                ? 'bg-gray-700/50 border-gray-600 hover:bg-gray-700'
+                : 'bg-gray-50 border-gray-100 hover:bg-white hover:shadow-md'
+            }`}>
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <span className="text-gray-900 font-bold text-lg">Rs. {payment.amount}</span>
-                    <span className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full border ${getStatusColor(payment.status)}`}>
+                    <span className={`font-black text-lg ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>NPR {payment.amount.toLocaleString()}</span>
+                    <span className={`px-3 py-0.5 text-[10px] font-black uppercase tracking-widest rounded-full border ${getStatusColor(payment.status)}`}>
                       {payment.status}
                     </span>
                   </div>
-                  <p className="text-gray-700 font-medium text-sm mb-2">{payment.description}</p>
-                  <div className="flex items-center gap-4 text-[11px] text-gray-500">
-                    <span className="flex items-center gap-1">📅 {payment.date}</span>
-                    <span className="flex items-center gap-1">💳 {payment.method}</span>
+                  <p className={`font-bold text-xs mb-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{payment.description}</p>
+                  <div className={`flex items-center gap-4 text-[10px] font-black uppercase tracking-tighter ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                    <span className="flex items-center gap-1.5"><span className="opacity-50 text-[14px]">📅</span> {payment.date}</span>
+                    <span className="flex items-center gap-1.5"><span className="opacity-50 text-[14px]">💳</span> {payment.method}</span>
                   </div>
                 </div>
-                <button className="text-gray-400 hover:text-gray-600 transition-colors">
-                  <span className="text-xl">›</span>
+                <button className={`p-2 rounded-xl transition-all duration-300 ${
+                  isDarkMode ? 'bg-gray-600/50 text-emerald-400 hover:bg-gray-600' : 'bg-white text-emerald-600 hover:bg-emerald-50 shadow-sm border border-emerald-100'
+                }`}>
+                  <span className="text-xl font-black">›</span>
                 </button>
               </div>
             </div>
           ))
         ) : (
-          <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-            <p className="text-gray-500">No payment history found.</p>
+          <div className={`text-center py-12 rounded-2xl border border-dashed flex flex-col items-center justify-center ${
+            isDarkMode
+              ? 'bg-gray-800/50 border-gray-700 text-gray-500'
+              : 'bg-gray-50/50 border-gray-300 text-gray-400'
+          }`}>
+            <span className="text-4xl mb-3 opacity-30">💸</span>
+            <p className="font-bold italic">No payment history yet.</p>
           </div>
         )}
       </div>
-      
-      {onViewAllPayments && (!limit || payments.length > limit) && (
-        <button 
-          onClick={onViewAllPayments}
-          className="w-full mt-6 text-emerald-600 hover:text-emerald-700 text-sm font-semibold transition-colors flex items-center justify-center gap-2"
-        >
-          View All Payments <span>→</span>
-        </button>
-      )}
     </div>
   );
 };

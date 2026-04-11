@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useDarkMode } from '../../../context/DarkModeContext';
 
 interface SettingsSection {
   id: string;
@@ -18,6 +19,7 @@ interface SettingsItem {
 }
 
 const SettingsManagement: React.FC = () => {
+  const { isDarkMode, setDarkMode } = useDarkMode();
   const [activeSection, setActiveSection] = useState('profile');
   const [formData, setFormData] = useState({
     firstName: 'John',
@@ -41,7 +43,7 @@ const SettingsManagement: React.FC = () => {
     {
       id: 'profile',
       title: 'Profile Settings',
-      icon: '',
+      icon: '👤',
       items: [
         { id: 'firstName', label: 'First Name', type: 'input', value: formData.firstName, placeholder: 'Enter your first name' },
         { id: 'lastName', label: 'Last Name', type: 'input', value: formData.lastName, placeholder: 'Enter your last name' },
@@ -54,7 +56,7 @@ const SettingsManagement: React.FC = () => {
     {
       id: 'security',
       title: 'Security',
-      icon: '',
+      icon: '�',
       items: [
         { id: 'currentPassword', label: 'Current Password', type: 'input', placeholder: 'Enter current password' },
         { id: 'newPassword', label: 'New Password', type: 'input', placeholder: 'Enter new password' },
@@ -64,7 +66,7 @@ const SettingsManagement: React.FC = () => {
     {
       id: 'notifications',
       title: 'Notifications',
-      icon: '',
+      icon: '�',
       items: [
         { id: 'notifications', label: 'Push Notifications', type: 'toggle', value: formData.notifications, description: 'Receive push notifications on your device' },
         { id: 'emailAlerts', label: 'Email Alerts', type: 'toggle', value: formData.emailAlerts, description: 'Receive important updates via email' },
@@ -74,17 +76,17 @@ const SettingsManagement: React.FC = () => {
     {
       id: 'preferences',
       title: 'Preferences',
-      icon: '',
+      icon: '⚙️',
       items: [
-        { 
-          id: 'language', 
-          label: 'Language', 
-          type: 'select', 
+        {
+          id: 'language',
+          label: 'Language',
+          type: 'select',
           value: formData.language,
           options: [
             { value: 'english', label: 'English' },
-            { value: 'nepali', label: 'नेपाली' },
-            { value: 'hindi', label: 'हिन्दी' }
+            { value: 'nepali', label: 'Nepali' },
+            { value: 'hindi', label: 'Hindi' }
           ]
         },
         {
@@ -100,14 +102,10 @@ const SettingsManagement: React.FC = () => {
         },
         {
           id: 'theme',
-          label: 'Theme',
-          type: 'select',
-          value: formData.theme,
-          options: [
-            { value: 'dark', label: 'Dark Mode' },
-            { value: 'light', label: 'Light Mode' },
-            { value: 'auto', label: 'Auto' }
-          ]
+          label: 'Dark Mode',
+          type: 'toggle',
+          value: isDarkMode,
+          description: 'Use dark theme across the application'
         }
       ]
     }
@@ -115,6 +113,11 @@ const SettingsManagement: React.FC = () => {
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+
+    // Handle dark mode toggle specifically
+    if (field === 'theme') {
+      setDarkMode(value as boolean);
+    }
   };
 
   const handleSaveSection = (sectionId: string) => {
@@ -152,36 +155,43 @@ const SettingsManagement: React.FC = () => {
     switch (item.type) {
       case 'toggle':
         return (
-          <div className="flex items-center justify-between">
-            <div className="flex-1">
-              <label className="text-gray-700 font-medium">{item.label}</label>
+          <div className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-300 ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-300'
+            }`}>
+            <div>
+              <h5 className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{item.label}</h5>
               {item.description && (
-                <p className="text-gray-600/60 text-sm mt-1">{item.description}</p>
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{item.description}</p>
               )}
             </div>
-            <button
-              onClick={() => handleInputChange(item.id, !item.value)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                item.value ? 'bg-blue-500' : 'bg-gray-300'
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  item.value ? 'translate-x-6' : 'translate-x-1'
-                }`}
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={item.value as boolean}
+                onChange={(e) => handleInputChange(item.id, e.target.checked)}
+                className="sr-only peer"
               />
-            </button>
+              <div className={`w-14 h-7 rounded-full peer transition-all duration-300 ${isDarkMode
+                  ? 'bg-gray-600 border-2 border-gray-500 peer-checked:bg-gradient-to-r peer-checked:from-blue-600 peer-checked:to-blue-700'
+                  : 'bg-gray-300 border-2 border-gray-400 peer-checked:bg-gradient-to-r peer-checked:from-blue-500 peer-checked:to-blue-600'
+                } peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300`}>
+                <div className={`absolute top-[2px] left-[2px] bg-white rounded-full h-6 w-6 transition-all duration-300 peer-checked:translate-x-7 border-2 ${isDarkMode ? 'border-gray-400' : 'border-gray-300'
+                  }`}></div>
+              </div>
+            </label>
           </div>
         );
 
       case 'select':
         return (
           <div>
-            <label className="block text-gray-700 font-medium mb-2">{item.label}</label>
+            <label className={`block font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{item.label}</label>
             <select
               value={(item.value as string) || ''}
               onChange={(e) => handleInputChange(item.id, e.target.value)}
-              className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-700 hover:bg-gray-50"
+              className={`w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 ${isDarkMode
+                  ? 'bg-gray-700 border-gray-600 text-gray-100 hover:bg-gray-600'
+                  : 'bg-white border-gray-400 text-gray-900 hover:bg-gray-50 shadow-sm'
+                }`}
             >
               {item.options?.map((option) => (
                 <option key={option.value} value={option.value} className="bg-white">
@@ -195,13 +205,16 @@ const SettingsManagement: React.FC = () => {
       case 'textarea':
         return (
           <div>
-            <label className="block text-gray-700 font-medium mb-2">{item.label}</label>
+            <label className={`block font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{item.label}</label>
             <textarea
               value={(item.value as string) || ''}
               onChange={(e) => handleInputChange(item.id, e.target.value)}
               placeholder={item.placeholder}
               rows={3}
-              className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-700 placeholder-gray-400/60 hover:bg-gray-50 resize-none"
+              className={`w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-none ${isDarkMode
+                  ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400/60 hover:bg-gray-600'
+                  : 'bg-white border-gray-400 text-gray-900 placeholder-gray-500 hover:bg-gray-50 shadow-sm'
+                }`}
             />
           </div>
         );
@@ -209,13 +222,16 @@ const SettingsManagement: React.FC = () => {
       default: // input
         return (
           <div>
-            <label className="block text-gray-700 font-medium mb-2">{item.label}</label>
+            <label className={`block font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{item.label}</label>
             <input
               type={item.id.includes('Password') ? 'password' : 'text'}
               value={(item.value as string) || ''}
               onChange={(e) => handleInputChange(item.id, e.target.value)}
               placeholder={item.placeholder}
-              className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-gray-700 placeholder-gray-400/60 hover:bg-gray-50"
+              className={`w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 ${isDarkMode
+                  ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400/60 hover:bg-gray-600'
+                  : 'bg-white border-gray-400 text-gray-900 placeholder-gray-500 hover:bg-gray-50 shadow-sm'
+                }`}
             />
           </div>
         );
@@ -226,25 +242,27 @@ const SettingsManagement: React.FC = () => {
     <div className="p-6">
       {/* Header */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-700 mb-2">Settings</h2>
-        <p className="text-gray-600">Manage your account settings and preferences</p>
+        <h2 className={`text-2xl font-bold mb-2 ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>Settings</h2>
+        <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Manage your account settings and preferences</p>
       </div>
 
       <div className="grid md:grid-cols-4 gap-6">
         {/* Sidebar */}
         <div className="md:col-span-1">
-          <div className="bg-white rounded-xl border border-gray-200">
+          <div className={`rounded-xl border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+            }`}>
             <nav className="p-4">
               <ul className="space-y-2">
                 {settingsSections.map((section) => (
                   <li key={section.id}>
                     <button
                       onClick={() => setActiveSection(section.id)}
-                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-                        activeSection === section.id
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeSection === section.id
                           ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
-                          : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'
-                      }`}
+                          : isDarkMode
+                            ? 'text-gray-300 hover:bg-gray-700 hover:text-blue-400'
+                            : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'
+                        }`}
                     >
                       <span className="text-xl">{section.icon}</span>
                       <span className="font-medium">{section.title}</span>
@@ -258,14 +276,15 @@ const SettingsManagement: React.FC = () => {
 
         {/* Main Content */}
         <div className="md:col-span-3">
-          <div className="bg-white rounded-xl border border-gray-200">
+          <div className={`rounded-xl border shadow-sm ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-300 shadow-md'
+            }`}>
             <div className="p-6">
               {/* Section Header */}
               <div className="mb-6">
-                <h3 className="text-xl font-bold text-gray-700 mb-2">
+                <h3 className={`text-xl font-bold mb-2 ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
                   {settingsSections.find(s => s.id === activeSection)?.title}
                 </h3>
-                <p className="text-gray-600/80 text-sm">
+                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                   {activeSection === 'profile' && 'Update your personal information and profile details'}
                   {activeSection === 'security' && 'Manage your password and security settings'}
                   {activeSection === 'notifications' && 'Control how you receive notifications and alerts'}
@@ -278,14 +297,16 @@ const SettingsManagement: React.FC = () => {
                 {settingsSections
                   .find(s => s.id === activeSection)
                   ?.items.map((item) => (
-                    <div key={item.id} className="pb-6 border-b border-gray-200 last:border-0">
+                    <div key={item.id} className={`pb-6 last:border-0 ${isDarkMode ? 'border-b border-gray-700' : 'border-b border-gray-200'
+                      }`}>
                       {renderSettingItem(item)}
                     </div>
                   ))}
 
                 {/* Section-specific actions */}
                 {activeSection === 'security' && (
-                  <div className="pt-6 border-t border-gray-200">
+                  <div className={`pt-6 ${isDarkMode ? 'border-t border-gray-700' : 'border-t border-gray-200'
+                    }`}>
                     <button
                       onClick={handlePasswordChange}
                       className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg"
@@ -296,7 +317,8 @@ const SettingsManagement: React.FC = () => {
                 )}
 
                 {activeSection === 'profile' && (
-                  <div className="pt-6 border-t border-gray-200">
+                  <div className={`pt-6 ${isDarkMode ? 'border-t border-gray-700' : 'border-t border-gray-200'
+                    }`}>
                     <button
                       onClick={() => handleSaveSection('profile')}
                       className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg"
@@ -307,7 +329,8 @@ const SettingsManagement: React.FC = () => {
                 )}
 
                 {activeSection === 'notifications' && (
-                  <div className="pt-6 border-t border-gray-200">
+                  <div className={`pt-6 ${isDarkMode ? 'border-t border-gray-700' : 'border-t border-gray-200'
+                    }`}>
                     <button
                       onClick={() => handleSaveSection('notifications')}
                       className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg"
@@ -318,7 +341,8 @@ const SettingsManagement: React.FC = () => {
                 )}
 
                 {activeSection === 'preferences' && (
-                  <div className="pt-6 border-t border-gray-200">
+                  <div className={`pt-6 ${isDarkMode ? 'border-t border-gray-700' : 'border-t border-gray-200'
+                    }`}>
                     <button
                       onClick={() => handleSaveSection('preferences')}
                       className="px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg"
@@ -333,9 +357,12 @@ const SettingsManagement: React.FC = () => {
 
           {/* Danger Zone */}
           {activeSection === 'security' && (
-            <div className="mt-6 bg-red-100 rounded-xl border border-red-200 p-6">
-              <h4 className="text-red-800 font-bold text-lg mb-3">Danger Zone</h4>
-              <p className="text-red-600 text-sm mb-4">
+            <div className={`mt-6 rounded-xl border p-6 ${isDarkMode
+                ? 'bg-red-900/20 border-red-800'
+                : 'bg-red-50 border-red-300'
+              }`}>
+              <h4 className={`font-bold text-lg mb-3 ${isDarkMode ? 'text-red-400' : 'text-red-700'}`}>Danger Zone</h4>
+              <p className={`text-sm mb-4 ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>
                 Irreversible and destructive actions. Please be careful.
               </p>
               <button

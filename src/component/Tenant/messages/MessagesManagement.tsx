@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useDarkMode } from '../../../context/DarkModeContext';
 
 interface Message {
   id: string;
@@ -14,6 +15,7 @@ interface Message {
 }
 
 const MessagesManagement: React.FC = () => {
+  const { isDarkMode } = useDarkMode();
   const [messages, setMessages] = useState<Message[]>([]);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [activeTab, setActiveTab] = useState<'inbox' | 'sent' | 'archived'>('inbox');
@@ -22,13 +24,19 @@ const MessagesManagement: React.FC = () => {
   const [replyText, setReplyText] = useState('');
   const [newMessage, setNewMessage] = useState<{ recipient: string; recipientId: string; recipientRole: string; subject: string; type: string } | null>(null);
 
-  // Check for new message data from localStorage (e.g. from "Contact Landlord" button)
+  // Check for new message data from user-specific localStorage (e.g. from "Contact Landlord" button)
   useEffect(() => {
-    const recipient = localStorage.getItem('newMessageRecipient');
-    const recipientId = localStorage.getItem('newMessageRecipientId');
-    const recipientRole = localStorage.getItem('newMessageRecipientRole');
-    const subject = localStorage.getItem('newMessageSubject');
-    const type = localStorage.getItem('newMessageType');
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    
+    // Create user-specific storage keys
+    const userId = JSON.parse(atob(token.split('.')[1])).userId;
+    
+    const recipient = localStorage.getItem(`newMessageRecipient_${userId}`);
+    const recipientId = localStorage.getItem(`newMessageRecipientId_${userId}`);
+    const recipientRole = localStorage.getItem(`newMessageRecipientRole_${userId}`);
+    const subject = localStorage.getItem(`newMessageSubject_${userId}`);
+    const type = localStorage.getItem(`newMessageType_${userId}`);
     
     if (recipient && subject && type) {
       setNewMessage({ 
@@ -39,11 +47,11 @@ const MessagesManagement: React.FC = () => {
         type 
       });
       // Clear the stored data
-      localStorage.removeItem('newMessageRecipient');
-      localStorage.removeItem('newMessageRecipientId');
-      localStorage.removeItem('newMessageRecipientRole');
-      localStorage.removeItem('newMessageSubject');
-      localStorage.removeItem('newMessageType');
+      localStorage.removeItem(`newMessageRecipient_${userId}`);
+      localStorage.removeItem(`newMessageRecipientId_${userId}`);
+      localStorage.removeItem(`newMessageRecipientRole_${userId}`);
+      localStorage.removeItem(`newMessageSubject_${userId}`);
+      localStorage.removeItem(`newMessageType_${userId}`);
     }
   }, []);
 
@@ -177,23 +185,34 @@ const MessagesManagement: React.FC = () => {
         console.error("Reply error:", err);
         
         // Fallback: Create a local reply when backend is not available
-        const localReply: Message = {
-          id: Date.now().toString(),
-          sender: 'You',
-          subject: `Re: ${selectedMessage.subject}`,
-          content: replyText,
-          timestamp: new Date().toISOString(),
-          isRead: true,
-          type: 'sent',
-          avatar: 'ME',
-          otherPartyId: (selectedMessage as any).otherPartyId,
-          otherPartyRole: (selectedMessage as any).otherPartyRole
-        };
-        
-        // Add to messages list
-        setMessages(prev => [localReply, ...prev]);
-        alert("✅ Reply sent successfully! (Stored locally - Backend unavailable)");
-        setReplyText('');
+        const token = localStorage.getItem('token');
+        if (token) {
+          const userId = JSON.parse(atob(token.split('.')[1])).userId;
+          const tenantMessagesKey = `tenantMessages_${userId}`;
+          
+          const localReply: Message = {
+            id: Date.now().toString(),
+            sender: 'You',
+            subject: `Re: ${selectedMessage.subject}`,
+            content: replyText,
+            timestamp: new Date().toISOString(),
+            isRead: true,
+            type: 'sent',
+            avatar: 'ME',
+            otherPartyId: (selectedMessage as any).otherPartyId,
+            otherPartyRole: (selectedMessage as any).otherPartyRole
+          };
+          
+          // Store in user-specific localStorage
+          const existingMessages = JSON.parse(localStorage.getItem(tenantMessagesKey) || '[]');
+          existingMessages.unshift(localReply);
+          localStorage.setItem(tenantMessagesKey, JSON.stringify(existingMessages));
+          
+          // Add to messages list
+          setMessages(prev => [localReply, ...prev]);
+          alert("✅ Reply sent successfully! (Stored locally - Backend unavailable)");
+          setReplyText('');
+        }
       }
     } else {
       alert('Please enter a reply message before sending.');
@@ -238,25 +257,36 @@ const MessagesManagement: React.FC = () => {
         console.error("Send error:", err);
         
         // Fallback: Create a local message when backend is not available
-        const localMessage: Message = {
-          id: Date.now().toString(),
-          sender: 'You',
-          subject: newMessage.subject,
-          content: replyText,
-          timestamp: new Date().toISOString(),
-          isRead: true,
-          type: 'sent',
-          avatar: 'ME',
-          otherPartyId: newMessage.recipientId,
-          otherPartyRole: newMessage.recipientRole
-        };
-        
-        // Add to messages list
-        setMessages(prev => [localMessage, ...prev]);
-        alert("✅ Message sent successfully! (Stored locally - Backend unavailable)");
-        setReplyText('');
-        setNewMessage(null);
-        setActiveTab('sent');
+        const token = localStorage.getItem('token');
+        if (token) {
+          const userId = JSON.parse(atob(token.split('.')[1])).userId;
+          const tenantMessagesKey = `tenantMessages_${userId}`;
+          
+          const localMessage: Message = {
+            id: Date.now().toString(),
+            sender: 'You',
+            subject: newMessage.subject,
+            content: replyText,
+            timestamp: new Date().toISOString(),
+            isRead: true,
+            type: 'sent',
+            avatar: 'ME',
+            otherPartyId: newMessage.recipientId,
+            otherPartyRole: newMessage.recipientRole
+          };
+          
+          // Store in user-specific localStorage
+          const existingMessages = JSON.parse(localStorage.getItem(tenantMessagesKey) || '[]');
+          existingMessages.unshift(localMessage);
+          localStorage.setItem(tenantMessagesKey, JSON.stringify(existingMessages));
+          
+          // Add to messages list
+          setMessages(prev => [localMessage, ...prev]);
+          alert("✅ Message sent successfully! (Stored locally - Backend unavailable)");
+          setReplyText('');
+          setNewMessage(null);
+          setActiveTab('sent');
+        }
       }
     } else {
       alert('Please enter a message before sending.');
@@ -296,38 +326,60 @@ const MessagesManagement: React.FC = () => {
   };
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Messages</h2>
-        <p className="text-gray-700">Communicate with landlords and support</p>
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="mb-12">
+        <h2 className={`text-3xl font-black italic mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Conversations</h2>
+        <p className={`text-xs font-bold uppercase tracking-widest ${isDarkMode ? 'text-emerald-500' : 'text-emerald-600'}`}>Communicate with Hosts & Support</p>
       </div>
 
-      <div className="flex gap-2 mb-6 bg-white rounded-xl p-1 border border-gray-200 shadow-sm">
+      <div className={`flex flex-wrap p-1.5 mb-10 rounded-2xl border transition-all duration-300 ${
+        isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-white border-gray-200 shadow-sm'
+      }`}>
         {(['inbox', 'sent', 'archived'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+            className={`flex-1 min-w-[120px] px-6 py-3 rounded-xl font-black text-sm uppercase tracking-wider transition-all duration-300 ${
               activeTab === tab
                 ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
-                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                : isDarkMode
+                  ? 'text-gray-400 hover:text-emerald-400 hover:bg-gray-700/50'
+                  : 'text-gray-500 hover:text-emerald-600 hover:bg-gray-50'
             }`}
           >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)} ({tab === 'inbox' ? messages.filter(m => m.type !== 'sent').length : messages.filter(m => m.type === 'sent').length})
+            {tab}
+            <span className={`ml-2 px-2 py-0.5 rounded-full text-[10px] ${
+                activeTab === tab 
+                  ? 'bg-white/20 text-white' 
+                  : isDarkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'
+              }`}>
+              {tab === 'inbox' ? messages.filter(m => m.type !== 'sent').length : messages.filter(m => m.type === 'sent').length}
+            </span>
           </button>
         ))}
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
-        <div className="md:col-span-1">
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
-            <div className="max-h-[600px] overflow-y-auto">
+      <div className="grid md:grid-cols-12 gap-8 min-h-[600px]">
+        {/* Sidebar / List */}
+        <div className="md:col-span-4 lg:col-span-3">
+          <div className={`rounded-3xl border overflow-hidden transition-all duration-500 h-full ${
+            isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-sm'
+          }`}>
+            <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
               {loading ? (
-                <div className="p-8 text-center"><div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div><p className="text-gray-500">Loading...</p></div>
+                <div className="p-12 text-center">
+                  <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                  <p className={`text-xs font-black uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Syncing...</p>
+                </div>
               ) : error ? (
-                <div className="p-8 text-center text-red-500">{error}</div>
+                <div className="p-12 text-center">
+                  <p className={`text-xs font-black uppercase tracking-widest ${isDarkMode ? 'text-red-400/50' : 'text-red-500/50'}`}>{error}</p>
+                </div>
               ) : filteredMessages.length === 0 ? (
-                <div className="p-8 text-center text-gray-500">No messages found</div>
+                <div className="p-12 text-center">
+                   <p className={`text-xs font-black uppercase tracking-widest ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>No Mail</p>
+                </div>
               ) : (
                 filteredMessages.map((message) => (
                   <div
@@ -336,18 +388,38 @@ const MessagesManagement: React.FC = () => {
                       setSelectedMessage(message);
                       if (!message.isRead) handleMarkAsRead(message.id);
                     }}
-                    className={`p-4 border-b border-gray-100 cursor-pointer transition-all ${
-                      selectedMessage?.id === message.id ? 'bg-emerald-50 border-r-4 border-r-emerald-500' : 'hover:bg-gray-50'
+                    className={`p-6 border-b cursor-pointer transition-all duration-500 group ${
+                      isDarkMode ? 'border-gray-700' : 'border-gray-100'
+                    } ${
+                      selectedMessage?.id === message.id 
+                        ? isDarkMode
+                          ? 'bg-emerald-500/10 border-r-4 border-r-emerald-500'
+                          : 'bg-emerald-50 border-r-4 border-r-emerald-500'
+                        : isDarkMode
+                          ? 'hover:bg-gray-700/50'
+                          : 'hover:bg-gray-50'
                     }`}
                   >
-                    <div className="flex gap-3">
-                      <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-700 font-bold shrink-0">{message.avatar}</div>
+                    <div className="flex gap-4">
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xs transition-all duration-500 ${
+                        selectedMessage?.id === message.id
+                          ? 'bg-emerald-500 text-white rotate-6 scale-110'
+                          : isDarkMode ? 'bg-gray-700 text-emerald-400' : 'bg-emerald-50 text-emerald-600'
+                      }`}>{message.avatar}</div>
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start mb-1">
-                          <h4 className={`text-sm truncate ${!message.isRead ? 'font-bold text-gray-900' : 'text-gray-700'}`}>{message.sender}</h4>
-                          <span className="text-[10px] text-gray-400">{formatDate(message.timestamp)}</span>
+                          <h4 className={`text-sm truncate uppercase tracking-tighter ${
+                            !message.isRead 
+                              ? `font-black ${isDarkMode ? 'text-white' : 'text-gray-900'}`
+                              : `font-bold ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`
+                          }`}>{message.sender}</h4>
+                          <span className={`text-[10px] font-black italic shrink-0 ${isDarkMode ? 'text-gray-600' : 'text-gray-400'}`}>{formatDate(message.timestamp)}</span>
                         </div>
-                        <p className={`text-xs truncate ${!message.isRead ? 'text-gray-800 font-medium' : 'text-gray-500'}`}>{message.subject}</p>
+                        <p className={`text-xs truncate italic ${
+                          !message.isRead 
+                            ? isDarkMode ? 'text-emerald-400' : 'text-emerald-600'
+                            : isDarkMode ? 'text-gray-500' : 'text-gray-400'
+                        }`}>{message.subject}</p>
                       </div>
                     </div>
                   </div>
@@ -357,63 +429,143 @@ const MessagesManagement: React.FC = () => {
           </div>
         </div>
 
-        <div className="md:col-span-2">
+        {/* Content View */}
+        <div className="md:col-span-8 lg:col-span-9 h-full">
           {selectedMessage ? (
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-              <div className="flex justify-between items-start mb-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center text-emerald-700 font-bold text-lg">{selectedMessage.avatar}</div>
-                  <div>
-                    <h3 className="font-bold text-gray-900">{selectedMessage.sender}</h3>
-                    <p className="text-sm text-gray-500">{formatDate(selectedMessage.timestamp)}</p>
+            <div className={`rounded-[2.5rem] border transition-all duration-500 h-full flex flex-col ${
+              isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-xl shadow-emerald-500/5'
+            }`}>
+              <div className="p-8 border-b dark:border-gray-700">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-5">
+                    <div className={`w-14 h-14 rounded-[1.2rem] flex items-center justify-center font-black text-xl italic border shadow-lg ${
+                      isDarkMode ? 'bg-gray-900 border-gray-700 text-emerald-500' : 'bg-white border-emerald-100 text-emerald-600'
+                    }`}>{selectedMessage.avatar}</div>
+                    <div>
+                      <h3 className={`text-xl font-black italic ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedMessage.sender}</h3>
+                      <p className={`text-xs font-black uppercase tracking-widest ${isDarkMode ? 'text-emerald-500' : 'text-emerald-600'}`}>
+                        {getTypeIcon(selectedMessage.type)} {selectedMessage.type}
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="flex gap-2">
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${getTypeColor(selectedMessage.type)}`}>
-                    {getTypeIcon(selectedMessage.type)} {selectedMessage.type}
-                  </span>
-                  <button onClick={() => handleDelete(selectedMessage.id)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all">🗑️</button>
+                  <div className="flex gap-4">
+                    <button 
+                      onClick={() => handleDelete(selectedMessage.id)} 
+                      className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all duration-300 border ${
+                        isDarkMode
+                          ? 'border-gray-700 text-gray-500 hover:text-red-400 hover:bg-red-400/10 hover:border-red-400/30'
+                          : 'border-gray-100 text-gray-400 hover:text-red-500 hover:bg-red-50'
+                      }`}
+                    >✕</button>
+                  </div>
                 </div>
               </div>
 
-              <h2 className="text-xl font-bold text-gray-900 mb-4">{selectedMessage.subject}</h2>
-              <div className="bg-gray-50 rounded-xl p-4 mb-6"><p className="text-gray-700 whitespace-pre-wrap">{selectedMessage.content}</p></div>
+              <div className="flex-1 p-8 overflow-y-auto custom-scrollbar bg-pattern">
+                <div className="mb-10 text-center">
+                   <span className={`text-[10px] font-black uppercase tracking-[0.3em] px-6 py-2 rounded-full border ${isDarkMode ? 'bg-gray-900/50 border-gray-700 text-gray-500' : 'bg-gray-50 border-gray-100 text-gray-400'}`}>
+                      {formatDate(selectedMessage.timestamp)}
+                   </span>
+                </div>
+                
+                <div className="max-w-2xl mx-auto">
+                    <h2 className={`text-2xl font-black italic mb-8 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{selectedMessage.subject}</h2>
+                    <div className={`p-8 rounded-[2rem] leading-relaxed relative ${
+                      isDarkMode ? 'bg-gray-700/50 text-gray-300' : 'bg-gray-50 text-gray-700 shadow-inner'
+                    }`}>
+                      <p className="whitespace-pre-wrap font-bold italic">{selectedMessage.content}</p>
+                    </div>
+                </div>
+              </div>
 
-              <div className="border-t pt-6">
-                <textarea
-                  value={replyText}
-                  onChange={(e) => setReplyText(e.target.value)}
-                  placeholder="Type your message here..."
-                  className="w-full p-4 border rounded-xl mb-3 focus:ring-2 focus:ring-emerald-500 outline-none min-h-[120px]"
-                ></textarea>
-                <div className="flex justify-end gap-3">
-                  <button onClick={handleReply} disabled={!replyText.trim()} className="px-6 py-2 bg-emerald-500 text-white rounded-lg font-bold hover:bg-emerald-600 disabled:opacity-50 transition-all">Send reply</button>
+              <div className={`p-8 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                <div className="max-w-3xl mx-auto">
+                   <div className="relative group">
+                    <textarea
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      placeholder="Your message..."
+                      className={`w-full p-6 rounded-3xl font-bold border transition-all duration-500 min-h-[140px] resize-none focus:outline-none focus:ring-4 ${
+                        isDarkMode
+                          ? 'bg-gray-900/50 border-gray-700 text-white placeholder-gray-600 focus:ring-emerald-500/10'
+                          : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-300 focus:ring-emerald-500/5 shadow-inner'
+                      }`}
+                    ></textarea>
+                    <div className="absolute right-4 bottom-4">
+                       <button 
+                        onClick={handleReply} 
+                        disabled={!replyText.trim()} 
+                        className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:-translate-y-1 transition-all duration-500 disabled:grayscale disabled:scale-100 disabled:translate-y-0"
+                      >Send Reply</button>
+                    </div>
+                   </div>
                 </div>
               </div>
             </div>
           ) : newMessage ? (
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-               <h3 className="text-xl font-bold text-gray-900 mb-4">Compose Message</h3>
-               <div className="space-y-4">
-                  <div><label className="text-sm text-gray-500">To: </label><span className="font-bold text-gray-900">{newMessage.recipient}</span></div>
-                  <div><label className="text-sm text-gray-500">Subject: </label><input type="text" value={newMessage.subject} readOnly className="w-full bg-gray-50 p-2 rounded-lg outline-none" /></div>
-                  <textarea
-                    value={replyText}
-                    onChange={(e) => setReplyText(e.target.value)}
-                    placeholder="Type your initial message..."
-                    className="w-full p-4 border rounded-xl min-h-[150px] outline-none focus:ring-2 focus:ring-emerald-500"
-                  ></textarea>
-                  <div className="flex justify-end gap-3">
-                    <button onClick={() => {setNewMessage(null); setReplyText('');}} className="px-4 py-2 text-gray-500 hover:bg-gray-100 rounded-lg">Cancel</button>
-                    <button onClick={handleSendMessage} disabled={!replyText.trim()} className="px-6 py-2 bg-emerald-500 text-white rounded-lg font-bold hover:bg-emerald-600 shadow-lg">Send Message</button>
+            <div className={`rounded-[3rem] border transition-all duration-500 h-full flex flex-col p-10 ${
+              isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-2xl'
+            }`}>
+               <h3 className={`text-3xl font-black italic mb-10 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>New Dispatch</h3>
+               <div className="space-y-8 flex-1">
+                  <div className="flex items-center gap-6 p-6 rounded-3xl bg-emerald-500/5 border border-emerald-500/10">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-500 text-white flex items-center justify-center font-black">TO</div>
+                    <div>
+                      <p className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-emerald-500' : 'text-emerald-600'}`}>Recipient</p>
+                      <p className={`text-xl font-black italic ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{newMessage.recipient}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="group">
+                    <label className={`block text-[10px] font-black uppercase tracking-[0.2em] mb-3 ml-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Subject</label>
+                    <input 
+                      type="text" 
+                      value={newMessage.subject} 
+                      readOnly 
+                      className={`w-full p-6 rounded-3xl font-black italic border transition-all duration-500 outline-none ${
+                        isDarkMode ? 'bg-gray-900/50 border-gray-700 text-white' : 'bg-gray-50 border-gray-100 text-gray-900'
+                      }`}
+                    />
+                  </div>
+
+                  <div className="group flex-1 flex flex-col">
+                    <label className={`block text-[10px] font-black uppercase tracking-[0.2em] mb-3 ml-2 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Inquiry</label>
+                    <textarea
+                      value={replyText}
+                      onChange={(e) => setReplyText(e.target.value)}
+                      placeholder="Start typing your inquiry..."
+                      className={`flex-1 w-full p-8 rounded-[2.5rem] font-bold border transition-all duration-500 outline-none resize-none min-h-[200px] ${
+                        isDarkMode
+                          ? 'bg-gray-900 border-gray-700 text-white placeholder-gray-600 focus:border-emerald-500'
+                          : 'bg-gray-50 border-gray-100 text-gray-900 placeholder-gray-300 focus:border-emerald-500'
+                      }`}
+                    ></textarea>
+                  </div>
+                  
+                  <div className="flex justify-end gap-6 pt-6">
+                    <button 
+                      onClick={() => {setNewMessage(null); setReplyText('');}} 
+                      className={`px-10 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 ${isDarkMode ? 'text-gray-500 hover:text-white' : 'text-gray-400 hover:text-gray-900'}`}
+                    >Drafts</button>
+                    <button 
+                      onClick={handleSendMessage} 
+                      disabled={!replyText.trim()} 
+                      className="px-12 py-5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl shadow-emerald-500/20 hover:scale-[1.05] transition-all duration-500"
+                    >Dispatch</button>
                   </div>
                </div>
             </div>
           ) : (
-            <div className="bg-white rounded-2xl border border-gray-200 shadow-sm h-full flex flex-col items-center justify-center text-center p-12 min-h-[400px]">
-              <div className="text-6xl mb-6">📬</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Select a message</h3>
-              <p className="text-gray-500 max-w-sm">Choose a conversation from the list to view the full details or reply.</p>
+            <div className={`rounded-[3rem] border h-full flex flex-col items-center justify-center text-center p-20 min-h-[500px] transition-all duration-500 ${
+              isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+            }`}>
+              <div className="w-24 h-24 mb-10 transform -rotate-12 transition-transform duration-700 hover:rotate-12">
+                 <div className={`w-full h-full rounded-[2rem] flex items-center justify-center text-5xl shadow-2xl ${
+                   isDarkMode ? 'bg-gray-700 text-emerald-400 border border-emerald-500/10' : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                 }`}>📧</div>
+              </div>
+              <h3 className={`text-3xl font-black italic mb-4 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Postbox</h3>
+              <p className={`max-w-xs font-bold leading-relaxed ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Select a conversation from your archive to read the full discourse.</p>
             </div>
           )}
         </div>

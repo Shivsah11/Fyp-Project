@@ -7,6 +7,10 @@
 /* Leaflet Map Styles */
 
 /* Custom globals if any */
+html {
+  font-size: 15px; /* Reduced from default 16px */
+}
+
 body {
   margin: 0;
   font-family: system-ui, -apple-system, sans-serif;
@@ -47,4 +51,25 @@ body {
 
 .marker-cluster-large {
   background-color: #ef4444;
+}
+/* Hide number input spinners globally */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+/* Hide scrollbar utility */
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }

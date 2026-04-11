@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { useDarkMode } from '../../context/DarkModeContext';
 import { Icon, LatLngBounds } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -56,6 +57,7 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
   zoom = 12,
   showPopups = true
 }) => {
+  const { isDarkMode } = useDarkMode();
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
 
   // Custom marker icon based on property status and price
@@ -92,7 +94,9 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
   };
 
   return (
-    <div className="w-full rounded-xl overflow-hidden border border-gray-200 shadow-sm">
+    <div className={`w-full rounded-[32px] overflow-hidden border transition-all duration-500 ${
+      isDarkMode ? 'border-gray-700 bg-gray-800 shadow-2xl' : 'border-gray-200 shadow-lg'
+    }`}>
       <MapContainer
         center={center}
         zoom={zoom}
@@ -101,7 +105,10 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          url={isDarkMode 
+            ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          }
         />
         
         {properties.length > 1 && <MapBounds properties={properties} />}
@@ -116,35 +123,30 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
             }}
           >
             {showPopups && (
-              <Popup>
-                <div className="p-2 min-w-[200px]">
-                  <h3 className="font-bold text-sm mb-1">{property.title}</h3>
-                  <p className="text-xs text-gray-600 mb-1">{property.type}</p>
-                  <p className="text-xs text-gray-500 mb-2">{property.location}</p>
-                  <div className="flex justify-between items-center">
-                    <span className="font-bold text-sm text-green-600">
+              <Popup className={isDarkMode ? 'dark-popup' : ''}>
+                <div className={`p-4 min-w-[220px] rounded-2xl ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                  <h3 className="font-black italic text-base mb-2">{property.title}</h3>
+                  <div className="space-y-1 mb-4">
+                    <p className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>{property.type}</p>
+                    <p className={`text-xs font-bold ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>📍 {property.location}</p>
+                  </div>
+                  <div className="flex justify-between items-center mb-4">
+                    <span className={`font-black text-sm ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>
                       NPR {property.price.toLocaleString()}/mo
                     </span>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
+                    <span className={`text-[10px] px-3 py-1 rounded-full font-black uppercase tracking-tighter ${
                       property.available 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-gray-100 text-gray-800'
+                        ? (isDarkMode ? 'bg-emerald-500/20 text-emerald-400' : 'bg-green-100 text-green-800')
+                        : (isDarkMode ? 'bg-gray-700 text-gray-500' : 'bg-gray-100 text-gray-800')
                     }`}>
                       {property.available ? 'Available' : 'Occupied'}
                     </span>
                   </div>
-                  {property.rating > 0 && (
-                    <div className="mt-1">
-                      <span className="text-xs text-yellow-600">
-                        ⭐ {property.rating.toFixed(1)}
-                      </span>
-                    </div>
-                  )}
                   <button
                     onClick={() => handlePropertyClick(property)}
-                    className="mt-2 w-full bg-blue-600 text-white text-xs px-3 py-1 rounded hover:bg-blue-700 transition-colors"
+                    className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black uppercase tracking-widest text-[10px] px-4 py-3 rounded-xl hover:shadow-lg transition-all"
                   >
-                    View Details
+                    View Estate details
                   </button>
                 </div>
               </Popup>

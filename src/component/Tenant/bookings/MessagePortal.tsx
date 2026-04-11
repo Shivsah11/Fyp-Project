@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useDarkMode } from '../../../context/DarkModeContext';
 
 interface MessagePortalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ const MessagePortal = ({
   propertyType, 
   onSendMessage 
 }: MessagePortalProps) => {
+  const { isDarkMode } = useDarkMode();
   const [message, setMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
 
@@ -29,14 +31,11 @@ const MessagePortal = ({
     setIsSending(true);
     
     try {
-      // Simulate message sending (in real app, this would be an API call)
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Actually send to the backend via parent component's handler
+      await onSendMessage(message);
       
-      onSendMessage(message);
       setMessage('');
       onClose();
-      
-      alert(`Message sent successfully to ${landlordName}!`);
     } catch (error) {
       console.error('Failed to send message:', error);
       alert('Failed to send message. Please try again.');
@@ -48,108 +47,112 @@ const MessagePortal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-lg border border-gray-200 shadow-xl">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[100] p-4">
+      <div className={`rounded-[2.5rem] p-10 w-full max-w-xl border shadow-2xl transition-all duration-500 transform ${
+        isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'
+      }`}>
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex justify-between items-start mb-10">
           <div>
-            <h3 className="text-xl font-bold text-gray-900">Send Message</h3>
-            <p className="text-sm text-gray-600 mt-1">
-              To: <span className="font-medium">{landlordName}</span>
+            <h3 className={`text-4xl font-black italic mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Message Host</h3>
+            <p className={`text-sm font-bold uppercase tracking-widest ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>
+              Talking to {landlordName}
             </p>
-            <p className="text-xs text-gray-500">
-              Regarding: {propertyName} - {propertyType}
-            </p>
+            <div className={`mt-4 px-4 py-2 rounded-2xl inline-block border ${
+              isDarkMode ? 'bg-gray-900/50 border-gray-700 text-gray-400' : 'bg-gray-50 border-gray-100 text-gray-500'
+            }`}>
+              <p className="text-xs font-black uppercase tracking-tighter">
+                Ref: {propertyName} • {propertyType}
+              </p>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl transition-colors"
+            className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl font-black transition-all duration-300 ${
+              isDarkMode ? 'bg-gray-700 text-gray-400 hover:text-white hover:bg-gray-600' : 'bg-gray-50 text-gray-400 hover:text-gray-900 hover:bg-gray-100'
+            }`}
           >
-            ×
+            ✕
           </button>
         </div>
 
         {/* Message Input */}
-        <div className="mb-6">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Your Message
+        <div className="mb-8">
+          <label className={`block text-[10px] font-black uppercase tracking-[0.2em] mb-3 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+            Your Inquiry
           </label>
-          <textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 text-gray-900 placeholder-gray-500 hover:bg-gray-100 resize-none"
-            placeholder="Type your message here..."
-            rows={6}
-            disabled={isSending}
-          />
-          <div className="flex justify-between items-center mt-2">
-            <span className="text-xs text-gray-500">
-              {message.length}/500 characters
-            </span>
-            {message.length > 500 && (
-              <span className="text-xs text-red-500">
-                Message too long
-              </span>
-            )}
+          <div className="relative">
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className={`w-full px-6 py-6 rounded-3xl font-bold border focus:outline-none focus:ring-4 transition-all duration-500 resize-none ${
+                isDarkMode
+                  ? 'bg-gray-900/50 border-gray-700 text-white placeholder-gray-600 focus:ring-emerald-500/10 focus:border-emerald-500/50'
+                  : 'bg-gray-50 border-gray-200 text-gray-900 placeholder-gray-300 focus:ring-emerald-500/5 focus:border-emerald-500/30'
+              }`}
+              placeholder="What would you like to ask the landlord?"
+              rows={5}
+              disabled={isSending}
+            />
+            <div className="absolute right-6 bottom-6">
+               <span className={`text-[10px] font-black italic shadow-sm px-2 py-1 rounded-lg ${
+                 message.length > 500 ? 'bg-red-500 text-white' : isDarkMode ? 'bg-gray-800 text-gray-500' : 'bg-white text-gray-300'
+               }`}>
+                 {message.length}/500
+               </span>
+            </div>
           </div>
         </div>
 
         {/* Quick Message Templates */}
-        <div className="mb-6">
-          <p className="text-sm font-semibold text-gray-700 mb-2">Quick Messages:</p>
+        <div className="mb-10">
+          <p className={`text-[10px] font-black uppercase tracking-[0.2em] mb-4 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Templates</p>
           <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => setMessage('Is this property still available?')}
-              className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-medium transition-colors"
-              disabled={isSending}
-            >
-              Available?
-            </button>
-            <button
-              onClick={() => setMessage('Can I schedule a visit to see the property?')}
-              className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-medium transition-colors"
-              disabled={isSending}
-            >
-              Schedule Visit
-            </button>
-            <button
-              onClick={() => setMessage('What are the payment terms and conditions?')}
-              className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-medium transition-colors"
-              disabled={isSending}
-            >
-              Payment Terms
-            </button>
-            <button
-              onClick={() => setMessage('Are utilities included in the rent?')}
-              className="px-3 py-1 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-medium transition-colors"
-              disabled={isSending}
-            >
-              Utilities?
-            </button>
+            {[
+              { id: 'av', text: 'Is this property still available?', label: 'Available?' },
+              { id: 'visit', text: 'Can I schedule a visit to see the property?', label: 'Visit' },
+              { id: 'pay', text: 'What are the payment terms and conditions?', label: 'Terms' },
+              { id: 'util', text: 'Are utilities included in the rent?', label: 'Utilities' }
+            ].map(tmp => (
+              <button
+                key={tmp.id}
+                onClick={() => setMessage(tmp.text)}
+                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 border ${
+                  isDarkMode 
+                    ? 'bg-gray-700/50 border-gray-600 text-gray-300 hover:bg-gray-600 hover:text-white' 
+                    : 'bg-white border-gray-200 text-gray-600 hover:bg-emerald-50 hover:border-emerald-200 hover:text-emerald-600 shadow-sm'
+                }`}
+                disabled={isSending}
+              >
+                {tmp.label}
+              </button>
+            ))}
           </div>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-3">
+        <div className="flex gap-4">
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors"
+            className={`flex-1 py-5 rounded-2xl font-black text-xs uppercase tracking-widest transition-all duration-300 ${
+              isDarkMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-400 hover:text-gray-700'
+            }`}
             disabled={isSending}
           >
-            Cancel
+            Go Back
           </button>
           <button
             onClick={handleSendMessage}
             disabled={isSending || !message.trim() || message.length > 500}
-            className="flex-1 px-4 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg disabled:cursor-not-allowed"
+            className={`flex-1 py-5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-xl shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:-translate-y-1 transition-all duration-500 disabled:grayscale disabled:cursor-not-allowed`}
           >
             {isSending ? (
-              <span className="flex items-center justify-center gap-2">
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                Sending...
-              </span>
+               <div className="flex items-center justify-center gap-3">
+                 <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"></div>
+                 Sending
+               </div>
             ) : (
-              'Send Message'
+              'Dispatch Message'
             )}
           </button>
         </div>

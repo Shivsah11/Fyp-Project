@@ -39,7 +39,7 @@ const Bookings: React.FC = () => {
 
   const fetchBookings = async () => {
     let bookingsData = [];
-    
+
     try {
       const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:5000/api/bookings/landlord', {
@@ -56,7 +56,7 @@ const Bookings: React.FC = () => {
     } catch (error) {
       console.error('Error fetching landlord bookings:', error);
     }
-    
+
     // If API failed or no data, try localStorage
     if (bookingsData.length === 0) {
       const landlordBookings = localStorage.getItem('landlordBookings');
@@ -69,7 +69,7 @@ const Bookings: React.FC = () => {
         }
       }
     }
-    
+
     // If still no data, check for tenant bookings that landlord should see
     if (bookingsData.length === 0) {
       const tenantBookings = localStorage.getItem('userBookings');
@@ -103,7 +103,7 @@ const Bookings: React.FC = () => {
         }
       }
     }
-    
+
     // If still no data, use sample landlord bookings with complete tenant info
     if (bookingsData.length === 0) {
       console.log('Using sample data with complete tenant information');
@@ -168,7 +168,7 @@ const Bookings: React.FC = () => {
       // Save sample data to localStorage
       localStorage.setItem('landlordBookings', JSON.stringify(bookingsData));
     }
-    
+
     setBookings(bookingsData);
     setLoading(false);
     console.log('Final landlord bookings loaded:', bookingsData);
@@ -241,13 +241,13 @@ const Bookings: React.FC = () => {
           timestamp: new Date().toISOString(),
           read: false
         };
-        
+
         // Store notification for tenant
         const existingNotifications = localStorage.getItem('tenantNotifications');
         const notifications = existingNotifications ? JSON.parse(existingNotifications) : [];
         notifications.unshift(notification);
         localStorage.setItem('tenantNotifications', JSON.stringify(notifications));
-        
+
         // Update tenant's booking to trigger payment option
         const tenantBookings = localStorage.getItem('userBookings');
         if (tenantBookings) {
@@ -269,7 +269,7 @@ const Bookings: React.FC = () => {
             console.error('Error updating tenant booking:', parseError);
           }
         }
-        
+
         // Try API call (but don't fail if it fails)
         try {
           const token = localStorage.getItem('token');
@@ -295,24 +295,24 @@ const Bookings: React.FC = () => {
         try {
           const bookingToUpdate = bookings.find(b => b.id === bookingId);
           if (bookingToUpdate) {
-            const updatedBookings = bookings.map(b => 
+            const updatedBookings = bookings.map(b =>
               b.id === bookingId ? { ...b, status: 'confirmed' as const } : b
             );
             setBookings(updatedBookings);
-            
+
             // Update tenant's localStorage bookings
             const tenantBookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
-            const updatedTenantBookings = tenantBookings.map((tb: any) => 
+            const updatedTenantBookings = tenantBookings.map((tb: any) =>
               tb.propertyId === bookingToUpdate.propertyId ? { ...tb, status: 'confirmed' } : tb
             );
             localStorage.setItem('userBookings', JSON.stringify(updatedTenantBookings));
-            
+
             // Trigger storage event for tenant component
             window.dispatchEvent(new StorageEvent('storage', {
               key: 'userBookings',
               newValue: JSON.stringify(updatedTenantBookings)
             }));
-            
+
             console.log('Tenant bookings updated with approved status');
           }
         } catch (syncError) {
@@ -321,7 +321,7 @@ const Bookings: React.FC = () => {
 
         alert('Booking approved successfully! Tenant has been notified to make payment.');
         fetchBookings();
-        
+
       } catch (error) {
         console.error('Approval error:', error);
         alert('Failed to approve booking. Please try again later.');
@@ -347,30 +347,30 @@ const Bookings: React.FC = () => {
           try {
             const bookingToUpdate = bookings.find(b => b.id === bookingId);
             if (bookingToUpdate) {
-              const updatedBookings = bookings.map(b => 
+              const updatedBookings = bookings.map(b =>
                 b.id === bookingId ? { ...b, status: 'cancelled' as const } : b
               );
               setBookings(updatedBookings);
-              
+
               // Update tenant's localStorage bookings
               const tenantBookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
-              const updatedTenantBookings = tenantBookings.map((tb: any) => 
+              const updatedTenantBookings = tenantBookings.map((tb: any) =>
                 tb.propertyId === bookingToUpdate.propertyId ? { ...tb, status: 'cancelled' } : tb
               );
               localStorage.setItem('userBookings', JSON.stringify(updatedTenantBookings));
-              
+
               // Trigger storage event for tenant component
               window.dispatchEvent(new StorageEvent('storage', {
                 key: 'userBookings',
                 newValue: JSON.stringify(updatedTenantBookings)
               }));
-              
+
               console.log('Tenant bookings updated with rejected status');
             }
           } catch (syncError) {
             console.error('Sync error:', syncError);
           }
-          
+
           alert('Booking rejected');
           fetchBookings();
         } else {
@@ -708,21 +708,19 @@ const Bookings: React.FC = () => {
               <div className="space-y-4">
                 <textarea
                   placeholder="Type your message to the tenant..."
-                  className={`w-full px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-none ${
-                    isDarkMode 
-                      ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400' 
+                  className={`w-full px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-none ${isDarkMode
+                      ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400'
                       : 'bg-white border-gray-300 text-gray-800 placeholder-gray-400'
-                  }`}
+                    }`}
                   rows={4}
                 />
                 <div className="flex gap-3">
                   <button
                     onClick={() => setShowMessageModal(false)}
-                    className={`flex-1 px-4 py-3 rounded-xl font-medium transition-colors ${
-                      isDarkMode
+                    className={`flex-1 px-4 py-3 rounded-xl font-medium transition-colors ${isDarkMode
                         ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
                         : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
-                    }`}
+                      }`}
                   >
                     Cancel
                   </button>
@@ -811,11 +809,10 @@ const Bookings: React.FC = () => {
               <input
                 type="text"
                 placeholder="Type your message..."
-                className={`flex-1 px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-300 ${
-                  isDarkMode
+                className={`flex-1 px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-300 ${isDarkMode
                     ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
                     : 'bg-white/10 border border-white/20 text-white placeholder-white/60'
-                }`}
+                  }`}
               />
               <button className="px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg">
                 Send

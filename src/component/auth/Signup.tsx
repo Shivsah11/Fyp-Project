@@ -111,8 +111,8 @@ const Signup = () => {
                 type="button"
                 onClick={() => setRole("Tenant")}
                 className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all duration-300 ${role === "Tenant"
-                    ? "bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-lg transform scale-[1.02] border border-teal-400/30"
-                    : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-300"
+                  ? "bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-lg transform scale-[1.02] border border-teal-400/30"
+                  : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-300"
                   }`}
               >
                 <span className="flex items-center justify-center gap-2">
@@ -126,8 +126,8 @@ const Signup = () => {
                 type="button"
                 onClick={() => setRole("Landlord")}
                 className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all duration-300 ${role === "Landlord"
-                    ? "bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-lg transform scale-[1.02] border border-teal-400/30"
-                    : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-300"
+                  ? "bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-lg transform scale-[1.02] border border-teal-400/30"
+                  : "bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-300"
                   }`}
               >
                 <span className="flex items-center justify-center gap-2">
@@ -225,7 +225,7 @@ const Signup = () => {
             Create Account
           </button>
 
-          
+
           {/* Login Link */}
           <p className="text-gray-700 text-center">
             Already have an account?{" "}

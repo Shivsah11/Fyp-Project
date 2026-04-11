@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useDarkMode } from '../../../context/DarkModeContext';
 import PaymentModal from '../payment/PaymentModal';
 import MessagePortal from './MessagePortal';
 
 interface Booking {
   id: string;
+  _id?: string;
   propertyName: string;
   propertyType: string;
   location: string;
@@ -12,7 +14,7 @@ interface Booking {
   checkOut: string;
   status: 'confirmed' | 'pending' | 'cancelled' | 'completed';
   price: number;
-  paymentStatus: 'paid' | 'pending' | 'overdue';
+  paymentStatus: 'paid' | 'pending' | 'overdue' | 'cancelled';
   image: string;
   amenities: string[];
   landlord: string;
@@ -22,6 +24,7 @@ interface Booking {
 }
 
 const BookingsManagement: React.FC = () => {
+  const { isDarkMode } = useDarkMode();
   const navigate = useNavigate();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<'active' | 'upcoming' | 'past' | 'cancelled'>('active');
@@ -38,15 +41,27 @@ const BookingsManagement: React.FC = () => {
   useEffect(() => {
     const fetchBookings = async () => {
       console.log('=== BookingsManagement useEffect triggered ===');
-      
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('No authentication token found');
+        setLoading(false);
+        return;
+      }
+
+      // Create user-specific storage keys
+      const userId = JSON.parse(atob(token.split('.')[1])).userId;
+      const userBookingsKey = `userBookings_${userId}`;
+      const newBookingKey = `newBooking_${userId}`;
+
       // First check for new booking data before anything else
-      const newBookingData = localStorage.getItem('newBooking');
+      const newBookingData = localStorage.getItem(newBookingKey);
       console.log('New booking data from localStorage at start:', newBookingData);
-      
+
       let bookingsData = [];
-      
-      // Try to get persistent bookings from localStorage first
-      const persistentBookings = localStorage.getItem('userBookings');
+
+      // Try to get persistent bookings from user-specific localStorage first
+      const persistentBookings = localStorage.getItem(userBookingsKey);
       if (persistentBookings) {
         try {
           bookingsData = JSON.parse(persistentBookings);
@@ -55,89 +70,80 @@ const BookingsManagement: React.FC = () => {
           console.error('Error parsing persistent bookings:', error);
         }
       }
-      
-      // If no persistent bookings, try API
-      if (bookingsData.length === 0) {
-        try {
-          const token = localStorage.getItem('token');
-          const response = await fetch('http://localhost:5000/api/bookings/tenant', {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          });
-          
-          const result = await response.json();
-          
-          if (result.success) {
-            bookingsData = result.data;
-            // Save to persistent storage
-            localStorage.setItem('userBookings', JSON.stringify(bookingsData));
-          } else {
-            setError(result.message || 'Failed to fetch bookings');
+
+      // Always try API to get fresh data
+      try {
+        const response = await fetch('http://localhost:5000/api/bookings/tenant', {
+          headers: {
+            'Authorization': `Bearer ${token}`
           }
-        } catch (err) {
-          console.error('Fetch error:', err);
-          setError('Error connecting to server. Please check if your backend is running.');
-          
-          // Fallback to sample data if backend fails
-          bookingsData = [
-            {
-              id: 'BK001',
-              propertyName: 'Sunset Apartment',
-              propertyType: '2 BHK',
-              location: 'Thamel, Kathmandu',
-              checkIn: '2024-04-15',
-              checkOut: '2024-10-15',
-              status: 'pending',
-              price: 25000,
-              paymentStatus: 'pending',
-              image: '/api/placeholder/300/200',
-              amenities: ['WiFi', 'Parking', 'Gym', 'Security'],
-              landlord: 'John Landlord',
-              landlordContact: 'john.landlord@example.com'
-            },
-            {
-              id: 'BK002',
-              propertyName: 'Mountain View Studio',
-              propertyType: 'Studio',
-              location: 'Patan, Kathmandu',
-              checkIn: '2024-02-01',
-              checkOut: '2024-08-01',
-              status: 'confirmed',
-              price: 15000,
-              paymentStatus: 'paid',
-              image: '/api/placeholder/300/200',
-              amenities: ['WiFi', 'Balcony', 'Security'],
-              landlord: 'Sarah Property Manager',
-              landlordContact: 'sarah@property.com'
-            }
-          ];
-          // Save sample data to persistent storage
-          localStorage.setItem('userBookings', JSON.stringify(bookingsData));
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          bookingsData = result.data;
+          // Save to user-specific persistent storage
+          localStorage.setItem(userBookingsKey, JSON.stringify(bookingsData));
+        } else {
+          setError(result.message || 'Failed to fetch bookings');
+          // If API fails, use cached data if available
+          if (!persistentBookings) {
+            bookingsData = [];
+          }
+        }
+      } catch (err) {
+        console.error('Fetch error:', err);
+        setError('Error connecting to server. Please check if your backend is running.');
+
+        // Only use cached data if API fails and no persistent data exists
+        if (!persistentBookings) {
+          bookingsData = [];
         }
       }
-      
-      // Check for new booking from localStorage (if not already checked above)
+
+      // Check for new booking from user-specific localStorage
       if (newBookingData) {
         try {
           const newBooking = JSON.parse(newBookingData);
           console.log('Parsed new booking:', newBooking);
-          // Add new booking to beginning of list
-          bookingsData.unshift(newBooking);
-          // Clear stored new booking
-          localStorage.removeItem('newBooking');
-          // Save updated bookings to persistent storage
-          localStorage.setItem('userBookings', JSON.stringify(bookingsData));
-          console.log('Added new booking to list, total bookings:', bookingsData.length);
+
+          // Check if this booking already exists in the data (to prevent duplicates)
+          const existingBooking = bookingsData.find(booking => {
+            // Check by ID (most reliable)
+            if (booking.id === newBooking.id || booking._id === newBooking.id) {
+              return true;
+            }
+            // Check by property name and dates (fallback)
+            if (booking.propertyName === newBooking.propertyName &&
+              booking.checkIn === newBooking.checkIn &&
+              booking.checkOut === newBooking.checkOut) {
+              return true;
+            }
+            return false;
+          });
+
+          if (!existingBooking) {
+            // Add new booking to beginning of list only if it doesn't exist
+            bookingsData.unshift(newBooking);
+            console.log('Added new booking to list, total bookings:', bookingsData.length);
+          } else {
+            console.log('New booking already exists, skipping duplicate');
+          }
+
+          // Clear stored new booking (always clear to prevent re-adding)
+          localStorage.removeItem(newBookingKey);
+          // Save updated bookings to user-specific persistent storage
+          localStorage.setItem(userBookingsKey, JSON.stringify(bookingsData));
         } catch (parseError) {
           console.error('Error parsing new booking:', parseError);
-          localStorage.removeItem('newBooking');
+          localStorage.removeItem(newBookingKey);
         }
       }
-      
+
       setBookings(bookingsData);
       setLoading(false);
-      
+
       // Debug: Log bookings data
       console.log('Final bookings loaded:', bookingsData);
       console.log('Active tab:', activeTab);
@@ -150,13 +156,19 @@ const BookingsManagement: React.FC = () => {
   // Add effect to listen for landlord approval/rejection/cancellation updates
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const userId = JSON.parse(atob(token.split('.')[1])).userId;
+      const userBookingsKey = `userBookings_${userId}`;
+
       console.log('Storage event detected:', e.key, e.newValue);
-      if (e.key === 'userBookings' && e.newValue) {
+      if (e.key === userBookingsKey && e.newValue) {
         console.log('Landlord updated bookings, refreshing tenant view...');
         const updatedBookings = JSON.parse(e.newValue);
         console.log('Updated bookings from storage:', updatedBookings);
         setBookings(updatedBookings);
-        
+
         // Show notification for status changes
         updatedBookings.forEach((booking: any) => {
           const existingBooking = bookings.find(b => b.id === booking.id);
@@ -178,39 +190,38 @@ const BookingsManagement: React.FC = () => {
   }, [bookings]);
 
   // Force refresh function
-  const forceRefreshBookings = () => {
+  const forceRefreshBookings = async () => {
     console.log('Force refreshing bookings...');
-    const landlordBookings = localStorage.getItem('landlordBookings');
-    if (landlordBookings) {
-      console.log('Found landlord bookings:', JSON.parse(landlordBookings));
-      
-      // Update tenant bookings based on landlord data
-      const parsedLandlordBookings = JSON.parse(landlordBookings);
-      const tenantBookings = parsedLandlordBookings
-        .filter((lb: any) => lb.status !== 'cancelled')
-        .map((lb: any) => ({
-          id: lb.id,
-          propertyName: lb.propertyName,
-          propertyType: lb.propertyType,
-          location: lb.location,
-          checkIn: lb.checkIn,
-          checkOut: lb.checkOut,
-          status: lb.status,
-          price: lb.price,
-          paymentStatus: lb.paymentStatus,
-          image: lb.image,
-          amenities: lb.amenities,
-          landlord: lb.tenantName, // This is the tenant name from landlord perspective
-          landlordContact: lb.tenantEmail,
-          requestDate: lb.requestDate
-        }));
-      
-      console.log('Updated tenant bookings from landlord data:', tenantBookings);
-      localStorage.setItem('userBookings', JSON.stringify(tenantBookings));
-      setBookings(tenantBookings);
-      alert('Bookings refreshed from landlord data!');
-    } else {
-      alert('No landlord bookings found. Please make sure landlord has accepted bookings.');
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('Authentication required. Please login again.');
+      return;
+    }
+
+    try {
+      // Refresh from API to get the latest data
+      const response = await fetch('http://localhost:5000/api/bookings/tenant', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        const userId = JSON.parse(atob(token.split('.')[1])).userId;
+        const userBookingsKey = `userBookings_${userId}`;
+
+        // Update user-specific storage and state
+        localStorage.setItem(userBookingsKey, JSON.stringify(result.data));
+        setBookings(result.data);
+        alert('Bookings refreshed successfully!');
+      } else {
+        alert('Failed to refresh bookings: ' + (result.message || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Refresh error:', error);
+      alert('Error refreshing bookings. Please check your internet connection.');
     }
   };
 
@@ -259,71 +270,51 @@ const BookingsManagement: React.FC = () => {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
     });
   };
 
-  const handleCancelBooking = (bookingId: string) => {
+  const handleCancelBooking = async (bookingId: string) => {
     if (window.confirm('Are you sure you want to cancel this booking?')) {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Authentication required. Please login again.');
+        return;
+      }
+
       try {
-        // Update tenant's booking to cancelled
-        const tenantBookings = localStorage.getItem('userBookings');
-        if (tenantBookings) {
-          const allTenantBookings = JSON.parse(tenantBookings);
-          const updatedTenantBookings = allTenantBookings.map((booking: any) => {
-            const bookingIdMatch = booking.id === bookingId || booking._id === bookingId;
-            if (bookingIdMatch) {
-              return {
-                ...booking,
-                status: 'cancelled',
-                paymentStatus: 'cancelled'
-              };
-            }
-            return booking;
-          });
-          localStorage.setItem('userBookings', JSON.stringify(updatedTenantBookings));
-          setBookings(updatedTenantBookings);
+        // Call API to cancel booking
+        const response = await fetch(`http://localhost:5000/api/bookings/${bookingId}/status`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ status: 'cancelled' })
+        });
+
+        if (response.ok) {
+          // Update local state
+          const updatedBookings = bookings.map(booking =>
+            booking.id === bookingId || booking._id === bookingId
+              ? { ...booking, status: 'cancelled' as const, paymentStatus: 'cancelled' as const }
+              : booking
+          );
+
+          setBookings(updatedBookings);
+
+          // Update user-specific localStorage
+          const userId = JSON.parse(atob(token.split('.')[1])).userId;
+          const userBookingsKey = `userBookings_${userId}`;
+          localStorage.setItem(userBookingsKey, JSON.stringify(updatedBookings));
+
+          alert('Booking cancelled successfully!');
+        } else {
+          alert('Failed to cancel booking. Please try again.');
         }
-
-        // Update landlord's booking to cancelled
-        const landlordBookings = localStorage.getItem('landlordBookings');
-        if (landlordBookings) {
-          const allLandlordBookings = JSON.parse(landlordBookings);
-          const updatedLandlordBookings = allLandlordBookings.map((booking: any) => {
-            const bookingIdMatch = booking.id === bookingId || booking._id === bookingId;
-            if (bookingIdMatch) {
-              return {
-                ...booking,
-                status: 'cancelled',
-                paymentStatus: 'cancelled'
-              };
-            }
-            return booking;
-          });
-          localStorage.setItem('landlordBookings', JSON.stringify(updatedLandlordBookings));
-        }
-
-        // Create notification for landlord
-        const notification = {
-          id: Date.now().toString(),
-          type: 'booking_cancelled',
-          title: 'Booking Cancelled!',
-          message: `A tenant has cancelled their booking. The property is now available for new bookings.`,
-          bookingId: bookingId,
-          timestamp: new Date().toISOString(),
-          read: false
-        };
-        
-        // Store notification for landlord
-        const existingNotifications = localStorage.getItem('landlordNotifications');
-        const notifications = existingNotifications ? JSON.parse(existingNotifications) : [];
-        notifications.unshift(notification);
-        localStorage.setItem('landlordNotifications', JSON.stringify(notifications));
-
-        alert('Booking cancelled successfully!');
       } catch (error) {
         console.error('Cancel booking error:', error);
         alert('Failed to cancel booking. Please try again.');
@@ -338,7 +329,7 @@ const BookingsManagement: React.FC = () => {
         alert('Invalid booking data');
         return;
       }
-      
+
       // Set the selected booking and open payment modal
       setSelectedBookingForPayment(booking);
       setIsPaymentModalOpen(true);
@@ -348,40 +339,76 @@ const BookingsManagement: React.FC = () => {
     }
   };
 
-  const handlePaymentSuccess = (amount: string, esewaNumber: string) => {
+  const handlePaymentSuccess = async (amount: string, esewaNumber: string) => {
     if (selectedBookingForPayment) {
-      // Update the booking payment status
-      const updatedBookings = bookings.map(booking => {
-        if (booking.id === selectedBookingForPayment.id) {
-          return {
-            ...booking,
-            paymentStatus: 'paid' as const
-          };
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Authentication required. Please login again.');
+        setIsPaymentModalOpen(false);
+        setSelectedBookingForPayment(null);
+        return;
+      }
+
+      try {
+        // Call API to update payment status
+        const response = await fetch(`http://localhost:5000/api/bookings/${selectedBookingForPayment.id}/status`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            paymentStatus: 'paid',
+            paymentMethod: 'esewa',
+            paymentAmount: amount,
+            paymentReference: esewaNumber
+          })
+        });
+
+        if (response.ok) {
+          // Update local state
+          const updatedBookings = bookings.map(booking => {
+            if (booking.id === selectedBookingForPayment.id || booking._id === selectedBookingForPayment.id) {
+              return {
+                ...booking,
+                paymentStatus: 'paid' as const
+              };
+            }
+            return booking;
+          });
+
+          setBookings(updatedBookings);
+
+          // Update user-specific localStorage
+          const userId = JSON.parse(atob(token.split('.')[1])).userId;
+          const userBookingsKey = `userBookings_${userId}`;
+          localStorage.setItem(userBookingsKey, JSON.stringify(updatedBookings));
+
+          alert(`Payment of Rs. ${amount} successful for ${selectedBookingForPayment.propertyName}!`);
+        } else {
+          alert('Payment recorded but failed to update status. Please contact support.');
         }
-        return booking;
-      });
-      
-      setBookings(updatedBookings);
-      localStorage.setItem('userBookings', JSON.stringify(updatedBookings));
-      
-      // Also update landlord's bookings
-      const landlordBookings = localStorage.getItem('landlordBookings');
-      if (landlordBookings) {
-        const allLandlordBookings = JSON.parse(landlordBookings);
-        const updatedLandlordBookings = allLandlordBookings.map((booking: any) => {
-          const bookingIdMatch = booking.id === selectedBookingForPayment.id || booking._id === selectedBookingForPayment.id;
-          if (bookingIdMatch) {
+      } catch (error) {
+        console.error('Payment update error:', error);
+        // Fallback: Update local state even if API fails
+        const updatedBookings = bookings.map(booking => {
+          if (booking.id === selectedBookingForPayment.id || booking._id === selectedBookingForPayment.id) {
             return {
               ...booking,
-              paymentStatus: 'paid'
+              paymentStatus: 'paid' as const
             };
           }
           return booking;
         });
-        localStorage.setItem('landlordBookings', JSON.stringify(updatedLandlordBookings));
+
+        setBookings(updatedBookings);
+
+        const userId = JSON.parse(atob(token.split('.')[1])).userId;
+        const userBookingsKey = `userBookings_${userId}`;
+        localStorage.setItem(userBookingsKey, JSON.stringify(updatedBookings));
+
+        alert(`Payment of Rs. ${amount} recorded locally for ${selectedBookingForPayment.propertyName}!`);
       }
-      
-      alert(`Payment of Rs. ${amount} successful for ${selectedBookingForPayment.propertyName}!`);
     }
     setIsPaymentModalOpen(false);
     setSelectedBookingForPayment(null);
@@ -393,10 +420,47 @@ const BookingsManagement: React.FC = () => {
     setIsMessagePortalOpen(true);
   };
 
-  const handleMessageSent = (message: string) => {
-    if (selectedBookingForMessage) {
-      // Store the message in tenant's localStorage (sent messages)
-      const existingTenantMessages = JSON.parse(localStorage.getItem('tenantMessages') || '[]');
+  const handleMessageSent = async (message: string) => {
+    const token = localStorage.getItem('token');
+    if (!token || !selectedBookingForMessage) return;
+
+    try {
+      const recipientId = selectedBookingForMessage.otherPartyId || selectedBookingForMessage.landlordId;
+      
+      if (!recipientId) {
+        alert("Cannot send message: Landlord ID is missing from this booking data.");
+        return;
+      }
+
+      const messagePayload = {
+        recipientId: recipientId,
+        subject: `Regarding ${selectedBookingForMessage.propertyName} - ${selectedBookingForMessage.propertyType}`,
+        content: message,
+        type: 'landlord'
+      };
+
+      const response = await fetch('http://localhost:5000/api/messages', {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(messagePayload)
+      });
+      
+      const result = await response.json();
+      if (result.success) {
+        alert("Message sent successfully and saved to your conversation history!");
+      } else {
+        alert(`Error: ${result.message}`);
+      }
+    } catch (err) {
+      console.error("Message send error:", err);
+      // Fallback local storage
+      const userId = JSON.parse(atob(token.split('.')[1])).userId;
+      const tenantMessagesKey = `tenantMessages_${userId}`;
+
+      const existingTenantMessages = JSON.parse(localStorage.getItem(tenantMessagesKey) || '[]');
       const tenantMessage = {
         id: Date.now().toString(),
         recipient: selectedBookingForMessage.landlord,
@@ -409,188 +473,192 @@ const BookingsManagement: React.FC = () => {
         read: false,
         type: 'sent'
       };
-      
+
       existingTenantMessages.unshift(tenantMessage);
-      localStorage.setItem('tenantMessages', JSON.stringify(existingTenantMessages));
-
-      // Store the message in landlord's localStorage (received messages)
-      const existingLandlordMessages = JSON.parse(localStorage.getItem('landlordMessages') || '[]');
-      const landlordMessage = {
-        id: Date.now().toString() + '_landlord', // Unique ID for landlord
-        sender: 'Tenant', // In real app, get actual tenant name
-        senderId: 'current-tenant-id', // In real app, get actual tenant ID
-        senderRole: 'tenant',
-        subject: `Regarding ${selectedBookingForMessage.propertyName} - ${selectedBookingForMessage.propertyType}`,
-        content: message,
-        timestamp: new Date().toISOString(),
-        bookingId: selectedBookingForMessage.id,
-        isRead: false,
-        type: 'landlord',
-        avatar: 'T',
-        otherPartyId: selectedBookingForMessage.otherPartyId || selectedBookingForMessage.landlordId || '',
-        otherPartyRole: 'tenant'
-      };
-      
-      existingLandlordMessages.unshift(landlordMessage);
-      localStorage.setItem('landlordMessages', JSON.stringify(existingLandlordMessages));
-
-      // Create notification for landlord about new message
-      const existingNotifications = JSON.parse(localStorage.getItem('landlordNotifications') || '[]');
-      const messageNotification = {
-        id: Date.now().toString(),
-        type: 'new_message',
-        title: 'New Message Received!',
-        message: `A tenant sent you a message regarding ${selectedBookingForMessage.propertyName}`,
-        bookingId: selectedBookingForMessage.id,
-        timestamp: new Date().toISOString(),
-        read: false
-      };
-      
-      existingNotifications.unshift(messageNotification);
-      localStorage.setItem('landlordNotifications', JSON.stringify(existingNotifications));
+      localStorage.setItem(tenantMessagesKey, JSON.stringify(existingTenantMessages));
+      alert('Message sent successfully! (Offline mode)');
     }
   };
 
   return (
-    <div className="p-6">
+    <div className="max-w-7xl mx-auto px-4 py-8">
       {/* Header */}
-      <div className="mb-6">
-        <div className="flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-900">My Bookings</h2>
-          <button
-            onClick={forceRefreshBookings}
-            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-          >
-            🔄 Sync with Landlord
-          </button>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+        <div>
+          <h2 className={`text-3xl font-black mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>My Bookings</h2>
+          <p className={`text-xs font-bold ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>Manage your property stays and applications</p>
         </div>
+        <button
+          onClick={forceRefreshBookings}
+          className={`group flex items-center gap-3 px-6 py-3 rounded-2xl font-black transition-all duration-300 transform hover:scale-[1.02] shadow-xl ${
+            isDarkMode
+              ? 'bg-white text-gray-900 hover:bg-emerald-50'
+              : 'bg-gray-900 text-white hover:bg-gray-800'
+          }`}
+        >
+          <span className="group-hover:rotate-180 transition-transform duration-500">🔄</span>
+          Sync Status
+        </button>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6 bg-white rounded-xl p-1 border border-gray-200 shadow-sm">
+      <div className={`flex flex-wrap p-1.5 mb-10 rounded-2xl border transition-all duration-300 ${
+        isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-white border-gray-200 shadow-sm'
+      }`}>
         {(['active', 'upcoming', 'past', 'cancelled'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`flex-1 px-4 py-2 rounded-lg font-medium transition-all duration-300 ${
+            className={`flex-1 min-w-[120px] px-6 py-3 rounded-xl font-black text-sm uppercase tracking-wider transition-all duration-300 ${
               activeTab === tab
                 ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg'
-                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
+                : isDarkMode
+                  ? 'text-gray-400 hover:text-emerald-400 hover:bg-gray-700/50'
+                  : 'text-gray-500 hover:text-emerald-600 hover:bg-gray-50'
             }`}
           >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)} ({bookings.filter(b => 
-              tab === 'active' ? (b.status === 'confirmed' || b.status === 'pending') :
-              tab === 'upcoming' ? new Date(b.checkIn) > new Date() :
-              tab === 'past' ? b.status === 'completed' :
-              b.status === 'cancelled'
-            ).length})
+            <span className="flex items-center justify-center gap-2">
+              {tab}
+              <span className={`px-2 py-0.5 rounded-full text-[10px] ${
+                activeTab === tab 
+                  ? 'bg-white/20 text-white' 
+                  : isDarkMode ? 'bg-gray-700 text-gray-400' : 'bg-gray-100 text-gray-500'
+              }`}>
+                {bookings.filter(b =>
+                  tab === 'active' ? (b.status === 'confirmed' || b.status === 'pending') :
+                    tab === 'upcoming' ? new Date(b.checkIn) > new Date() :
+                      tab === 'past' ? b.status === 'completed' :
+                        b.status === 'cancelled'
+                ).length}
+              </span>
+            </span>
           </button>
         ))}
       </div>
 
       {/* Bookings Grid */}
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-32 space-y-4">
-           <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-           <p className="text-gray-500 font-bold text-xl animate-pulse">Loading your bookings...</p>
+        <div className="flex flex-col items-center justify-center py-32 space-y-6">
+          <div className="w-20 h-20 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className={`font-black text-xl animate-pulse uppercase tracking-widest ${isDarkMode ? 'text-emerald-500' : 'text-emerald-600'}`}>Loading Stays...</p>
         </div>
       ) : error ? (
-        <div className="text-center py-20 bg-red-50 rounded-2xl border border-red-200">
-           <div className="text-5xl mb-4">⚠️</div>
-           <h3 className="text-2xl font-bold text-red-700 mb-2">Connection Issue</h3>
-           <p className="text-red-600">{error}</p>
+        <div className={`p-10 rounded-3xl border text-center ${
+          isDarkMode ? 'bg-red-900/10 border-red-800/30' : 'bg-red-50 border-red-100'
+        }`}>
+          <div className="text-4xl mb-4">⚠️</div>
+          <h3 className={`text-2xl font-black mb-2 ${isDarkMode ? 'text-red-400' : 'text-red-700'}`}>Connection Issue</h3>
+          <p className={`font-bold italic ${isDarkMode ? 'text-red-400/80' : 'text-red-600/80'}`}>{error}</p>
         </div>
       ) : (
-        <div className="grid gap-6">
+        <div className="grid gap-8">
           {filteredBookings.map((booking) => (
-            <div key={booking.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:bg-gray-50 transition-all duration-300 shadow-sm">
-              <div className="grid md:grid-cols-3 gap-6 h-full">
+            <div key={booking.id} className={`group relative rounded-3xl border overflow-hidden transition-all duration-500 transform hover:scale-[1.01] hover:shadow-2xl ${
+              isDarkMode
+                ? 'bg-gray-800 border-gray-700 hover:border-emerald-500/50'
+                : 'bg-white border-gray-200 hover:border-emerald-400'
+            }`}>
+              <div className="grid md:grid-cols-5 gap-0">
                 {/* Property Image */}
-                <div className="relative h-64 md:h-64">
-                  <img 
-                    src={booking.image || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop'}
+                <div className="relative md:col-span-2 h-72 overflow-hidden">
+                  <img
+                    src={booking.image || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop'}
                     alt={booking.propertyName}
-                    className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-                    onError={(e) => {
-                      e.currentTarget.src = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop';
-                    }}
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                  <div className="absolute top-4 left-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium border backdrop-blur-sm ${getStatusColor(booking.status)}`}>
-                      {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+                  <div className="absolute top-6 left-6 flex flex-wrap gap-2">
+                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border backdrop-blur-md ${getStatusColor(booking.status)}`}>
+                      {booking.status}
+                    </span>
+                    <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border backdrop-blur-md ${getPaymentStatusColor(booking.paymentStatus)}`}>
+                      {booking.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
                     </span>
                   </div>
-                  <div className="absolute bottom-4 left-4 right-4">
-                    <div className="text-white">
-                      <p className="text-sm font-medium drop-shadow-lg">{booking.propertyType}</p>
-                      <p className="text-xs opacity-90 drop-shadow-md">{booking.location}</p>
-                    </div>
+                  <div className="absolute bottom-6 left-6 right-6">
+                    <p className="text-emerald-400 text-xs font-black uppercase tracking-widest mb-1">{booking.propertyType}</p>
+                    <h3 className="text-white text-xl font-black italic">{booking.propertyName}</h3>
                   </div>
                 </div>
 
                 {/* Property Details */}
-                <div className="md:col-span-2 p-6 flex flex-col h-64 md:h-64">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-1">{booking.propertyName}</h3>
-                      <p className="text-gray-600 text-sm mb-2">📍 {booking.location}</p>
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {booking.amenities.map((amenity, index) => (
-                          <span key={index} className="px-2 py-1 bg-gray-100 rounded-lg text-xs text-gray-700">
+                <div className="md:col-span-3 p-8 flex flex-col">
+                  <div className="flex justify-between items-start mb-8">
+                    <div className="space-y-3">
+                      <p className={`text-sm font-bold flex items-center gap-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        <span className="text-lg">📍</span> {booking.location}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {booking.amenities.slice(0, 4).map((amenity, index) => (
+                          <span key={index} className={`px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-tighter ${
+                            isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+                          }`}>
                             {amenity}
                           </span>
                         ))}
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-gray-900">NPR {booking.price.toLocaleString()}</p>
-                      <p className="text-gray-600 text-sm">per month</p>
+                      <p className={`text-2xl font-black ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>NPR {booking.price.toLocaleString()}</p>
+                      <p className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Monthly Total</p>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div className={`grid grid-cols-2 gap-8 p-6 mb-8 rounded-2xl border ${
+                    isDarkMode ? 'bg-gray-900/50 border-gray-700' : 'bg-gray-50 border-gray-100'
+                  }`}>
                     <div>
-                      <p className="text-gray-600 text-sm">Check-in</p>
-                      <p className="text-gray-900 font-medium">{formatDate(booking.checkIn)}</p>
+                      <p className={`text-[10px] font-black uppercase tracking-widest mb-2 ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>Check-in</p>
+                      <p className={`text-lg font-black italic ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{formatDate(booking.checkIn)}</p>
                     </div>
                     <div>
-                      <p className="text-gray-600 text-sm">Check-out</p>
-                      <p className="text-gray-900 font-medium">{formatDate(booking.checkOut)}</p>
+                      <p className={`text-[10px] font-black uppercase tracking-widest mb-2 ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>Check-out</p>
+                      <p className={`text-lg font-black italic ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{formatDate(booking.checkOut)}</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-200 mt-auto">
-                    <div>
-                      <p className="text-gray-600 text-sm">Landlord</p>
-                      <p className="text-gray-900 font-medium">{booking.landlord}</p>
-                      <p className="text-gray-700 text-sm">{booking.landlordContact}</p>
+                  <div className="flex items-center justify-between mt-auto">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xl border ${
+                        isDarkMode ? 'bg-gray-700 border-gray-600 text-emerald-400' : 'bg-emerald-50 border-emerald-100 text-emerald-600'
+                      }`}>
+                        {booking.landlord.charAt(0)}
+                      </div>
+                      <div>
+                        <p className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Landlord</p>
+                        <p className={`font-black italic ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{booking.landlord}</p>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getPaymentStatusColor(booking.paymentStatus)}`}>
-                        {booking.paymentStatus === 'paid' ? '✓ Paid' : 
-                         booking.paymentStatus === 'pending' ? '⏳ Pending' : '⚠️ Overdue'}
-                      </span>
+                    
+                    <div className="flex gap-3">
                       <button
                         onClick={() => handleContactLandlord(booking)}
-                        className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg font-medium transition-colors"
+                        className={`px-6 py-3 rounded-2xl font-black text-sm uppercase transition-all duration-300 border ${
+                          isDarkMode 
+                            ? 'bg-gray-700 border-gray-600 text-white hover:bg-gray-600' 
+                            : 'bg-white border-gray-200 text-gray-900 hover:bg-gray-50 shadow-sm'
+                        }`}
                       >
-                        Contact
+                        Chat
                       </button>
+                      
                       {booking.status === 'confirmed' && booking.paymentStatus === 'pending' && (
                         <button
                           onClick={() => handleMakePayment(booking)}
-                          className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-medium transition-colors"
+                          className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-2xl font-black text-sm uppercase shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:-translate-y-0.5 transition-all duration-300"
                         >
-                          Make Payment
+                          Pay Now
                         </button>
                       )}
+                      
                       {booking.status === 'confirmed' && (
                         <button
                           onClick={() => handleCancelBooking(booking.id)}
-                          className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors"
+                          className={`px-4 py-3 rounded-2xl font-black transition-all duration-300 ${
+                            isDarkMode ? 'text-red-400 hover:bg-red-400/10' : 'text-red-500 hover:bg-red-50'
+                          }`}
                         >
-                          Cancel
+                          ✕
                         </button>
                       )}
                     </div>
@@ -599,23 +667,25 @@ const BookingsManagement: React.FC = () => {
               </div>
             </div>
           ))}
-        </div>
-      )}
 
-      {filteredBookings.length === 0 && (
-        <div className="text-center py-16">
-          <div className="text-6xl mb-4">📅</div>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">No {activeTab} bookings</h3>
-          <p className="text-gray-700">
-            {activeTab === 'active' ? 'You currently have no active bookings' :
-             activeTab === 'upcoming' ? 'You have no upcoming bookings' :
-             activeTab === 'past' ? 'You have no past bookings' :
-             'You have no cancelled bookings'}
-          </p>
-          {activeTab === 'active' && (
-            <button className="mt-4 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-xl font-medium hover:from-emerald-600 hover:to-teal-700 transition-all duration-300 transform hover:scale-[1.02] shadow-lg">
-              Explore Properties
-            </button>
+          {filteredBookings.length === 0 && !loading && (
+            <div className={`text-center py-24 rounded-3xl border border-dashed ${
+              isDarkMode ? 'bg-gray-800/20 border-gray-700' : 'bg-gray-50/50 border-gray-200'
+            }`}>
+              <div className="text-6xl mb-6 grayscale h-20">🛌</div>
+              <h3 className={`text-2xl font-black mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>No {activeTab} bookings</h3>
+              <p className={`font-bold italic mb-10 ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                Ready for your next adventure?
+              </p>
+              {activeTab === 'active' && (
+                <button 
+                  onClick={() => navigate('/tenant/rooms')}
+                  className="px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 hover:scale-[1.05] transition-all duration-500"
+                >
+                  Explore Properties
+                </button>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -623,19 +693,23 @@ const BookingsManagement: React.FC = () => {
       {/* Booking Detail Modal */}
       {selectedBooking && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200 shadow-lg">
+          <div className={`rounded-2xl p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto border shadow-lg ${isDarkMode
+              ? 'bg-gray-800 border-gray-700'
+              : 'bg-white border-gray-200'
+            }`}>
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-2xl font-bold text-gray-900">Booking Details</h3>
+              <h3 className={`text-2xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Booking Details</h3>
               <button
                 onClick={() => setSelectedBooking(null)}
-                className="text-gray-600 hover:text-gray-900 text-2xl"
+                className={`text-2xl transition-colors ${isDarkMode ? 'text-gray-400 hover:text-gray-100' : 'text-gray-600 hover:text-gray-900'
+                  }`}
               >
                 ×
               </button>
             </div>
             {/* Booking details content would go here */}
             <div className="text-center py-8">
-              <p className="text-gray-700">Detailed booking information</p>
+              <p className={isDarkMode ? 'text-gray-400' : 'text-gray-700'}>Detailed booking information</p>
             </div>
           </div>
         </div>
