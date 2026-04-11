@@ -1,20 +1,70 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 
 const PaymentSuccess = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const searchParams = new URLSearchParams(location.search);
-  
+  const isRecorded = useRef(false);
+
   const status = searchParams.get("status");
   const transactionId = searchParams.get("transaction_id");
   const amount = searchParams.get("amount");
 
   useEffect(() => {
     if (status !== 'success') {
-      navigate('/dashboard');
+      navigate('/tenant/dashboard');
+      return;
     }
-  }, [status, navigate]);
+
+    if (isRecorded.current) return;
+    isRecorded.current = true;
+
+    // --- Step 1: Save payment to localStorage immediately (always works) ---
+    const newPayment = {
+      id: transactionId || `local_${Date.now()}`,
+      amount: Number(amount) || 0,
+      method: 'eSewa',
+      date: new Date().toISOString().split('T')[0],
+      status: 'completed' as const,
+      description: `Payment via eSewa (${transactionId})`,
+    };
+
+    const existing = JSON.parse(localStorage.getItem('pendingPayments') || '[]');
+    existing.unshift(newPayment);
+    localStorage.setItem('pendingPayments', JSON.stringify(existing));
+
+    // --- Step 2: Also try to record in backend (best effort) ---
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetch('http://localhost:5000/api/dashboard/record-payment', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: Number(amount),
+          method: 'eSewa',
+          description: `Payment via eSewa (${transactionId})`,
+          transactionId
+        })
+      })
+        .then(res => res.json())
+        .then(data => {
+          if (data.payment) {
+            // Backend saved it — remove from pendingPayments to avoid duplicates
+            const stored = JSON.parse(localStorage.getItem('pendingPayments') || '[]');
+            const filtered = stored.filter((p: any) => p.id !== newPayment.id);
+            localStorage.setItem('pendingPayments', JSON.stringify(filtered));
+            console.log("Payment also recorded in backend DB.");
+          }
+        })
+        .catch(() => {
+          console.log("Backend unavailable, payment stored locally only.");
+        });
+    }
+  }, [status, navigate, amount, transactionId]);
 
   return (
     <div className="fixed inset-0 w-screen h-screen bg-gray-50 flex items-center justify-center p-4 z-[100]">
@@ -28,26 +78,26 @@ const PaymentSuccess = () => {
           <h2 className="text-2xl font-bold text-white">Payment Successful!</h2>
           <p className="text-green-50 mt-1">Thank you for your payment via eSewa</p>
         </div>
-        
+
         <div className="p-8">
           <div className="border-b border-gray-100 pb-4 mb-4">
             <div className="flex justify-between items-center mb-2">
               <span className="text-gray-500">Transaction ID</span>
-              <span className="font-semibold text-gray-800">{transactionId}</span>
+              <span className="font-semibold text-gray-800 text-sm break-all">{transactionId}</span>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-500">Gateway</span>
-              <span className="font-semibold text-[#60BB46]">eSewa Mock Checkout</span>
+            <div className="flex justify-between items-center mt-2">
+              <span className="text-gray-500">Status</span>
+              <span className="font-semibold text-[#60BB46]">Confirmed ✓</span>
             </div>
           </div>
-          
+
           <div className="flex justify-between items-center mb-8">
             <span className="text-lg text-gray-700">Total Amount</span>
             <span className="text-2xl font-bold text-gray-900">Rs. {amount}</span>
           </div>
-          
-          <Link 
-            to="/dashboard"
+
+          <Link
+            to="/tenant/dashboard"
             className="block w-full text-center bg-gray-900 hover:bg-gray-800 text-white font-semibold py-3 px-4 rounded-xl transition-colors"
           >
             Return to Dashboard

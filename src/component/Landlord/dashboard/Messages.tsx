@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useDarkMode } from '../../../context/DarkModeContext';
 
 interface Message {
-  id: number;
+  id: string;
   sender: string;
   subject: string;
   message: string;
@@ -9,10 +10,13 @@ interface Message {
   unread: boolean;
   property?: string;
   avatar?: string;
+  timestamp?: string;
+  type?: string;
+  senderRole?: string;
 }
 
 interface Conversation {
-  id: number;
+  id: string;
   participant: string;
   property: string;
   lastMessage: string;
@@ -23,347 +27,196 @@ interface Conversation {
 }
 
 const Messages = () => {
-  const [selectedConversation, setSelectedConversation] = useState<number | null>(null);
+  const { isDarkMode } = useDarkMode();
+  const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'all' | 'unread' | 'tenants' | 'maintenance'>('all');
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [conversations, setConversations] = useState<Conversation[]>([
-    {
-      id: 1,
-      participant: 'John Doe',
-      property: '2 BHK Apartment',
-      lastMessage: 'The air conditioning is not working properly...',
-      time: '2 hours ago',
-      unread: 2,
-      avatar: 'JD',
-      messages: [
-        {
-          id: 1,
-          sender: 'John Doe',
-          subject: 'Maintenance Request',
-          message: 'Hi, I\'m having an issue with the air conditioning in the master bedroom. It\'s not cooling properly and making strange noises.',
-          time: '2 hours ago',
-          unread: false,
-          property: '2 BHK Apartment'
-        },
-        {
-          id: 2,
-          sender: 'You',
-          subject: 'Re: Maintenance Request',
-          message: 'I understand the issue. I\'ll contact the AC technician tomorrow morning to get this fixed for you.',
-          time: '1 hour ago',
-          unread: false,
-          property: '2 BHK Apartment'
-        },
-        {
-          id: 3,
-          sender: 'John Doe',
-          subject: 'Re: Maintenance Request',
-          message: 'The air conditioning is not working properly and it\'s getting quite hot. Could you please expedite this?',
-          time: '30 minutes ago',
-          unread: true,
-          property: '2 BHK Apartment'
+  useEffect(() => {
+    loadMessages();
+  }, []);
+
+  const loadMessages = () => {
+    try {
+      // Load messages from localStorage
+      const landlordMessages = JSON.parse(localStorage.getItem('landlordMessages') || '[]');
+      
+      // Group messages by booking/property to create conversations
+      const conversationMap = new Map<string, Conversation>();
+      
+      landlordMessages.forEach((msg: any) => {
+        const bookingId = msg.bookingId || 'general';
+        const property = msg.subject ? msg.subject.split(' - ')[1] || 'Property' : 'Property';
+        
+        if (!conversationMap.has(bookingId)) {
+          conversationMap.set(bookingId, {
+            id: bookingId,
+            participant: msg.sender || 'Tenant',
+            property: property,
+            lastMessage: msg.content || msg.message || 'No message',
+            time: formatTime(msg.timestamp),
+            unread: msg.isRead ? 0 : 1,
+            avatar: msg.avatar || 'T',
+            messages: []
+          });
         }
-      ]
-    },
-    {
-      id: 2,
-      participant: 'Jane Smith',
-      property: 'Studio Room',
-      lastMessage: 'Thank you for the quick response!',
-      time: '5 hours ago',
-      unread: 0,
-      avatar: 'JS',
-      messages: [
-        {
-          id: 1,
-          sender: 'Jane Smith',
-          subject: 'Payment Confirmation',
-          message: 'I just transferred the rent for this month. Please confirm receipt.',
-          time: '5 hours ago',
-          unread: false,
-          property: 'Studio Room'
-        },
-        {
-          id: 2,
-          sender: 'You',
-          subject: 'Re: Payment Confirmation',
-          message: 'Thank you! I\'ve received your payment and it\'s been recorded. Appreciate your prompt payment.',
-          time: '4 hours ago',
-          unread: false,
-          property: 'Studio Room'
-        },
-        {
-          id: 3,
-          sender: 'Jane Smith',
-          subject: 'Re: Payment Confirmation',
-          message: 'Thank you for the quick response!',
-          time: '3 hours ago',
-          unread: false,
-          property: 'Studio Room'
-        }
-      ]
-    },
-    {
-      id: 3,
-      participant: 'Mike Johnson',
-      property: '3 BHK House',
-      lastMessage: 'Is it okay if I paint the living room wall?',
-      time: '1 day ago',
-      unread: 1,
-      avatar: 'MJ',
-      messages: [
-        {
-          id: 1,
-          sender: 'Mike Johnson',
-          subject: 'Renovation Request',
-          message: 'Hi! I\'d like to paint the living room wall a different color. Is this okay with you?',
-          time: '1 day ago',
-          unread: true,
-          property: '3 BHK House'
-        }
-      ]
-    },
-    {
-      id: 4,
-      participant: 'Sarah Wilson',
-      property: '1 BHK Apartment',
-      lastMessage: 'The water pressure seems low in the bathroom',
-      time: '2 days ago',
-      unread: 0,
-      avatar: 'SW',
-      messages: [
-        {
-          id: 1,
-          sender: 'Sarah Wilson',
-          subject: 'Water Pressure Issue',
-          message: 'I\'ve noticed the water pressure in the bathroom has been quite low for the past few days.',
-          time: '2 days ago',
-          unread: false,
-          property: '1 BHK Apartment'
-        },
-        {
-          id: 2,
-          sender: 'You',
-          subject: 'Re: Water Pressure Issue',
-          message: 'Thanks for letting me know. I\'ll check with the building maintenance about this issue.',
-          time: '2 days ago',
-          unread: false,
-          property: '1 BHK Apartment'
-        },
-        {
-          id: 3,
-          sender: 'Sarah Wilson',
-          subject: 'Re: Water Pressure Issue',
-          message: 'The water pressure seems low in the bathroom',
-          time: '2 days ago',
-          unread: false,
-          property: '1 BHK Apartment'
-        }
-      ]
+        
+        const conversation = conversationMap.get(bookingId)!;
+        conversation.messages.push({
+          id: msg.id,
+          sender: msg.sender || 'Tenant',
+          subject: msg.subject,
+          message: msg.content || msg.message,
+          time: formatTime(msg.timestamp),
+          unread: !msg.isRead,
+          property: property,
+          avatar: msg.avatar || 'T',
+          timestamp: msg.timestamp,
+          type: msg.type,
+          senderRole: msg.senderRole
+        });
+      });
+      
+      setConversations(Array.from(conversationMap.values()));
+    } catch (error) {
+      console.error('Failed to load landlord messages:', error);
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
+
+  const formatTime = (timestamp?: string) => {
+    if (!timestamp) return 'Just now';
+    
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffTime = now.getTime() - date.getTime();
+    const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+    
+    if (diffHours < 1) return 'Just now';
+    if (diffHours < 24) return `${diffHours} hours ago`;
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric'
+    });
+  };
 
   const selectedConv = conversations.find(c => c.id === selectedConversation);
 
-  const handleSendMessage = () => {
-    if (newMessage.trim() && selectedConversation) {
-      const updatedConversations = conversations.map(conv => {
-        if (conv.id === selectedConversation) {
-          return {
-            ...conv,
-            messages: [
-              ...conv.messages,
-              {
-                id: conv.messages.length + 1,
-                sender: 'You',
-                subject: 'Re: ' + conv.messages[conv.messages.length - 1].subject,
-                message: newMessage,
-                time: 'Just now',
-                unread: false,
-                property: conv.property
-              }
-            ],
-            lastMessage: newMessage,
-            time: 'Just now'
-          };
-        }
-        return conv;
-      });
-      setConversations(updatedConversations);
-      setNewMessage('');
-    }
-  };
-
-  const filteredConversations = conversations.filter(conv => {
-    const matchesSearch = conv.participant.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         conv.property.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         conv.lastMessage.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    if (filter === 'unread') return matchesSearch && conv.unread > 0;
-    if (filter === 'tenants') return matchesSearch && conv.messages.some(m => m.subject.includes('Payment') || m.subject.includes('Rent'));
-    if (filter === 'maintenance') return matchesSearch && conv.messages.some(m => m.subject.includes('Maintenance') || m.subject.includes('Issue'));
-    
-    return matchesSearch;
-  });
-
-  const markAsRead = (conversationId: number) => {
-    setConversations(conversations.map(conv => 
-      conv.id === conversationId ? { ...conv, unread: 0 } : conv
-    ));
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-8rem)]">
+        <div className="text-center">
+          <div className="w-8 h-8 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+          <p className={`text-gray-500 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Loading messages...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="h-[calc(100vh-8rem)] flex gap-4">
+    <div className={`h-[calc(100vh-8rem)] flex gap-4 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       {/* Conversations List */}
-      <div className="w-96 bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 flex flex-col">
+      <div className={`w-96 rounded-xl border flex flex-col shadow-sm ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
         {/* Header */}
-        <div className="p-4 border-b border-white/20">
-          <h3 className="text-xl font-bold text-gray-900 mb-3">Messages</h3>
-          
-          {/* Search */}
-          <div className="relative mb-3">
-            <input
-              type="text"
-              placeholder="Search conversations..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-4 py-2 pl-10 bg-white border border-gray-300 rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
-            />
-            <span className="absolute left-3 top-2.5 text-gray-600">🔍</span>
-          </div>
-
-          {/* Filters */}
-          <div className="flex flex-wrap gap-2">
-            {[
-              { key: 'all', label: 'All', count: conversations.length },
-              { key: 'unread', label: 'Unread', count: conversations.reduce((acc, c) => acc + c.unread, 0) },
-              { key: 'tenants', label: 'Tenants', count: conversations.filter(c => c.messages.some(m => m.subject.includes('Payment'))).length },
-              { key: 'maintenance', label: 'Maintenance', count: conversations.filter(c => c.messages.some(m => m.subject.includes('Maintenance'))).length }
-            ].map(({ key, label, count }) => (
-              <button
-                key={key}
-                onClick={() => setFilter(key as any)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-300 whitespace-nowrap ${
-                  filter === key
-                    ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white border border-emerald-400/30 shadow-lg'
-                    : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300 hover:border-gray-400'
-                }`}
-              >
-                {label} ({count})
-              </button>
-            ))}
-          </div>
+        <div className={`p-4 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+          <h3 className={`text-xl font-bold mb-3 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Messages</h3>
         </div>
 
         {/* Conversations */}
         <div className="flex-1 overflow-y-auto">
-          {filteredConversations.map((conversation) => (
-            <div
-              key={conversation.id}
-              onClick={() => {
-                setSelectedConversation(conversation.id);
-                markAsRead(conversation.id);
-              }}
-              className={`p-4 border-b border-white/10 cursor-pointer transition-all duration-300 ${
-                selectedConversation === conversation.id
-                  ? 'bg-white/20 border-l-4 border-l-emerald-400'
-                  : 'hover:bg-white/10'
-              }`}
-            >
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg flex-shrink-0">
-                  {conversation.avatar}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <h4 className="text-gray-800 font-semibold truncate">{conversation.participant}</h4>
-                    <span className="text-gray-600 text-xs flex-shrink-0">{conversation.time}</span>
-                  </div>
-                  <p className="text-gray-700 text-xs mb-1">{conversation.property}</p>
-                  <p className="text-gray-900 text-sm truncate">{conversation.lastMessage}</p>
-                </div>
-                {conversation.unread > 0 && (
-                  <div className="w-5 h-5 bg-emerald-400 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                    {conversation.unread}
-                  </div>
-                )}
-              </div>
+          {conversations.length === 0 ? (
+            <div className={`p-8 text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+              <div className="text-4xl mb-2">📭</div>
+              <p>No messages from tenants yet</p>
             </div>
-          ))}
+          ) : (
+            conversations.map(conv => (
+              <div
+                key={conv.id}
+                onClick={() => setSelectedConversation(conv.id)}
+                className={`p-4 border-b cursor-pointer transition-colors ${
+                  selectedConversation === conv.id 
+                    ? isDarkMode ? 'bg-emerald-900/30 border-r-4 border-r-emerald-500' : 'bg-emerald-50 border-r-4 border-r-emerald-500'
+                    : isDarkMode ? 'hover:bg-gray-700 border-gray-700' : 'hover:bg-gray-50 border-gray-100'
+                }`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold flex-shrink-0 ${
+                    isDarkMode ? 'bg-emerald-900/30 text-emerald-400' : 'bg-emerald-100 text-emerald-700'
+                  }`}>
+                    {conv.avatar}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start mb-1">
+                      <h4 className={`font-semibold truncate ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{conv.participant}</h4>
+                      <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{conv.time}</span>
+                    </div>
+                    <p className={`text-sm truncate mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{conv.property}</p>
+                    <p className={`text-sm truncate ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{conv.lastMessage}</p>
+                  </div>
+                  {conv.unread > 0 && (
+                    <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full min-w-[20px] text-center">
+                      {conv.unread}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
-      {/* Conversation View */}
-      <div className="flex-1 bg-white/10 backdrop-blur-xl rounded-xl border border-white/20 flex flex-col">
+      {/* Conversation Detail */}
+      <div className={`flex-1 rounded-xl border flex flex-col shadow-sm ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
         {selectedConv ? (
           <>
-            {/* Conversation Header */}
-            <div className="p-4 border-b border-white/20">
+            {/* Header */}
+            <div className={`p-4 border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                  isDarkMode ? 'bg-emerald-900/30 text-emerald-400' : 'bg-emerald-100 text-emerald-700'
+                }`}>
                   {selectedConv.avatar}
                 </div>
                 <div>
-                  <h4 className="text-black font-semibold">{selectedConv.participant}</h4>
-                  <p className="text-gray-900 text-sm">{selectedConv.property}</p>
+                  <h4 className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{selectedConv.participant}</h4>
+                  <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{selectedConv.property}</p>
                 </div>
               </div>
             </div>
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {selectedConv.messages.map((message) => (
+              {selectedConv.messages.map(msg => (
                 <div
-                  key={message.id}
-                  className={`flex ${message.sender === 'You' ? 'justify-end' : 'justify-start'}`}
+                  key={msg.id}
+                  className={`flex ${msg.sender === 'You' ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
-                    className={`max-w-xs lg:max-w-md px-4 py-3 rounded-xl ${
-                      message.sender === 'You'
-                        ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white'
-                        : 'bg-gray-800 text-white border border-gray-600'
+                    className={`max-w-xs px-4 py-3 rounded-2xl ${
+                      msg.sender === 'You'
+                        ? 'bg-emerald-500 text-white'
+                        : isDarkMode ? 'bg-gray-700 text-gray-100' : 'bg-gray-100 text-gray-900'
                     }`}
                   >
-                    <p className="text-sm font-semibold mb-1">{message.subject}</p>
-                    <p className="text-sm leading-relaxed">{message.message}</p>
-                    <p className={`text-xs mt-2 font-medium ${
-                      message.sender === 'You' ? 'text-emerald-200' : 'text-gray-300'
-                    }`}>
-                      {message.time}
-                    </p>
+                    <div className="text-xs font-medium mb-1">{msg.sender}</div>
+                    <div className="text-sm">{msg.message}</div>
+                    <div className="text-xs opacity-75 mt-1">{msg.time}</div>
                   </div>
                 </div>
               ))}
             </div>
-
-            {/* Message Input */}
-            <div className="p-4 border-t border-white/20">
-              <div className="flex gap-3">
-                <input
-                  type="text"
-                  placeholder="Type your message..."
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                  className="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-emerald-200/60 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
-                />
-                <button
-                  onClick={handleSendMessage}
-                  className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-emerald-400/30"
-                >
-                  Send
-                </button>
-              </div>
-            </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center">
+          <div className="flex-1 flex items-center justify-center text-center p-8">
+            <div>
               <div className="text-6xl mb-4">💬</div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Select a conversation</h3>
-              <p className="text-gray-700">Choose a conversation from the left to start messaging</p>
+              <h3 className={`text-xl font-bold mb-2 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Select a conversation</h3>
+              <p className={isDarkMode ? 'text-gray-400' : 'text-gray-600'}>Choose a conversation from the list to view messages</p>
             </div>
           </div>
         )}

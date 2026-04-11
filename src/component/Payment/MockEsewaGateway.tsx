@@ -83,7 +83,7 @@ const MockEsewaGateway = () => {
           ) : step === "login" ? (
             <form onSubmit={handleLogin} className="space-y-5">
               <h3 className="text-xl font-semibold text-gray-800 mb-4">Login to eSewa</h3>
-              
+
               {error && <div className="p-3 bg-red-50 text-red-600 text-sm rounded-md">{error}</div>}
 
               <div>
@@ -131,7 +131,7 @@ const MockEsewaGateway = () => {
           ) : (
             <form onSubmit={handleToken} className="space-y-5">
               <h3 className="text-xl font-semibold text-gray-800 mb-4">Confirm Payment</h3>
-              
+
               <div className="bg-green-50 text-green-800 p-3 rounded-md text-sm mb-4">
                 Logged in as {esewaId}.
               </div>
@@ -162,7 +162,7 @@ const MockEsewaGateway = () => {
             </form>
           )}
         </div>
-        
+
         <div className="text-center mt-6 text-xs text-gray-400">
           <p>© {new Date().getFullYear()} eSewa Mock Gateway. For development testing only.</p>
         </div>

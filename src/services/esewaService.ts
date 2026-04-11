@@ -15,7 +15,7 @@ class EsewaService {
   createPaymentRequest(amount: number, productName: string = 'Rent Payment'): EsewaPaymentRequest {
     const transactionId = this.generateTransactionId();
     const totalAmount = amount.toString();
-    
+
     return {
       amount: totalAmount,
       product_name: productName,

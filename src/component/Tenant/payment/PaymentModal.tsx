@@ -5,10 +5,11 @@ interface PaymentModalProps {
   isOpen: boolean;
   onClose: () => void;
   onPaymentSuccess?: (amount: string, esewaNumber: string) => void;
+  defaultAmount?: string;
 }
 
-const PaymentModal = ({ isOpen, onClose }: PaymentModalProps) => {
-  const [amount, setAmount] = useState('');
+const PaymentModal = ({ isOpen, onClose, onPaymentSuccess, defaultAmount }: PaymentModalProps) => {
+  const [amount, setAmount] = useState(defaultAmount || '');
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handlePayment = async (e: React.FormEvent) => {
@@ -18,6 +19,15 @@ const PaymentModal = ({ isOpen, onClose }: PaymentModalProps) => {
     try {
       const paymentRequest = esewaService.createPaymentRequest(Number(amount), 'Rent Payment');
       esewaService.redirectToEsewa(paymentRequest);
+      
+      // Simulate payment success for demo purposes
+      setTimeout(() => {
+        if (onPaymentSuccess) {
+          onPaymentSuccess(amount, '98XXXXXXXX'); // Mock eSewa number
+        }
+        setIsProcessing(false);
+        onClose();
+      }, 2000);
     } catch (error) {
       console.error('Failed to initiate payment:', error);
       setIsProcessing(false);

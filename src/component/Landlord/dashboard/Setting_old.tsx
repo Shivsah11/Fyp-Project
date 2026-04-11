@@ -57,16 +57,8 @@ const Settings = () => {
     { id: 'preferences', label: 'Preferences' }
   ];
 
-  const inputClasses = `w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 ${
-    isDarkMode 
-      ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400'
-      : 'bg-gray-50 border-gray-300 text-gray-800 placeholder-gray-500'
-  }`;
-
-  const labelClasses = `block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`;
-
   return (
-    <div className={`p-6 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+    <div className={`p-6 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
       {/* Header */}
       <div className="mb-6">
         <h3 className={`text-2xl font-bold mb-2 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Settings</h3>
@@ -76,7 +68,7 @@ const Settings = () => {
       <div className="flex gap-6">
         {/* Sidebar */}
         <div className="w-64">
-          <div className={`rounded-xl border p-4 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-sm'}`}>
+          <div className={`rounded-xl border p-4 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white/10 backdrop-blur-xl border border-white/20'}`}>
             <nav className="space-y-2">
               {tabs.map((tab) => (
                 <button
@@ -102,87 +94,115 @@ const Settings = () => {
           {activeTab === 'profile' && (
             <div className="space-y-6">
               {/* Profile Information */}
-              <div className={`rounded-xl border p-6 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-sm'}`}>
+              <div className={`rounded-xl border p-6 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white/10 backdrop-blur-xl border border-white/20'}`}>
                 <h4 className={`text-lg font-bold mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Profile Information</h4>
                 <form onSubmit={handleProfileUpdate} className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className={labelClasses}>First Name</label>
+                      <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>First Name</label>
                       <input
                         type="text"
                         value={formData.firstName}
                         onChange={(e) => setFormData({...formData, firstName: e.target.value})}
-                        className={inputClasses}
+                        className={`w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 ${
+                          isDarkMode 
+                            ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400'
+                            : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500'
+                        }`}
                       />
                     </div>
                     <div>
-                      <label className={labelClasses}>Last Name</label>
+                      <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Last Name</label>
                       <input
                         type="text"
                         value={formData.lastName}
                         onChange={(e) => setFormData({...formData, lastName: e.target.value})}
-                        className={inputClasses}
+                        className={`w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 ${
+                          isDarkMode 
+                            ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400'
+                            : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500'
+                        }`}
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className={labelClasses}>Email Address</label>
+                    <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Email Address</label>
                     <input
                       type="email"
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
-                      className={inputClasses}
+                      className={`w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 ${
+                        isDarkMode 
+                          ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400'
+                          : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500'
+                      }`}
                     />
                   </div>
 
                   <div>
-                    <label className={labelClasses}>Phone Number</label>
+                    <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Phone Number</label>
                     <input
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                      className={inputClasses}
+                      className={`w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 ${
+                        isDarkMode 
+                          ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400'
+                          : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500'
+                      }`}
                     />
                   </div>
 
                   <div>
-                    <label className={labelClasses}>Address</label>
+                    <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Address</label>
                     <input
                       type="text"
                       value={formData.address}
                       onChange={(e) => setFormData({...formData, address: e.target.value})}
-                      className={inputClasses}
+                      className={`w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 ${
+                        isDarkMode 
+                          ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400'
+                          : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500'
+                      }`}
                     />
                   </div>
 
                   <div>
-                    <label className={labelClasses}>Bio</label>
+                    <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Bio</label>
                     <textarea
                       value={formData.bio}
                       onChange={(e) => setFormData({...formData, bio: e.target.value})}
                       rows={3}
-                      className={inputClasses}
+                      className={`w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 ${
+                        isDarkMode 
+                          ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400'
+                          : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500'
+                      }`}
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className={labelClasses}>Company</label>
+                      <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Company</label>
                       <input
                         type="text"
                         value={formData.company}
                         onChange={(e) => setFormData({...formData, company: e.target.value})}
-                        className={inputClasses}
+                        className={`w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 ${
+                          isDarkMode 
+                            ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400'
+                            : 'bg-white border-gray-300 text-gray-800 placeholder-gray-500'
+                        }`}
                       />
                     </div>
                     <div>
-                      <label className={labelClasses}>Website</label>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">Website</label>
                       <input
                         type="url"
                         value={formData.website}
                         onChange={(e) => setFormData({...formData, website: e.target.value})}
-                        className={inputClasses}
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
                       />
                     </div>
                   </div>
@@ -197,30 +217,30 @@ const Settings = () => {
               </div>
 
               {/* Change Password */}
-              <div className={`rounded-xl border p-6 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-sm'}`}>
-                <h4 className={`text-lg font-bold mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Change Password</h4>
+              <div className={`rounded-xl border p-6 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white/10 backdrop-blur-xl border border-white/20'}`}>
+                <h4 className="text-lg font-bold text-gray-900 mb-4">Change Password</h4>
                 <form onSubmit={handlePasswordChange} className="space-y-4">
                   <div>
-                    <label className={labelClasses}>Current Password</label>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Current Password</label>
                     <input
                       type="password"
-                      className={inputClasses}
+                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
                       placeholder="Enter current password"
                     />
                   </div>
                   <div>
-                    <label className={labelClasses}>New Password</label>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">New Password</label>
                     <input
                       type="password"
-                      className={inputClasses}
+                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
                       placeholder="Enter new password"
                     />
                   </div>
                   <div>
-                    <label className={labelClasses}>Confirm New Password</label>
+                    <label className="block text-gray-700 text-sm font-medium mb-2">Confirm New Password</label>
                     <input
                       type="password"
-                      className={inputClasses}
+                      className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
                       placeholder="Confirm new password"
                     />
                   </div>
@@ -237,8 +257,8 @@ const Settings = () => {
 
           {activeTab === 'notifications' && (
             <div className="space-y-6">
-              <div className={`rounded-xl border p-6 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-sm'}`}>
-                <h4 className={`text-lg font-bold mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Notification Preferences</h4>
+              <div className={`rounded-xl border p-6 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white/10 backdrop-blur-xl border border-white/20'}`}>
+                <h4 className="text-lg font-bold text-gray-900 mb-4">Notification Preferences</h4>
                 <div className="space-y-4">
                   {[
                     { key: 'emailNotifications', label: 'Email Notifications', description: 'Receive notifications via email' },
@@ -249,12 +269,10 @@ const Settings = () => {
                     { key: 'monthlyReports', label: 'Monthly Reports', description: 'Receive monthly performance reports' },
                     { key: 'marketingEmails', label: 'Marketing Emails', description: 'Receive promotional offers and updates' }
                   ].map((item) => (
-                    <div key={item.key} className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-300 ${
-                      isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'
-                    }`}>
+                    <div key={item.key} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
                       <div>
-                        <h5 className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{item.label}</h5>
-                        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{item.description}</p>
+                        <h5 className="text-gray-900 font-medium">{item.label}</h5>
+                        <p className="text-gray-600 text-sm">{item.description}</p>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
@@ -274,19 +292,17 @@ const Settings = () => {
 
           {activeTab === 'security' && (
             <div className="space-y-6">
-              <div className={`rounded-xl border p-6 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-sm'}`}>
-                <h4 className={`text-lg font-bold mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Security Settings</h4>
+              <div className={`rounded-xl border p-6 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white/10 backdrop-blur-xl border border-white/20'}`}>
+                <h4 className="text-lg font-bold text-gray-900 mb-4">Security Settings</h4>
                 <div className="space-y-4">
                   {[
                     { key: 'twoFactorAuth', label: 'Two-Factor Authentication', description: 'Add an extra layer of security to your account' },
                     { key: 'loginAlerts', label: 'Login Alerts', description: 'Get notified when someone logs into your account' }
                   ].map((item) => (
-                    <div key={item.key} className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-300 ${
-                      isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'
-                    }`}>
+                    <div key={item.key} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
                       <div>
-                        <h5 className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{item.label}</h5>
-                        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{item.description}</p>
+                        <h5 className="text-gray-900 font-medium">{item.label}</h5>
+                        <p className="text-gray-600 text-sm">{item.description}</p>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
@@ -302,30 +318,30 @@ const Settings = () => {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className={labelClasses}>Session Timeout (minutes)</label>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">Session Timeout (minutes)</label>
                       <select
                         value={securitySettings.sessionTimeout}
                         onChange={(e) => setSecuritySettings({...securitySettings, sessionTimeout: e.target.value})}
-                        className={inputClasses}
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
                       >
-                        <option value="15" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>15 minutes</option>
-                        <option value="30" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>30 minutes</option>
-                        <option value="60" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>1 hour</option>
-                        <option value="120" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>2 hours</option>
+                        <option value="15" className="bg-gray-800">15 minutes</option>
+                        <option value="30" className="bg-gray-800">30 minutes</option>
+                        <option value="60" className="bg-gray-800">1 hour</option>
+                        <option value="120" className="bg-gray-800">2 hours</option>
                       </select>
                     </div>
                     <div>
-                      <label className={labelClasses}>Password Expiry (days)</label>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">Password Expiry (days)</label>
                       <select
                         value={securitySettings.passwordExpiry}
                         onChange={(e) => setSecuritySettings({...securitySettings, passwordExpiry: e.target.value})}
-                        className={inputClasses}
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
                       >
-                        <option value="30" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>30 days</option>
-                        <option value="60" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>60 days</option>
-                        <option value="90" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>90 days</option>
-                        <option value="180" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>180 days</option>
-                        <option value="365" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>1 year</option>
+                        <option value="30" className="bg-gray-800">30 days</option>
+                        <option value="60" className="bg-gray-800">60 days</option>
+                        <option value="90" className="bg-gray-800">90 days</option>
+                        <option value="180" className="bg-gray-800">180 days</option>
+                        <option value="365" className="bg-gray-800">1 year</option>
                       </select>
                     </div>
                   </div>
@@ -336,71 +352,69 @@ const Settings = () => {
 
           {activeTab === 'preferences' && (
             <div className="space-y-6">
-              <div className={`rounded-xl border p-6 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200 shadow-sm'}`}>
-                <h4 className={`text-lg font-bold mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Preferences</h4>
+              <div className={`rounded-xl border p-6 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white/10 backdrop-blur-xl border border-white/20'}`}>
+                <h4 className="text-lg font-bold text-gray-900 mb-4">Preferences</h4>
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className={labelClasses}>Language</label>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">Language</label>
                       <select
                         value={preferences.language}
                         onChange={(e) => setPreferences({...preferences, language: e.target.value})}
-                        className={inputClasses}
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
                       >
-                        <option value="english" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>English</option>
-                        <option value="nepali" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>नेपाली</option>
-                        <option value="hindi" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>हिन्दी</option>
+                        <option value="english" className="bg-gray-800">English</option>
+                        <option value="nepali" className="bg-gray-800">नेपाली</option>
+                        <option value="hindi" className="bg-gray-800">हिन्दी</option>
                       </select>
                     </div>
                     <div>
-                      <label className={labelClasses}>Timezone</label>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">Timezone</label>
                       <select
                         value={preferences.timezone}
                         onChange={(e) => setPreferences({...preferences, timezone: e.target.value})}
-                        className={inputClasses}
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
                       >
-                        <option value="Asia/Kathmandu" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>Asia/Kathmandu</option>
-                        <option value="Asia/Delhi" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>Asia/Delhi</option>
-                        <option value="Asia/Dubai" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>Asia/Dubai</option>
-                        <option value="UTC" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>UTC</option>
+                        <option value="Asia/Kathmandu" className="bg-gray-800">Asia/Kathmandu</option>
+                        <option value="Asia/Delhi" className="bg-gray-800">Asia/Delhi</option>
+                        <option value="Asia/Dubai" className="bg-gray-800">Asia/Dubai</option>
+                        <option value="UTC" className="bg-gray-800">UTC</option>
                       </select>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className={labelClasses}>Currency</label>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">Currency</label>
                       <select
                         value={preferences.currency}
                         onChange={(e) => setPreferences({...preferences, currency: e.target.value})}
-                        className={inputClasses}
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
                       >
-                        <option value="NPR" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>NPR - Nepalese Rupee</option>
-                        <option value="USD" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>USD - US Dollar</option>
-                        <option value="EUR" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>EUR - Euro</option>
-                        <option value="INR" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>INR - Indian Rupee</option>
+                        <option value="NPR" className="bg-gray-800">NPR - Nepalese Rupee</option>
+                        <option value="USD" className="bg-gray-800">USD - US Dollar</option>
+                        <option value="EUR" className="bg-gray-800">EUR - Euro</option>
+                        <option value="INR" className="bg-gray-800">INR - Indian Rupee</option>
                       </select>
                     </div>
                     <div>
-                      <label className={labelClasses}>Date Format</label>
+                      <label className="block text-gray-700 text-sm font-medium mb-2">Date Format</label>
                       <select
                         value={preferences.dateFormat}
                         onChange={(e) => setPreferences({...preferences, dateFormat: e.target.value})}
-                        className={inputClasses}
+                        className="w-full px-4 py-3 bg-white border border-gray-300 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300"
                       >
-                        <option value="DD/MM/YYYY" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>DD/MM/YYYY</option>
-                        <option value="MM/DD/YYYY" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>MM/DD/YYYY</option>
-                        <option value="YYYY-MM-DD" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>YYYY-MM-DD</option>
+                        <option value="DD/MM/YYYY" className="bg-gray-800">DD/MM/YYYY</option>
+                        <option value="MM/DD/YYYY" className="bg-gray-800">MM/DD/YYYY</option>
+                        <option value="YYYY-MM-DD" className="bg-gray-800">YYYY-MM-DD</option>
                       </select>
                     </div>
                   </div>
 
-                  <div className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-300 ${
-                    isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'
-                  }`}>
+                  <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-200">
                     <div>
-                      <h5 className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>Dark Mode</h5>
-                      <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Use dark theme across the application</p>
+                      <h5 className="text-gray-900 font-medium">Dark Mode</h5>
+                      <p className="text-gray-600 text-sm">Use dark theme across the application</p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input

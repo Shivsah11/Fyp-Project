@@ -8,8 +8,11 @@ import AdminLogin from "./component/admin/AdminLogin";
 import AdminDashboard from "./component/admin/AdminDashboard";
 import TenantDashboard from "./component/Tenant/dashboard/Dashboard";
 import LandlordDashboard from "./component/Landlord/dashboard/LandlordDashboard";
+import ExploreRooms from "./component/Tenant/rooms/ExploreRooms";
+import RoomDetailPage from "./component/Tenant/rooms/RoomDetailPage";
 import MockEsewaGateway from "./component/Payment/MockEsewaGateway";
 import PaymentSuccess from "./component/Payment/PaymentSuccess";
+import { DarkModeProvider } from "./context/DarkModeContext";
 
 // Route Guard Component
 const PrivateRoute = ({ children, requiredRole }: { children: React.ReactElement, requiredRole: string }) => {
@@ -20,12 +23,12 @@ const PrivateRoute = ({ children, requiredRole }: { children: React.ReactElement
     // Check if user is logged in and get their role
     const token = localStorage.getItem('token');
     const storedRole = localStorage.getItem('userRole');
-    
-    // For testing: automatically set as Landlord if not logged in
+
+    // For testing: automatically set as Admin if not logged in
     if (!token || !storedRole) {
       localStorage.setItem('token', 'test-token');
-      localStorage.setItem('userRole', 'Landlord');
-      setUserRole('Landlord');
+      localStorage.setItem('userRole', 'Admin');
+      setUserRole('Admin');
     } else {
       setUserRole(storedRole);
     }
@@ -47,9 +50,9 @@ const PrivateRoute = ({ children, requiredRole }: { children: React.ReactElement
   if (userRole !== requiredRole) {
     // Redirect to appropriate dashboard based on role
     return <Navigate to={
-      userRole === 'Tenant' ? '/tenant/dashboard' : 
-      userRole === 'Admin' ? '/admin/dashboard' : 
-      '/landlord/dashboard'
+      userRole === 'Tenant' ? '/tenant/dashboard' :
+        userRole === 'Admin' ? '/admin/dashboard' :
+          '/landlord/dashboard'
     } replace />;
   }
 
@@ -59,64 +62,82 @@ const PrivateRoute = ({ children, requiredRole }: { children: React.ReactElement
 function App() {
   const getDashboardRoute = () => {
     const role = localStorage.getItem('userRole');
-    return role === 'Tenant' ? '/tenant/dashboard' : 
-           role === 'Admin' ? '/admin/dashboard' : 
-           '/landlord/dashboard';
+    return role === 'Tenant' ? '/tenant/dashboard' :
+      role === 'Admin' ? '/admin/dashboard' :
+        '/landlord/dashboard';
   };
 
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<Login />} />
-        <Route path="/dashboard" element={<Navigate to="/landlord/dashboard" replace />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/admin/login" element={<AdminLogin />} />
-        
-        {/* Tenant Routes */}
-        <Route 
-          path="/tenant/dashboard" 
-          element={
-            <PrivateRoute requiredRole="Tenant">
-              <TenantDashboard />
-            </PrivateRoute>
-          } 
-        />
-        
-        {/* Landlord Routes */}
-        <Route 
-          path="/landlord/dashboard" 
-          element={
-            <PrivateRoute requiredRole="Landlord">
-              <LandlordDashboard />
-            </PrivateRoute>
-          } 
-        />
+    <DarkModeProvider>
+      <BrowserRouter>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<Login />} />
+          <Route path="/dashboard" element={<Navigate to="/landlord/dashboard" replace />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
 
-        {/* Admin Routes */}
-        <Route 
-          path="/admin/dashboard" 
-          element={
-            <PrivateRoute requiredRole="Admin">
-              <AdminDashboard />
-            </PrivateRoute>
-          } 
-        />
-        
-        {/* Payment / eSewa Mock Routes */}
-        <Route path="/esewa-checkout" element={<MockEsewaGateway />} />
-        <Route path="/payment/success" element={<PaymentSuccess />} />
-        
-        {/* Default dashboard route - redirect based on stored role */}
-        <Route 
-          path="/dashboard" 
-          element={<Navigate to={getDashboardRoute()} replace />} 
-        />
-        
-        {/* Catch all route - redirect to login */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+          {/* Tenant Routes */}
+          <Route
+            path="/tenant/dashboard"
+            element={
+              <PrivateRoute requiredRole="Tenant">
+                <TenantDashboard />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/tenant/explore"
+            element={
+              <PrivateRoute requiredRole="Tenant">
+                <ExploreRooms />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/tenant/room/:roomId"
+            element={
+              <PrivateRoute requiredRole="Tenant">
+                <RoomDetailPage />
+              </PrivateRoute>
+            }
+          />
+
+          {/* Landlord Routes */}
+          <Route
+            path="/landlord/dashboard"
+            element={
+              <PrivateRoute requiredRole="Landlord">
+                <LandlordDashboard />
+              </PrivateRoute>
+            }
+          />
+
+          {/* Admin Routes */}
+          <Route
+            path="/admin/dashboard"
+            element={
+              <PrivateRoute requiredRole="Admin">
+                <AdminDashboard />
+              </PrivateRoute>
+            }
+          />
+
+          {/* Payment / eSewa Mock Routes */}
+          <Route path="/esewa-checkout" element={<MockEsewaGateway />} />
+          <Route path="/payment/success" element={<PaymentSuccess />} />
+
+          {/* Default dashboard route - redirect based on stored role */}
+          <Route
+            path="/dashboard"
+            element={<Navigate to={getDashboardRoute()} replace />}
+          />
+
+          {/* Catch all route - redirect to login */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </DarkModeProvider>
   );
 }
 

@@ -3,9 +3,10 @@ import { useState } from 'react';
 interface RequestModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onRequestAdded?: () => void;
 }
 
-const RequestModal = ({ isOpen, onClose }: RequestModalProps) => {
+const RequestModal = ({ isOpen, onClose, onRequestAdded }: RequestModalProps) => {
   const [requestType, setRequestType] = useState('');
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
@@ -48,6 +49,7 @@ const RequestModal = ({ isOpen, onClose }: RequestModalProps) => {
       alert(`Request "${subject}" submitted successfully! We'll respond within 24 hours.`);
       setIsSubmitting(false);
       onClose();
+      if (onRequestAdded) onRequestAdded();
       
       // Reset form
       setRequestType('');

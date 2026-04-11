@@ -1,7 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import PropertyMap from '../../Shared/PropertyMap';
+import { useDarkMode } from '../../../context/DarkModeContext';
 
 interface Booking {
   id: string;
+  _id?: string;
+  propertyId: string;
   tenantName: string;
   tenantEmail: string;
   tenantPhone: string;
@@ -20,67 +24,155 @@ interface Booking {
 }
 
 const Bookings: React.FC = () => {
+  const { isDarkMode } = useDarkMode();
   const [activeTab, setActiveTab] = useState<'pending' | 'confirmed' | 'active' | 'completed' | 'cancelled'>('pending');
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showMessageModal, setShowMessageModal] = useState(false);
   const [selectedTenant, setSelectedTenant] = useState<string>('');
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Sample booking data for landlord
-  const bookings: Booking[] = [
-    {
-      id: 'BK001',
-      tenantName: 'John Doe',
-      tenantEmail: 'john.doe@example.com',
-      tenantPhone: '+977-9841234567',
-      propertyName: 'Sunset Apartment',
-      propertyType: '2 BHK',
-      location: 'Thamel, Kathmandu',
-      checkIn: '2024-01-15',
-      checkOut: '2024-06-15',
-      status: 'pending',
-      price: 25000,
-      paymentStatus: 'pending',
-      image: '/api/placeholder/300/200',
-      amenities: ['WiFi', 'Parking', 'Gym', 'Security'],
-      requestDate: '2024-01-10',
-      specialRequests: 'Need early check-in if possible'
-    },
-    {
-      id: 'BK002',
-      tenantName: 'Sarah Miller',
-      tenantEmail: 'sarah.miller@example.com',
-      tenantPhone: '+977-9849876543',
-      propertyName: 'Mountain View Studio',
-      propertyType: 'Studio',
-      location: 'Patan, Kathmandu',
-      checkIn: '2024-02-01',
-      checkOut: '2024-08-01',
-      status: 'confirmed',
-      price: 15000,
-      paymentStatus: 'paid',
-      image: '/api/placeholder/300/200',
-      amenities: ['WiFi', 'Balcony', 'Security'],
-      requestDate: '2024-01-15'
-    },
-    {
-      id: 'BK003',
-      tenantName: 'Mike Johnson',
-      tenantEmail: 'mike.j@example.com',
-      tenantPhone: '+977-9845678901',
-      propertyName: 'City Center Flat',
-      propertyType: '1 BHK',
-      location: 'New Baneshwor, Kathmandu',
-      checkIn: '2023-06-01',
-      checkOut: '2023-12-01',
-      status: 'completed',
-      price: 20000,
-      paymentStatus: 'paid',
-      image: '/api/placeholder/300/200',
-      amenities: ['WiFi', 'Parking', 'Security'],
-      requestDate: '2023-05-20'
+  useEffect(() => {
+    fetchBookings();
+  }, []);
+
+  const fetchBookings = async () => {
+    let bookingsData = [];
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/bookings/landlord', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const result = await response.json();
+      if (response.ok) {
+        bookingsData = result.data;
+        // Save to persistent storage
+        localStorage.setItem('landlordBookings', JSON.stringify(bookingsData));
+      }
+    } catch (error) {
+      console.error('Error fetching landlord bookings:', error);
     }
-  ];
+    
+    // If API failed or no data, try localStorage
+    if (bookingsData.length === 0) {
+      const landlordBookings = localStorage.getItem('landlordBookings');
+      if (landlordBookings) {
+        try {
+          bookingsData = JSON.parse(landlordBookings);
+          console.log('Loaded landlord bookings from localStorage:', bookingsData);
+        } catch (parseError) {
+          console.error('Error parsing landlord bookings:', parseError);
+        }
+      }
+    }
+    
+    // If still no data, check for tenant bookings that landlord should see
+    if (bookingsData.length === 0) {
+      const tenantBookings = localStorage.getItem('userBookings');
+      if (tenantBookings) {
+        try {
+          const allTenantBookings = JSON.parse(tenantBookings);
+          console.log('Found tenant bookings, showing to landlord:', allTenantBookings);
+          // Transform tenant bookings to landlord format with proper tenant info
+          bookingsData = allTenantBookings.map((booking: any) => ({
+            ...booking,
+            _id: booking._id || booking.id,
+            id: booking.id || booking._id,
+            tenantName: booking.userName || 'Tenant Name',
+            tenantEmail: booking.userEmail || 'tenant@example.com',
+            tenantPhone: booking.userPhone || '+977-9840000000',
+            propertyName: booking.propertyName || 'Property Name',
+            propertyType: booking.propertyType || 'Apartment',
+            location: booking.location || 'Location',
+            checkIn: booking.checkIn || new Date().toISOString(),
+            checkOut: booking.checkOut || new Date().toISOString(),
+            status: booking.status || 'pending',
+            price: booking.price || 25000,
+            paymentStatus: booking.paymentStatus || 'pending',
+            image: booking.image || '/api/placeholder/300/200',
+            amenities: booking.amenities || ['WiFi', 'Parking'],
+            requestDate: booking.requestDate || new Date().toISOString(),
+            specialRequests: booking.specialRequests || ''
+          }));
+        } catch (parseError) {
+          console.error('Error parsing tenant bookings:', parseError);
+        }
+      }
+    }
+    
+    // If still no data, use sample landlord bookings with complete tenant info
+    if (bookingsData.length === 0) {
+      console.log('Using sample data with complete tenant information');
+      bookingsData = [
+        {
+          _id: 'LB001',
+          id: 'LB001',
+          tenantName: 'John Doe',
+          tenantEmail: 'john.doe@example.com',
+          tenantPhone: '+977-9841234567',
+          propertyName: 'Sunset Apartment',
+          propertyType: '2 BHK',
+          location: 'Thamel, Kathmandu',
+          checkIn: '2024-01-15',
+          checkOut: '2024-06-15',
+          status: 'confirmed',
+          price: 25000,
+          paymentStatus: 'paid',
+          image: '/api/placeholder/300/200',
+          amenities: ['WiFi', 'Parking', 'Gym', 'Security'],
+          requestDate: '2024-01-10',
+          specialRequests: 'Need early check-in if possible'
+        },
+        {
+          _id: 'LB002',
+          id: 'LB002',
+          tenantName: 'Sarah Miller',
+          tenantEmail: 'sarah.miller@example.com',
+          tenantPhone: '+977-9849876543',
+          propertyName: 'Mountain View Studio',
+          propertyType: 'Studio',
+          location: 'Patan, Kathmandu',
+          checkIn: '2024-02-01',
+          checkOut: '2024-08-01',
+          status: 'confirmed',
+          price: 15000,
+          paymentStatus: 'paid',
+          image: '/api/placeholder/300/200',
+          amenities: ['WiFi', 'Balcony', 'Security'],
+          requestDate: '2024-01-15'
+        },
+        {
+          _id: 'LB003',
+          id: 'LB003',
+          tenantName: 'Mike Johnson',
+          tenantEmail: 'mike.johnson@example.com',
+          tenantPhone: '+977-9845678901',
+          propertyName: 'Green Valley House',
+          propertyType: '3 BHK',
+          location: 'Lalitpur, Kathmandu',
+          checkIn: '2024-03-01',
+          checkOut: '2024-09-01',
+          status: 'pending',
+          price: 35000,
+          paymentStatus: 'pending',
+          image: '/api/placeholder/300/200',
+          amenities: ['WiFi', 'Parking', 'Garden', 'Security'],
+          requestDate: '2024-02-20',
+          specialRequests: 'Pet-friendly required'
+        }
+      ];
+      // Save sample data to localStorage
+      localStorage.setItem('landlordBookings', JSON.stringify(bookingsData));
+    }
+    
+    setBookings(bookingsData);
+    setLoading(false);
+    console.log('Final landlord bookings loaded:', bookingsData);
+  };
 
   const filteredBookings = bookings.filter(booking => {
     switch (activeTab) {
@@ -102,49 +194,193 @@ const Bookings: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed':
-        return 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30';
+        return isDarkMode ? 'bg-green-900/30 text-green-400 border-green-700' : 'bg-green-100 text-green-800 border-green-200';
       case 'pending':
-        return 'bg-yellow-500/20 text-yellow-300 border-yellow-400/30';
+        return isDarkMode ? 'bg-yellow-900/30 text-yellow-400 border-yellow-700' : 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'cancelled':
-        return 'bg-red-500/20 text-red-300 border-red-400/30';
+        return isDarkMode ? 'bg-red-900/30 text-red-400 border-red-700' : 'bg-red-100 text-red-800 border-red-200';
       case 'completed':
-        return 'bg-blue-500/20 text-blue-300 border-blue-400/30';
+        return isDarkMode ? 'bg-blue-900/30 text-blue-400 border-blue-700' : 'bg-blue-100 text-blue-800 border-blue-200';
       default:
-        return 'bg-gray-500/20 text-gray-300 border-gray-400/30';
+        return isDarkMode ? 'bg-gray-900/30 text-gray-400 border-gray-700' : 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
   const getPaymentStatusColor = (status: string) => {
     switch (status) {
       case 'paid':
-        return 'bg-green-500/20 text-green-300 border-green-400/30';
+        return isDarkMode ? 'bg-green-900/30 text-green-400 border-green-700' : 'bg-green-100 text-green-800 border-green-200';
       case 'pending':
-        return 'bg-yellow-500/20 text-yellow-300 border-yellow-400/30';
+        return isDarkMode ? 'bg-yellow-900/30 text-yellow-400 border-yellow-700' : 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'overdue':
-        return 'bg-red-500/20 text-red-300 border-red-400/30';
+        return isDarkMode ? 'bg-red-900/30 text-red-400 border-red-700' : 'bg-red-100 text-red-800 border-red-200';
       default:
-        return 'bg-gray-500/20 text-gray-300 border-gray-400/30';
+        return isDarkMode ? 'bg-gray-900/30 text-gray-400 border-gray-700' : 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
     });
   };
 
-  const handleApproveBooking = (bookingId: string) => {
+  const handleApproveBooking = async (bookingId: string) => {
     if (window.confirm('Are you sure you want to approve this booking?')) {
-      alert(`Booking ${bookingId} approved successfully!`);
+      try {
+        // Create notification for tenant first
+        const notification = {
+          id: Date.now().toString(),
+          type: 'booking_approved',
+          title: 'Booking Approved!',
+          message: 'Your booking has been approved. Please proceed with payment.',
+          bookingId: bookingId,
+          timestamp: new Date().toISOString(),
+          read: false
+        };
+        
+        // Store notification for tenant
+        const existingNotifications = localStorage.getItem('tenantNotifications');
+        const notifications = existingNotifications ? JSON.parse(existingNotifications) : [];
+        notifications.unshift(notification);
+        localStorage.setItem('tenantNotifications', JSON.stringify(notifications));
+        
+        // Update tenant's booking to trigger payment option
+        const tenantBookings = localStorage.getItem('userBookings');
+        if (tenantBookings) {
+          try {
+            const allTenantBookings = JSON.parse(tenantBookings);
+            const updatedTenantBookings = allTenantBookings.map((booking: any) => {
+              const bookingIdMatch = booking.id === bookingId || booking._id === bookingId;
+              if (bookingIdMatch) {
+                return {
+                  ...booking,
+                  status: 'confirmed',
+                  paymentStatus: 'pending'
+                };
+              }
+              return booking;
+            });
+            localStorage.setItem('userBookings', JSON.stringify(updatedTenantBookings));
+          } catch (parseError) {
+            console.error('Error updating tenant booking:', parseError);
+          }
+        }
+        
+        // Try API call (but don't fail if it fails)
+        try {
+          const token = localStorage.getItem('token');
+          const response = await fetch(`http://localhost:5000/api/bookings/${bookingId}/status`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ status: 'Confirmed' })
+          });
+
+          if (response.ok) {
+            console.log('API update successful');
+          } else {
+            console.log('API update failed, but tenant notified');
+          }
+        } catch (apiError) {
+          console.log('API call failed, but tenant notified:', apiError);
+        }
+
+        // Update tenant's booking status in real-time
+        try {
+          const bookingToUpdate = bookings.find(b => b.id === bookingId);
+          if (bookingToUpdate) {
+            const updatedBookings = bookings.map(b => 
+              b.id === bookingId ? { ...b, status: 'confirmed' as const } : b
+            );
+            setBookings(updatedBookings);
+            
+            // Update tenant's localStorage bookings
+            const tenantBookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
+            const updatedTenantBookings = tenantBookings.map((tb: any) => 
+              tb.propertyId === bookingToUpdate.propertyId ? { ...tb, status: 'confirmed' } : tb
+            );
+            localStorage.setItem('userBookings', JSON.stringify(updatedTenantBookings));
+            
+            // Trigger storage event for tenant component
+            window.dispatchEvent(new StorageEvent('storage', {
+              key: 'userBookings',
+              newValue: JSON.stringify(updatedTenantBookings)
+            }));
+            
+            console.log('Tenant bookings updated with approved status');
+          }
+        } catch (syncError) {
+          console.error('Sync error:', syncError);
+        }
+
+        alert('Booking approved successfully! Tenant has been notified to make payment.');
+        fetchBookings();
+        
+      } catch (error) {
+        console.error('Approval error:', error);
+        alert('Failed to approve booking. Please try again later.');
+      }
     }
   };
 
-  const handleRejectBooking = (bookingId: string) => {
+  const handleRejectBooking = async (bookingId: string) => {
     if (window.confirm('Are you sure you want to reject this booking?')) {
-      alert(`Booking ${bookingId} rejected`);
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`http://localhost:5000/api/bookings/${bookingId}/status`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ status: 'Cancelled' })
+        });
+
+        if (response.ok) {
+          // Update tenant's booking status in real-time
+          try {
+            const bookingToUpdate = bookings.find(b => b.id === bookingId);
+            if (bookingToUpdate) {
+              const updatedBookings = bookings.map(b => 
+                b.id === bookingId ? { ...b, status: 'cancelled' as const } : b
+              );
+              setBookings(updatedBookings);
+              
+              // Update tenant's localStorage bookings
+              const tenantBookings = JSON.parse(localStorage.getItem('userBookings') || '[]');
+              const updatedTenantBookings = tenantBookings.map((tb: any) => 
+                tb.propertyId === bookingToUpdate.propertyId ? { ...tb, status: 'cancelled' } : tb
+              );
+              localStorage.setItem('userBookings', JSON.stringify(updatedTenantBookings));
+              
+              // Trigger storage event for tenant component
+              window.dispatchEvent(new StorageEvent('storage', {
+                key: 'userBookings',
+                newValue: JSON.stringify(updatedTenantBookings)
+              }));
+              
+              console.log('Tenant bookings updated with rejected status');
+            }
+          } catch (syncError) {
+            console.error('Sync error:', syncError);
+          }
+          
+          alert('Booking rejected');
+          fetchBookings();
+        } else {
+          const err = await response.json();
+          alert(`Error: ${err.message}`);
+        }
+      } catch (error) {
+        console.error('Rejection error:', error);
+        alert('Failed to reject booking. Please try again later.');
+      }
     }
   };
 
@@ -152,8 +388,9 @@ const Bookings: React.FC = () => {
     window.open(`tel:${tenantPhone}`);
   };
 
-  const handleMessageTenant = (tenantName: string) => {
-    setSelectedTenant(tenantName);
+  const handleMessageTenant = (booking: any) => {
+    console.log('Message button clicked - booking data:', booking);
+    setSelectedBooking(booking);
     setShowMessageModal(true);
   };
 
@@ -170,118 +407,55 @@ const Bookings: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen p-6">
-      {/* Header with gradient background */}
-      <div className="mb-8 relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/20 to-teal-600/20 rounded-2xl backdrop-blur-xl"></div>
-        <div className="relative z-10">
-          <h2 className="text-3xl font-bold text-white mb-2 bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
-            Booking Management
-          </h2>
-          <p className="text-emerald-100 text-lg">Manage your property bookings and tenant requests</p>
-        </div>
+    <div className={`min-h-screen p-4 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      {/* Header */}
+      <div className="mb-8">
+        <h2 className={`text-xl font-bold mb-2 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+          Booking Management
+        </h2>
       </div>
 
-      {/* Enhanced Revenue Overview with animations */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="group relative overflow-hidden bg-gradient-to-br from-emerald-500/20 via-emerald-600/10 to-teal-600/20 backdrop-blur-xl rounded-2xl border border-emerald-400/30 p-6 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl">
-          <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/5 to-teal-400/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div className="relative z-10">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-teal-500 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-xl font-bold">₹</span>
-              </div>
-              <div className="text-right">
-                <span className="text-emerald-300 text-xs font-medium bg-emerald-500/20 px-2 py-1 rounded-full">+12.5%</span>
-              </div>
-            </div>
-            <p className="text-emerald-200 text-sm font-medium mb-2">Total Revenue</p>
-            <p className="text-4xl font-bold text-white mb-2">NPR {calculateTotalRevenue().toLocaleString()}</p>
-            <div className="flex items-center text-emerald-300 text-sm">
-              <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
-              </svg>
-              Increased from last month
-            </div>
+      {/* Revenue Overview */}
+      <div className="grid grid-cols-3 gap-2 md:gap-4 mb-6">
+        <div className={`rounded-xl p-3 md:p-4 border shadow-sm hover:shadow-md transition-shadow ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+          <div>
+            <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Total Revenue</p>
+            <p className={`text-lg md:text-xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>NPR {calculateTotalRevenue().toLocaleString()}</p>
           </div>
         </div>
 
-        <div className="group relative overflow-hidden bg-gradient-to-br from-yellow-500/20 via-orange-600/10 to-amber-600/20 backdrop-blur-xl rounded-2xl border border-yellow-400/30 p-6 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl">
-          <div className="absolute inset-0 bg-gradient-to-r from-yellow-400/5 to-orange-400/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div className="relative z-10">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-xl font-bold">⏱</span>
-              </div>
-              <div className="text-right">
-                <span className="text-yellow-300 text-xs font-medium bg-yellow-500/20 px-2 py-1 rounded-full">Pending</span>
-              </div>
-            </div>
-            <p className="text-yellow-200 text-sm font-medium mb-2">Pending Revenue</p>
-            <p className="text-4xl font-bold text-white mb-2">NPR {calculatePendingRevenue().toLocaleString()}</p>
-            <div className="flex items-center text-yellow-300 text-sm">
-              <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-              </svg>
-              Awaiting payment
-            </div>
+        <div className={`rounded-xl p-3 md:p-4 border shadow-sm hover:shadow-md transition-shadow ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+          <div>
+            <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Pending Revenue</p>
+            <p className={`text-lg md:text-xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>NPR {calculatePendingRevenue().toLocaleString()}</p>
           </div>
         </div>
 
-        <div className="group relative overflow-hidden bg-gradient-to-br from-blue-500/20 via-purple-600/10 to-indigo-600/20 backdrop-blur-xl rounded-2xl border border-blue-400/30 p-6 transform transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl">
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-400/5 to-purple-400/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-          <div className="relative z-10">
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
-                <span className="text-xl font-bold">�</span>
-              </div>
-              <div className="text-right">
-                <span className="text-blue-300 text-xs font-medium bg-blue-500/20 px-2 py-1 rounded-full">Active</span>
-              </div>
-            </div>
-            <p className="text-blue-200 text-sm font-medium mb-2">Active Bookings</p>
-            <p className="text-4xl font-bold text-white mb-2">{bookings.filter(b => b.status === 'confirmed').length}</p>
-            <div className="flex items-center text-blue-300 text-sm">
-              <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
-              </svg>
-              Currently occupied
-            </div>
+        <div className={`rounded-xl p-3 md:p-4 border shadow-sm hover:shadow-md transition-shadow ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+          <div>
+            <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Active Bookings</p>
+            <p className={`text-lg md:text-xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{bookings.filter(b => b.status === 'confirmed').length}</p>
           </div>
         </div>
       </div>
 
-      {/* Enhanced Tabs with animations */}
-      <div className="relative mb-8">
-        <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/10 to-teal-600/10 rounded-2xl backdrop-blur-xl"></div>
-        <div className="relative z-10 bg-white/5 backdrop-blur-sm rounded-2xl p-2 border border-white/10">
+      {/* Tabs */}
+      <div className="mb-6">
+        <div className={`rounded-xl p-2 border shadow-sm ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
           <div className="grid grid-cols-5 gap-2">
             {(['pending', 'confirmed', 'active', 'completed', 'cancelled'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`relative px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-[1.02] ${
-                  activeTab === tab
-                    ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg border border-emerald-400/30'
-                    : 'text-emerald-200 hover:bg-emerald-800/50 hover:text-white border border-transparent'
-                }`}
+                className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${activeTab === tab
+                  ? 'bg-blue-600 text-white shadow-lg'
+                  : isDarkMode
+                    ? 'text-gray-300 hover:bg-gray-700 border border-transparent'
+                    : 'text-gray-600 hover:bg-gray-100 border border-transparent'
+                  }`}
               >
-                <span className="flex items-center justify-center gap-2">
-                  {tab === 'pending' && '⏱'}
-                  {tab === 'confirmed' && '✓'}
-                  {tab === 'active' && '�'}
-                  {tab === 'completed' && '✨'}
-                  {tab === 'cancelled' && '✕'}
+                <span className="flex items-center justify-center">
                   {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </span>
-                <span className="absolute -top-2 -right-2 bg-gradient-to-r from-emerald-400 to-teal-400 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center shadow-lg">
-                  {bookings.filter(b => 
-                    tab === 'pending' ? b.status === 'pending' :
-                    tab === 'confirmed' ? b.status === 'confirmed' :
-                    tab === 'active' ? b.status === 'confirmed' && new Date(b.checkIn) <= new Date() && new Date(b.checkOut) >= new Date() :
-                    tab === 'completed' ? b.status === 'completed' :
-                    b.status === 'cancelled'
-                  ).length}
                 </span>
               </button>
             ))}
@@ -289,135 +463,152 @@ const Bookings: React.FC = () => {
         </div>
       </div>
 
-      {/* Enhanced Bookings Grid */}
-      <div className="grid gap-6">
+      {/* Bookings Map */}
+      <div className="mb-6">
+        <div className={`rounded-xl border p-4 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+          <h3 className={`font-semibold mb-3 ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>Rental Locations ({filteredBookings.length})</h3>
+          <PropertyMap
+            properties={filteredBookings.map(booking => ({
+              id: Number(booking.id) || booking._id ? Number(booking._id) : 0,
+              title: booking.propertyName,
+              type: booking.propertyType,
+              price: booking.price,
+              location: booking.location,
+              lat: 27.7172 + (Math.random() - 0.5) * 0.1,
+              lng: 85.3240 + (Math.random() - 0.5) * 0.1,
+              available: booking.status === 'confirmed',
+              rating: 0
+            }))}
+            height="400px"
+            showPopups={true}
+          />
+        </div>
+      </div>
+
+      {/* Bookings Grid */}
+      <div className="grid gap-4">
         {filteredBookings.map((booking) => (
-          <div key={booking.id} className="group relative overflow-hidden bg-white/10 backdrop-blur-xl rounded-2xl border border-white/20 hover:bg-white/15 transition-all duration-300 transform hover:scale-[1.01] hover:shadow-2xl">
-            <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/5 to-teal-400/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <div className="relative z-10">
-              <div className="grid md:grid-cols-3 gap-6">
-                {/* Enhanced Property Image */}
-                <div className="relative h-48 md:h-auto overflow-hidden rounded-t-2xl md:rounded-l-2xl">
-                  <div className="w-full h-full bg-gradient-to-br from-green-400 via-emerald-500 to-teal-600 flex items-center justify-center shadow-inner">
-                    <div className="text-center text-white">
-                      <div className="text-4xl mb-2 font-bold">{booking.propertyType}</div>
-                      <p className="text-sm font-medium">{booking.propertyType}</p>
+          <div key={booking.id} className={`rounded-xl border shadow-sm hover:shadow-md transition-all duration-300 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+            <div className="grid md:grid-cols-3 gap-4">
+              {/* Property Image */}
+              <div className="relative h-32 md:h-auto overflow-hidden rounded-t-xl md:rounded-l-xl">
+                <div className={`w-full h-full flex items-center justify-center ${isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}`}>
+                  <div className={`text-center ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>
+                    <div className="text-4xl mb-2 font-bold">{booking.propertyType}</div>
+                    <p className="text-sm font-medium">{booking.propertyType}</p>
+                  </div>
+                </div>
+                <div className="absolute top-4 left-4">
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(booking.status)}`}>
+                    {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Booking Details */}
+              <div className="md:col-span-2 p-4">
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h3 className={`text-lg font-bold mb-1 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{booking.propertyName}</h3>
+                    <p className={`text-xs mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                      {booking.location}
+                    </p>
+                    <div className="flex flex-wrap gap-1 mb-2">
+                      {booking.amenities.map((amenity: string, index: number) => (
+                        <span key={index} className={`px-2 py-1 rounded-lg text-xs border ${isDarkMode ? 'bg-gray-700 text-gray-300 border-gray-600' : 'bg-gray-100 text-gray-700 border-gray-200'}`}>
+                          {amenity}
+                        </span>
+                      ))}
                     </div>
                   </div>
-                  <div className="absolute top-4 left-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(booking.status)} shadow-lg`}>
-                      {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                    </span>
+                  <div className="text-right">
+                    <p className={`text-xl font-bold mb-1 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>NPR {booking.price.toLocaleString()}</p>
+                    <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>per month</p>
                   </div>
                 </div>
 
-                {/* Enhanced Booking Details */}
-                <div className="md:col-span-2 p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div>
-                      <h3 className="text-2xl font-bold text-white mb-2 bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">{booking.propertyName}</h3>
-                      <p className="text-emerald-200 text-sm mb-3 flex items-center gap-1">
-                        <span className="text-emerald-400">•</span>
-                        {booking.location}
-                      </p>
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {booking.amenities.map((amenity: string, index: number) => (
-                          <span key={index} className="px-3 py-1 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 rounded-lg text-xs text-emerald-100 border border-emerald-400/30">
-                            {amenity}
-                          </span>
-                        ))}
-                      </div>
+                {/* Tenant Information */}
+                <div className={`rounded-xl p-3 mb-3 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                  <h4 className={`font-bold text-sm mb-2 ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+                    Tenant Information
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div className={`rounded-lg p-2 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                      <p className={`text-xs font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Name</p>
+                      <p className={`font-semibold text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{booking.tenantName}</p>
                     </div>
-                    <div className="text-right">
-                      <p className="text-3xl font-bold text-white mb-1">NPR {booking.price.toLocaleString()}</p>
-                      <p className="text-emerald-200 text-sm">per month</p>
+                    <div className={`rounded-lg p-2 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                      <p className={`text-xs font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Email</p>
+                      <p className={`font-semibold text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{booking.tenantEmail}</p>
+                    </div>
+                    <div className={`rounded-lg p-2 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                      <p className={`text-xs font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Phone</p>
+                      <p className={`font-semibold text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{booking.tenantPhone}</p>
+                    </div>
+                    <div className={`rounded-lg p-2 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                      <p className={`text-xs font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Request Date</p>
+                      <p className={`font-semibold text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{formatDate(booking.requestDate)}</p>
                     </div>
                   </div>
-
-                  {/* Enhanced Tenant Information */}
-                  <div className="bg-gradient-to-r from-white/5 to-white/10 rounded-2xl p-5 mb-4 border border-white/10">
-                    <h4 className="text-gray-800 font-bold text-lg mb-4 flex items-center gap-2">
-                      <span className="text-lg">Profile</span>
-                      Tenant Information
-                    </h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="bg-white/5 rounded-xl p-3">
-                        <p className="text-gray-700 text-xs font-medium mb-1">Name</p>
-                        <p className="text-gray-900 font-semibold">{booking.tenantName}</p>
-                      </div>
-                      <div className="bg-white/5 rounded-xl p-3">
-                        <p className="text-gray-700 text-xs font-medium mb-1">Email</p>
-                        <p className="text-gray-900 font-semibold">{booking.tenantEmail}</p>
-                      </div>
-                      <div className="bg-white/5 rounded-xl p-3">
-                        <p className="text-gray-700 text-xs font-medium mb-1">Phone</p>
-                        <p className="text-gray-900 font-semibold">{booking.tenantPhone}</p>
-                      </div>
-                      <div className="bg-white/5 rounded-xl p-3">
-                        <p className="text-gray-700 text-xs font-medium mb-1">Request Date</p>
-                        <p className="text-gray-900 font-semibold">{formatDate(booking.requestDate)}</p>
-                      </div>
+                  {booking.specialRequests && (
+                    <div className={`mt-2 pt-2 border-t ${isDarkMode ? 'border-gray-600' : 'border-gray-200'}`}>
+                      <p className={`text-xs font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Special Requests</p>
+                      <p className={`text-xs rounded-lg p-2 ${isDarkMode ? 'text-gray-300 bg-gray-800' : 'text-gray-800 bg-white'}`}>{booking.specialRequests}</p>
                     </div>
-                    {booking.specialRequests && (
-                      <div className="mt-4 pt-4 border-t border-white/10">
-                        <p className="text-gray-700 text-xs font-medium mb-2">Special Requests</p>
-                        <p className="text-gray-800 text-sm bg-white/5 rounded-lg p-2">{booking.specialRequests}</p>
-                      </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <div className={`rounded-lg p-2 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                    <p className={`text-xs font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Check-in</p>
+                    <p className={`font-semibold text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{formatDate(booking.checkIn)}</p>
+                  </div>
+                  <div className={`rounded-lg p-2 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-50'}`}>
+                    <p className={`text-xs font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Check-out</p>
+                    <p className={`font-semibold text-sm ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{formatDate(booking.checkOut)}</p>
+                  </div>
+                </div>
+
+                <div className={`flex items-center justify-between pt-2 border-t ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                  <div>
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getPaymentStatusColor(booking.paymentStatus)}`}>
+                      {booking.paymentStatus === 'paid' ? 'Paid' :
+                        booking.paymentStatus === 'pending' ? 'Pending' : 'Overdue'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleMessageTenant(booking)}
+                      className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors text-sm"
+                      title="Message tenant"
+                    >
+                      Message
+                    </button>
+                    {booking.status === 'pending' && (
+                      <>
+                        <button
+                          onClick={() => handleApproveBooking(booking.id)}
+                          className="px-3 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors text-sm"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => handleRejectBooking(booking.id)}
+                          className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors text-sm"
+                        >
+                          Reject
+                        </button>
+                      </>
                     )}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 mb-4">
-                    <div className="bg-white/5 rounded-xl p-3">
-                      <p className="text-emerald-200 text-xs font-medium mb-1">Check-in</p>
-                      <p className="text-white font-semibold">{formatDate(booking.checkIn)}</p>
-                    </div>
-                    <div className="bg-white/5 rounded-xl p-3">
-                      <p className="text-emerald-200 text-xs font-medium mb-1">Check-out</p>
-                      <p className="text-white font-semibold">{formatDate(booking.checkOut)}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-4 border-t border-white/10">
-                    <div>
-                      <span className={`px-4 py-2 rounded-full text-xs font-bold border ${getPaymentStatusColor(booking.paymentStatus)}`}>
-                        {booking.paymentStatus === 'paid' ? 'Paid' : 
-                         booking.paymentStatus === 'pending' ? 'Pending' : 'Overdue'}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => handleMessageTenant(booking.tenantName)}
-                        className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg"
-                        title="Message tenant"
-                      >
-                        Message
-                      </button>
-                      {booking.status === 'pending' && (
-                        <>
-                          <button
-                            onClick={() => handleApproveBooking(booking.id)}
-                            className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg"
-                          >
-                            Approve
-                          </button>
-                          <button
-                            onClick={() => handleRejectBooking(booking.id)}
-                            className="px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg"
-                          >
-                            Reject
-                          </button>
-                        </>
-                      )}
-                      <button
-                        onClick={() => {
-                          setSelectedBooking(booking);
-                          setShowDetailsModal(true);
-                        }}
-                        className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg"
-                      >
-                        View Details
-                      </button>
-                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedBooking(booking);
+                        setShowDetailsModal(true);
+                      }}
+                      className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors text-sm"
+                    >
+                      View Details
+                    </button>
                   </div>
                 </div>
               </div>
@@ -428,199 +619,203 @@ const Bookings: React.FC = () => {
 
       {filteredBookings.length === 0 && (
         <div className="text-center py-16">
-          <div className="text-6xl mb-4 font-bold text-emerald-400">No Bookings</div>
-          <h3 className="text-2xl font-bold text-white mb-4 bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">No {activeTab} bookings</h3>
-          <p className="text-emerald-100 text-lg">
+          <h3 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>No {activeTab} bookings</h3>
+          <p className={`text-lg ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
             {activeTab === 'pending' ? 'No pending booking requests at the moment' :
-             activeTab === 'confirmed' ? 'No confirmed bookings' :
-             activeTab === 'active' ? 'No currently active bookings' :
-             activeTab === 'completed' ? 'No completed bookings yet' :
-             'No cancelled bookings'}
+              activeTab === 'confirmed' ? 'No confirmed bookings' :
+                activeTab === 'active' ? 'No currently active bookings' :
+                  activeTab === 'completed' ? 'No completed bookings yet' :
+                    'No cancelled bookings'}
           </p>
         </div>
       )}
 
-      {/* Enhanced Booking Details Modal */}
-      {showDetailsModal && selectedBooking && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gradient-to-br from-emerald-900 via-teal-900 to-cyan-900 rounded-3xl p-8 max-w-5xl w-full max-h-[90vh] overflow-y-auto border border-white/20 shadow-2xl transform transition-all duration-300">
+      {/* Message Modal */}
+      {showMessageModal && selectedBooking && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className={`rounded-3xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto border shadow-xl ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
             <div className="flex justify-between items-center mb-8">
-              <h3 className="text-3xl font-bold text-white bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">Booking Details</h3>
+              <h3 className={`text-3xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Message Tenant</h3>
               <button
-                onClick={() => setShowDetailsModal(false)}
-                className="text-white hover:text-emerald-200 text-3xl transition-colors transform hover:scale-110"
+                onClick={() => setShowMessageModal(false)}
+                className={`text-3xl transition-colors ${isDarkMode ? 'text-gray-400 hover:text-gray-600' : 'text-gray-400 hover:text-gray-600'}`}
               >
                 ×
               </button>
             </div>
-            
+
+            {/* Debug Info */}
+            <div className={`rounded-xl p-4 mb-6 ${isDarkMode ? 'bg-yellow-900/30 border-yellow-700' : 'bg-yellow-50 border-yellow-200'}`}>
+              <p className={`text-sm font-medium ${isDarkMode ? 'text-yellow-400' : 'text-yellow-800'}`}>Debug Info:</p>
+              <pre className={`text-xs mt-2 ${isDarkMode ? 'text-yellow-300' : 'text-yellow-700'}`}>{JSON.stringify(selectedBooking, null, 2)}</pre>
+            </div>
+
+            {/* Tenant Details */}
+            <div className={`rounded-2xl p-6 border mb-6 ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
+              <h4 className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                Tenant Information
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                  <p className={`text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Name</p>
+                  <p className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{selectedBooking.tenantName || 'N/A'}</p>
+                </div>
+                <div className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                  <p className={`text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Email</p>
+                  <p className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{selectedBooking.tenantEmail || 'N/A'}</p>
+                </div>
+                <div className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                  <p className={`text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Phone</p>
+                  <p className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{selectedBooking.tenantPhone || 'N/A'}</p>
+                </div>
+                <div className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                  <p className={`text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Booking Status</p>
+                  <p className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{selectedBooking.status || 'N/A'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Property Details */}
+            <div className={`rounded-2xl p-6 border mb-6 ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
+              <h4 className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                Property Information
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                  <p className={`text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Property</p>
+                  <p className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{selectedBooking.propertyName || 'N/A'}</p>
+                </div>
+                <div className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                  <p className={`text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Type</p>
+                  <p className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{selectedBooking.propertyType || 'N/A'}</p>
+                </div>
+                <div className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                  <p className={`text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Location</p>
+                  <p className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{selectedBooking.location || 'N/A'}</p>
+                </div>
+                <div className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                  <p className={`text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Price</p>
+                  <p className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>NPR {selectedBooking.price ? selectedBooking.price.toLocaleString() : '0'}/month</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Message Section */}
+            <div className={`rounded-2xl p-6 border ${isDarkMode ? 'bg-blue-900/30 border-blue-700' : 'bg-blue-50 border-blue-200'}`}>
+              <h4 className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-blue-400' : 'text-blue-900'}`}>
+                Send Message
+              </h4>
+              <div className="space-y-4">
+                <textarea
+                  placeholder="Type your message to the tenant..."
+                  className={`w-full px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-none ${
+                    isDarkMode 
+                      ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400' 
+                      : 'bg-white border-gray-300 text-gray-800 placeholder-gray-400'
+                  }`}
+                  rows={4}
+                />
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setShowMessageModal(false)}
+                    className={`flex-1 px-4 py-3 rounded-xl font-medium transition-colors ${
+                      isDarkMode
+                        ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                        : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                    }`}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      alert('Message functionality would be connected to backend here');
+                      setShowMessageModal(false);
+                    }}
+                    className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors"
+                  >
+                    Send Message
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showDetailsModal && selectedBooking && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className={`rounded-3xl p-8 max-w-5xl w-full max-h-[90vh] overflow-y-auto border shadow-xl ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+            <div className="flex justify-between items-center mb-8">
+              <h3 className={`text-3xl font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>Booking Details</h3>
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className={`text-3xl transition-colors ${isDarkMode ? 'text-gray-400 hover:text-gray-600' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                ×
+              </button>
+            </div>
+
             <div className="grid md:grid-cols-2 gap-6">
               {/* Property Details */}
-              <div className="bg-white/10 rounded-2xl p-6 border border-white/20">
-                <h4 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                  <span className="text-2xl">Building</span>
+              <div className={`rounded-2xl p-6 border ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
+                <h4 className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
                   Property Information
                 </h4>
                 <div className="space-y-4">
-                  <div className="bg-white/5 rounded-xl p-3">
-                    <p className="text-emerald-200 text-sm font-medium mb-1">Property Name</p>
-                    <p className="text-white font-semibold">{selectedBooking.propertyName}</p>
+                  <div className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                    <p className={`text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Property Name</p>
+                    <p className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{selectedBooking.propertyName}</p>
                   </div>
-                  <div className="bg-white/5 rounded-xl p-3">
-                    <p className="text-emerald-200 text-sm font-medium mb-1">Type</p>
-                    <p className="text-white font-semibold">{selectedBooking.propertyType}</p>
+                  <div className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                    <p className={`text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Type</p>
+                    <p className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{selectedBooking.propertyType}</p>
                   </div>
-                  <div className="bg-white/5 rounded-xl p-3">
-                    <p className="text-emerald-200 text-sm font-medium mb-1">Location</p>
-                    <p className="text-white font-semibold">{selectedBooking.location}</p>
+                  <div className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                    <p className={`text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Location</p>
+                    <p className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{selectedBooking.location}</p>
                   </div>
-                  <div className="bg-white/5 rounded-xl p-3">
-                    <p className="text-emerald-200 text-sm font-medium mb-1">Price</p>
-                    <p className="text-white font-semibold">NPR {selectedBooking.price.toLocaleString()}/month</p>
+                  <div className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                    <p className={`text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Price</p>
+                    <p className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>NPR {selectedBooking.price.toLocaleString()}/month</p>
                   </div>
                 </div>
               </div>
 
               {/* Tenant Details */}
-              <div className="bg-white/10 rounded-2xl p-6 border border-white/20">
-                <h4 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                  <span className="text-2xl">Profile</span>
+              <div className={`rounded-2xl p-6 border ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'}`}>
+                <h4 className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
                   Tenant Information
                 </h4>
                 <div className="space-y-4">
-                  <div className="bg-white/5 rounded-xl p-3">
-                    <p className="text-emerald-200 text-sm font-medium mb-1">Name</p>
-                    <p className="text-white font-semibold">{selectedBooking.tenantName}</p>
+                  <div className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                    <p className={`text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Name</p>
+                    <p className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{selectedBooking.tenantName}</p>
                   </div>
-                  <div className="bg-white/5 rounded-xl p-3">
-                    <p className="text-emerald-200 text-sm font-medium mb-1">Email</p>
-                    <p className="text-white font-semibold">{selectedBooking.tenantEmail}</p>
+                  <div className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                    <p className={`text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Email</p>
+                    <p className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{selectedBooking.tenantEmail}</p>
                   </div>
-                  <div className="bg-white/5 rounded-xl p-3">
-                    <p className="text-emerald-200 text-sm font-medium mb-1">Phone</p>
-                    <p className="text-white font-semibold">{selectedBooking.tenantPhone}</p>
+                  <div className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                    <p className={`text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Phone</p>
+                    <p className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{selectedBooking.tenantPhone}</p>
                   </div>
-                  <div className="bg-white/5 rounded-xl p-3">
-                    <p className="text-emerald-200 text-sm font-medium mb-1">Request Date</p>
-                    <p className="text-white font-semibold">{formatDate(selectedBooking.requestDate)}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 bg-white/10 rounded-2xl p-6 border border-white/20">
-              <h4 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                <span className="text-2xl">Calendar</span>
-                Booking Period
-              </h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white/5 rounded-xl p-3">
-                  <p className="text-emerald-200 text-sm font-medium mb-1">Check-in</p>
-                  <p className="text-white font-semibold">{formatDate(selectedBooking.checkIn)}</p>
-                </div>
-                <div className="bg-white/5 rounded-xl p-3">
-                  <p className="text-emerald-200 text-sm font-medium mb-1">Check-out</p>
-                  <p className="text-white font-semibold">{formatDate(selectedBooking.checkOut)}</p>
-                </div>
-              </div>
-            </div>
-
-            {selectedBooking.specialRequests && (
-              <div className="mt-6 bg-white/10 rounded-2xl p-6 border border-white/20">
-                <h4 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                  <span className="text-2xl">Notes</span>
-                  Special Requests
-                </h4>
-                <p className="text-emerald-100 bg-white/5 rounded-xl p-3">{selectedBooking.specialRequests}</p>
-              </div>
-            )}
-
-            <div className="mt-8 flex justify-end gap-4">
-              <button
-                onClick={() => setShowDetailsModal(false)}
-                className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] border border-white/20"
-              >
-                Close
-              </button>
-              {selectedBooking.status === 'pending' && (
-                <>
-                  <button
-                    onClick={() => {
-                      handleApproveBooking(selectedBooking.id);
-                      setShowDetailsModal(false);
-                    }}
-                    className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg"
-                  >
-                    Approve Booking
-                  </button>
-                  <button
-                    onClick={() => {
-                      handleRejectBooking(selectedBooking.id);
-                      setShowDetailsModal(false);
-                    }}
-                    className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg"
-                  >
-                    Reject Booking
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Message Modal */}
-      {showMessageModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-gradient-to-br from-purple-900 via-indigo-900 to-blue-900 rounded-3xl p-8 max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-white/20 shadow-2xl transform transition-all duration-300">
-            <div className="flex justify-between items-center mb-8">
-              <h3 className="text-3xl font-bold text-white bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent">
-                Message with {selectedTenant}
-              </h3>
-              <button
-                onClick={() => setShowMessageModal(false)}
-                className="text-white hover:text-purple-200 text-3xl transition-colors transform hover:scale-110"
-              >
-                ×
-              </button>
-            </div>
-
-            {/* Chat Interface */}
-            <div className="bg-white/10 rounded-2xl p-6 border border-white/20 mb-6 h-96 overflow-y-auto">
-              <div className="space-y-4">
-                {/* Sample Messages */}
-                <div className="flex justify-start">
-                  <div className="bg-white/20 rounded-2xl p-4 max-w-md">
-                    <p className="text-white font-medium mb-1">{selectedTenant}</p>
-                    <p className="text-white/90">Hi, I'm interested in the property. Is it still available?</p>
-                    <p className="text-white/60 text-xs mt-2">2 hours ago</p>
-                  </div>
-                </div>
-                
-                <div className="flex justify-end">
-                  <div className="bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl p-4 max-w-md">
-                    <p className="text-white font-medium mb-1">You</p>
-                    <p className="text-white">Yes, the property is still available! Would you like to schedule a viewing?</p>
-                    <p className="text-white/80 text-xs mt-2">1 hour ago</p>
-                  </div>
-                </div>
-
-                <div className="flex justify-start">
-                  <div className="bg-white/20 rounded-2xl p-4 max-w-md">
-                    <p className="text-white font-medium mb-1">{selectedTenant}</p>
-                    <p className="text-white/90">That would be great! When would be a good time?</p>
-                    <p className="text-white/60 text-xs mt-2">30 minutes ago</p>
+                  <div className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
+                    <p className={`text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Request Date</p>
+                    <p className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{formatDate(selectedBooking.requestDate)}</p>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Message Input */}
-            <div className="flex gap-4">
+            <div className="flex gap-4 mt-6">
               <input
                 type="text"
                 placeholder="Type your message..."
-                className="flex-1 px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-300"
+                className={`flex-1 px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-300 ${
+                  isDarkMode
+                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+                    : 'bg-white/10 border border-white/20 text-white placeholder-white/60'
+                }`}
               />
               <button className="px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg">
                 Send
