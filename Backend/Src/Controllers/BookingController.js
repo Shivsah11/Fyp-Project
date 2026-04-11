@@ -117,11 +117,11 @@ export const getTenantBookings = async (req, res) => {
       paymentStatus: booking.paymentStatus ? booking.paymentStatus.toLowerCase() : 'pending',
       image: booking.propertyId?.image || '/api/placeholder/300/200',
       amenities: booking.propertyId?.amenities || [],
-      landlord: booking.propertyId?.landlordId 
-        ? `${booking.propertyId.landlordId.firstName} ${booking.propertyId.landlordId.lastName}` 
+      landlord: booking.propertyId?.landlordId
+        ? `${booking.propertyId.landlordId.firstName} ${booking.propertyId.landlordId.lastName}`
         : 'Unknown Landlord',
-      landlordContact: booking.propertyId?.landlordId 
-        ? `${booking.propertyId.landlordId.email} (${booking.propertyId.landlordId.phone || 'no phone'})` 
+      landlordContact: booking.propertyId?.landlordId
+        ? `${booking.propertyId.landlordId.email} (${booking.propertyId.landlordId.phone || 'no phone'})`
         : 'Unknown Contact',
     }));
 
@@ -132,9 +132,9 @@ export const getTenantBookings = async (req, res) => {
     });
   } catch (error) {
     console.error("Error fetching tenant bookings:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: "Server error fetching your bookings" 
+    res.status(500).json({
+      success: false,
+      message: "Server error fetching your bookings"
     });
   }
 };
