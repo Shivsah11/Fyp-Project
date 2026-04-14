@@ -16,7 +16,8 @@ const propertySchema = new mongoose.Schema({
     enum: ['active', 'inactive', 'pending', 'suspended', 'Available', 'Rented', 'Maintenance'],
     default: 'pending'
   },
-  image: { type: String },
+  images: { type: [String], default: [] },
+  image: { type: String }, // Keep for backward compatibility
   amenities: { type: [String], default: [] },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }

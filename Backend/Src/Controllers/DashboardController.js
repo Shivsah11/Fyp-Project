@@ -21,6 +21,12 @@ export const getDashboardData = async (req, res) => {
       return res.status(404).json({ success: false, message: "User not found" });
     }
 
+    // --- Legacy Support: Generate referral code if missing ---
+    if (!user.referralCode) {
+      user.referralCode = 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+      await user.save();
+    }
+
     // --- ADMIN DASHBOARD ---
     if (userRole === 'Admin') {
       const [totalUsers, totalTenants, totalLandlords, totalProperties, totalBookings, totalPayments] = await Promise.all([
@@ -72,6 +78,27 @@ export const getDashboardData = async (req, res) => {
         return sum + priceNum;
       }, 0);
 
+      // Calculate dynamic monthly revenue for the last 12 months
+      const monthlyRevenue = [];
+      const now = new Date();
+
+      for (let i = 11; i >= 0; i--) {
+        const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const startOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+        const endOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59);
+
+        const monthIncome = allBookings.filter(b => {
+          const bookingDate = new Date(b.createdAt);
+          return (b.status === 'Confirmed' || b.status === 'confirmed' || b.status === 'Completed' || b.status === 'completed') &&
+            bookingDate >= startOfMonth && bookingDate <= endOfMonth;
+        }).reduce((sum, b) => {
+          const priceNum = typeof b.price === 'string' ? parseInt(b.price.replace(/[^0-9]/g, "")) || 0 : b.price;
+          return sum + priceNum;
+        }, 0);
+
+        monthlyRevenue.push(monthIncome);
+      }
+
       const analytics = {
         totalIncome,
         activeTenants: confirmedBookings.length,
@@ -79,7 +106,7 @@ export const getDashboardData = async (req, res) => {
         totalProperties: landlordProperties.length,
         occupancyRate: landlordProperties.length > 0 ? Math.round((confirmedBookings.length / landlordProperties.length) * 100) : 0,
         averageRent: confirmedBookings.length > 0 ? Math.round(totalIncome / confirmedBookings.length) : 0,
-        monthlyRevenue: [0, 0, 0, 0, 0, totalIncome] // Simplified for now
+        monthlyRevenue
       };
 
       return res.status(200).json({
@@ -102,9 +129,9 @@ export const getDashboardData = async (req, res) => {
     const daysUntilRent = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     // Count Active Requests (Pending Bookings)
-    const activeRequestsCount = await Booking.countDocuments({ 
-      tenantId: userId, 
-      status: { $in: ['Pending', 'pending'] } 
+    const activeRequestsCount = await Booking.countDocuments({
+      tenantId: userId,
+      status: { $in: ['Pending', 'pending'] }
     });
 
     const recommendedRoomsRaw = await Property.find({ status: { $in: ['Available', 'available', 'active'] } })
@@ -125,8 +152,8 @@ export const getDashboardData = async (req, res) => {
       stats: {
         daysUntilRent,
         activeRequests: activeRequestsCount,
-        currentRoom: recentBookingsRaw.length > 0 && recentBookingsRaw[0].status.toLowerCase() === 'confirmed' 
-          ? (recentBookingsRaw[0].propertyId ? recentBookingsRaw[0].propertyId.title : 'Owned') 
+        currentRoom: recentBookingsRaw.length > 0 && recentBookingsRaw[0].status.toLowerCase() === 'confirmed'
+          ? (recentBookingsRaw[0].propertyId ? recentBookingsRaw[0].propertyId.title : 'Owned')
           : "No active room"
       },
       recentBookings: recentBookingsRaw.map(b => ({

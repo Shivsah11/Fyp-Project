@@ -1,5 +1,5 @@
 import express from "express";
-import { sendMessage, getMessages, markAsRead, deleteMessage } from "../Controllers/MessageController.js";
+import { sendMessage, getMessages, markAsRead, deleteMessage, getConversations, getConversationMessages } from "../Controllers/MessageController.js";
 import { authenticateToken } from "../Middleware/Auth.js";
 
 const router = express.Router();
@@ -9,6 +9,12 @@ router.use(authenticateToken);
 
 // Get messages for current user
 router.get("/", getMessages);
+
+// Get conversations for current user
+router.get("/conversations", getConversations);
+
+// Get messages for a specific conversation
+router.get("/conversation/:userId", getConversationMessages);
 
 // Send new message
 router.post("/", sendMessage);

@@ -22,6 +22,7 @@ export const getLandlordBookings = async (req, res) => {
     const formattedBookings = bookings.map((booking) => ({
       id: booking._id,
       tenantName: booking.tenantId ? `${booking.tenantId.firstName} ${booking.tenantId.lastName}` : 'Unknown Tenant',
+      tenantId: booking.tenantId ? booking.tenantId._id : null,
       tenantEmail: booking.tenantId ? booking.tenantId.email : 'Unknown Email',
       tenantPhone: booking.tenantId ? booking.tenantId.phone : 'Unknown Phone',
       propertyName: booking.propertyId ? booking.propertyId.title : 'Unknown Property',
@@ -30,9 +31,9 @@ export const getLandlordBookings = async (req, res) => {
       checkIn: booking.checkInDate,
       checkOut: booking.checkOutDate || 'Not specified',
       status: booking.status.toLowerCase(), // Frontend expects lowercase
-      price: parseInt(booking.price.replace(/[^0-9]/g, "")) || 0, // Parse price as number
+      price: (typeof booking.price === 'string' ? parseInt(booking.price.replace(/[^0-9]/g, "")) : (booking.price || 0)),
       paymentStatus: booking.paymentStatus ? booking.paymentStatus.toLowerCase() : 'pending',
-      image: booking.propertyId?.image || '/api/placeholder/300/200',
+      image: booking.propertyId?.image || (booking.propertyId?.images?.length > 0 ? booking.propertyId.images[0] : '/api/placeholder/300/200'),
       amenities: booking.propertyId?.amenities || [],
       requestDate: booking.createdAt,
       specialRequests: booking.specialRequests || '',
@@ -54,10 +55,10 @@ export const getLandlordBookings = async (req, res) => {
 export const updateBookingStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body; // e.g., 'confirmed' or 'cancelled'
+    const { status, paymentStatus, paymentMethod, paymentAmount, paymentReference } = req.body;
     const landlordId = req.user.userId;
 
-    if (!['pending', 'confirmed', 'cancelled', 'completed', 'refunded', 'Pending', 'Confirmed', 'Cancelled'].includes(status)) {
+    if (status && !['pending', 'confirmed', 'cancelled', 'completed', 'refunded', 'Pending', 'Confirmed', 'Cancelled'].includes(status)) {
       return res.status(400).json({ message: "Invalid status" });
     }
 
@@ -67,17 +68,37 @@ export const updateBookingStatus = async (req, res) => {
       return res.status(404).json({ message: "Booking not found" });
     }
 
-    // Verify the logged-in landlord owns the property associated with the booking
-    // Support admins overriding this by checking user role if necessary, but right now ensuring landlordId matches
-    if (booking.propertyId.landlordId.toString() !== landlordId.toString() && req.user.role !== 'Admin') {
+    // Authorization check:
+    // 1. Admin can do anything
+    // 2. Landlord can update if they own the property
+    // 3. Tenant can ONLY cancel their own booking
+    const isAdmin = req.user.role === 'Admin';
+    const isLandlord = req.user.role === 'Landlord' && booking.propertyId.landlordId.toString() === landlordId.toString();
+    const isTenant = req.user.role === 'Tenant' && booking.tenantId.toString() === req.user.userId.toString();
+
+    if (!isAdmin && !isLandlord && !isTenant) {
       return res.status(403).json({ message: "Not authorized to update this booking" });
     }
 
-    booking.status = status;
+    // Restriction: Tenants can ONLY set status to 'cancelled'
+    if (isTenant && !isLandlord && !isAdmin && status !== 'cancelled') {
+        return res.status(403).json({ message: "Tenants can only cancel their own bookings" });
+    }
+
+    if (status) {
+        booking.status = status;
+    }
+    
+    // Update payment fields if provided
+    if (paymentStatus) booking.paymentStatus = paymentStatus;
+    if (paymentMethod) booking.paymentMethod = paymentMethod;
+    if (paymentAmount) booking.paymentAmount = paymentAmount;
+    if (paymentReference) booking.paymentReference = paymentReference;
+
     const updatedBooking = await booking.save();
 
     res.status(200).json({
-      message: `Booking successfully ${status.toLowerCase()}`,
+      message: `Booking successfully updated`,
       data: updatedBooking,
     });
   } catch (error) {
@@ -113,14 +134,17 @@ export const getTenantBookings = async (req, res) => {
       checkIn: booking.checkInDate,
       checkOut: booking.checkOutDate || 'Not specified',
       status: booking.status.toLowerCase(), // Frontend expects lowercase
-      price: parseInt(booking.price.replace(/[^0-9]/g, "")) || 0,
+      price: (typeof booking.price === 'string' ? parseInt(booking.price.replace(/[^0-9]/g, "")) : (booking.price || 0)),
       paymentStatus: booking.paymentStatus ? booking.paymentStatus.toLowerCase() : 'pending',
-      image: booking.propertyId?.image || '/api/placeholder/300/200',
+      image: booking.propertyId?.image || (booking.propertyId?.images?.length > 0 ? booking.propertyId.images[0] : '/api/placeholder/300/200'),
       amenities: booking.propertyId?.amenities || [],
-      landlord: booking.propertyId?.landlordId
+      landlord: booking.propertyId?.landlordId && booking.propertyId.landlordId.firstName
         ? `${booking.propertyId.landlordId.firstName} ${booking.propertyId.landlordId.lastName}`
         : 'Unknown Landlord',
-      landlordContact: booking.propertyId?.landlordId
+      landlordId: booking.landlordId || (booking.propertyId?.landlordId 
+        ? (booking.propertyId.landlordId._id || booking.propertyId.landlordId) 
+        : null),
+      landlordContact: booking.propertyId?.landlordId && booking.propertyId.landlordId.email
         ? `${booking.propertyId.landlordId.email} (${booking.propertyId.landlordId.phone || 'no phone'})`
         : 'Unknown Contact',
     }));

@@ -18,7 +18,9 @@ export const sendMessage = async (req, res) => {
   try {
     const { recipientId, subject, content, type } = req.body;
     const senderId = req.user.userId;
-    const senderModel = req.user.role; // Extract from token
+    // Extract from token and normalize to Title Case ('Tenant', 'Landlord', 'Admin') to match Mongoose refPath Enums
+    const rawRole = req.user.role || 'Tenant';
+    const senderModel = rawRole.charAt(0).toUpperCase() + rawRole.slice(1).toLowerCase();
 
     if (!recipientId || !content) {
       return res.status(400).json({ success: false, message: "Recipient and content are required" });
@@ -151,6 +153,104 @@ export const deleteMessage = async (req, res) => {
     res.status(200).json({ success: true, message: "Message deleted successfully" });
   } catch (error) {
     console.error("Error deleting message:", error);
-    res.status(500).json({ success: false, message: "Server error deleting message" });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
+// @desc    Get all conversations for the current user
+// @route   GET /api/messages/conversations
+// @access  Private
+export const getConversations = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+
+    const messages = await Message.find({
+      $or: [{ senderId: userId }, { recipientId: userId }]
+    }).sort({ createdAt: -1 });
+
+    const conversationsMap = new Map();
+
+    for (const msg of messages) {
+      const isSent = msg.senderId.toString() === userId.toString();
+      const otherPartyId = isSent ? msg.recipientId.toString() : msg.senderId.toString();
+      const otherPartyModel = isSent ? msg.recipientModel : msg.senderModel;
+
+      if (!conversationsMap.has(otherPartyId)) {
+        let otherUser;
+        if (otherPartyModel === 'Tenant') otherUser = await Tenant.findById(otherPartyId).select('firstName lastName email');
+        else if (otherPartyModel === 'Landlord') otherUser = await Landlord.findById(otherPartyId).select('firstName lastName email');
+        else if (otherPartyModel === 'Admin') otherUser = await Admin.findById(otherPartyId).select('firstName lastName email');
+
+        const otherPartyName = otherUser ? `${otherUser.firstName} ${otherUser.lastName}` : "Unknown User";
+
+        conversationsMap.set(otherPartyId, {
+          otherPartyId,
+          otherPartyRole: otherPartyModel,
+          name: otherPartyName,
+          avatar: otherUser ? otherUser.firstName.charAt(0) + otherUser.lastName.charAt(0) : "U",
+          lastMessage: {
+            id: msg._id,
+            content: msg.content,
+            subject: msg.subject,
+            timestamp: msg.createdAt,
+            isRead: msg.isRead,
+            isSent
+          },
+          unreadCount: 0
+        });
+      }
+
+      if (!isSent && !msg.isRead) {
+        conversationsMap.get(otherPartyId).unreadCount++;
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      data: Array.from(conversationsMap.values())
+    });
+  } catch (error) {
+    console.error("Error fetching conversations:", error);
+    res.status(500).json({ success: false, message: "Server error fetching conversations" });
+  }
+};
+
+// @desc    Get messages for a specific conversation
+// @route   GET /api/messages/conversation/:userId
+// @access  Private
+export const getConversationMessages = async (req, res) => {
+  try {
+    const currentUserId = req.user.userId;
+    const { userId: otherUserId } = req.params;
+
+    const messages = await Message.find({
+      $or: [
+        { senderId: currentUserId, recipientId: otherUserId },
+        { senderId: otherUserId, recipientId: currentUserId }
+      ]
+    }).sort({ createdAt: 1 });
+
+    const formattedMessages = messages.map(msg => {
+      const isSent = msg.senderId.toString() === currentUserId.toString();
+      return {
+        id: msg._id,
+        senderId: msg.senderId,
+        recipientId: msg.recipientId,
+        subject: msg.subject,
+        content: msg.content,
+        timestamp: msg.createdAt,
+        isRead: msg.isRead,
+        isSent
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: formattedMessages
+    });
+  } catch (error) {
+    console.error("Error fetching conversation messages:", error);
+    res.status(500).json({ success: false, message: "Server error fetching conversation messages" });
+  }
+};
+

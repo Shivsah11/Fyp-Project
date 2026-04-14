@@ -11,6 +11,7 @@ import bookingRoutes from "./Routes/BookingRoutes.js";
 import propertyRoutes from "./Routes/PropertyRoutes.js";
 import messageRoutes from "./Routes/MessageRoutes.js";
 import paymentRoutes from "./Routes/PaymentRoutes.js";
+import notificationRoutes from "./Routes/NotificationRoutes.js";
 
 dotenv.config();
 connectDB();
@@ -31,6 +32,7 @@ app.use("/api/bookings", bookingRoutes);
 app.use("/api/properties", propertyRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {
