@@ -1,18 +1,19 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDarkMode } from '../../../context/DarkModeContext';
 
 const Settings = () => {
   const { isDarkMode, setDarkMode } = useDarkMode();
   const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'security' | 'preferences'>('profile');
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
-    firstName: 'Alex',
-    lastName: 'Thompson',
-    email: 'alex.thompson@email.com',
-    phone: '+977 9812345678',
-    address: 'Kathmandu, Nepal',
-    bio: 'Experienced landlord with 5+ years in property management.',
-    company: 'Suite Dreams Properties',
-    website: 'www.suitedreams.com'
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    address: '',
+    bio: '',
+    company: '',
+    website: ''
   });
 
   const [notificationSettings, setNotificationSettings] = useState({
@@ -28,8 +29,8 @@ const Settings = () => {
   const [securitySettings, setSecuritySettings] = useState({
     twoFactorAuth: false,
     loginAlerts: true,
-    sessionTimeout: '30' as string,
-    passwordExpiry: '90' as string
+    sessionTimeout: '30',
+    passwordExpiry: '90'
   });
 
   const [preferences, setPreferences] = useState({
@@ -40,14 +41,151 @@ const Settings = () => {
     darkMode: isDarkMode
   });
 
-  const handleProfileUpdate = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert('Profile updated successfully!');
+  const [passwords, setPasswords] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/users/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        const u = data.user;
+        setFormData({
+          firstName: u.firstName || '',
+          lastName: u.lastName || '',
+          email: u.email || '',
+          phone: u.phone || '',
+          address: u.address || '',
+          bio: u.bio || '',
+          company: u.preferences?.company || '',
+          website: u.preferences?.website || ''
+        });
+        if (u.preferences) {
+          setNotificationSettings(prev => ({ ...prev, ...u.preferences }));
+          setSecuritySettings(prev => ({ ...prev, ...u.preferences }));
+          setPreferences(prev => ({ ...prev, ...u.preferences, darkMode: isDarkMode }));
+        }
+      } else {
+        console.error('Failed to fetch profile:', data.message);
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handlePasswordChange = (e: React.FormEvent) => {
+  const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Password changed successfully!');
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Update basic profile
+      const profResp = await fetch('http://localhost:5000/api/users/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phone: formData.phone,
+          address: formData.address,
+          bio: formData.bio
+        })
+      });
+
+      // Update secondary preferences (company, website)
+      await fetch('http://localhost:5000/api/users/preferences', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          company: formData.company,
+          website: formData.website
+        })
+      });
+
+      if (profResp.ok) {
+        alert('Profile updated successfully!');
+      } else {
+        const data = await profResp.json();
+        alert(`Failed to update: ${data.message || 'Error'}`);
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      alert('Connection error while updating profile');
+    }
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!passwords.currentPassword || !passwords.newPassword || !passwords.confirmPassword) {
+      alert('All password fields are required!');
+      return;
+    }
+    if (passwords.newPassword !== passwords.confirmPassword) {
+      alert('New passwords do not match!');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/users/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          currentPassword: passwords.currentPassword,
+          newPassword: passwords.newPassword
+        })
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        alert('Password changed successfully!');
+        setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      } else {
+        alert(data.message || 'Failed to change password');
+      }
+    } catch (error) {
+      console.error('Error changing password:', error);
+      alert('Connection error while changing password');
+    }
+  };
+
+  const savePreferences = async (newPrefs: any) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/users/preferences', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(newPrefs)
+      });
+      if (!response.ok) console.error('Failed to auto-save preferences');
+    } catch (error) {
+      console.error('Error auto-saving preferences:', error);
+    }
   };
 
   const tabs = [
@@ -64,6 +202,14 @@ const Settings = () => {
   }`;
 
   const labelClasses = `block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className={`p-6 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
@@ -205,6 +351,8 @@ const Settings = () => {
                     <input
                       type="password"
                       className={inputClasses}
+                      value={passwords.currentPassword}
+                      onChange={(e) => setPasswords({...passwords, currentPassword: e.target.value})}
                       placeholder="Enter current password"
                     />
                   </div>
@@ -213,6 +361,8 @@ const Settings = () => {
                     <input
                       type="password"
                       className={inputClasses}
+                      value={passwords.newPassword}
+                      onChange={(e) => setPasswords({...passwords, newPassword: e.target.value})}
                       placeholder="Enter new password"
                     />
                   </div>
@@ -221,6 +371,8 @@ const Settings = () => {
                     <input
                       type="password"
                       className={inputClasses}
+                      value={passwords.confirmPassword}
+                      onChange={(e) => setPasswords({...passwords, confirmPassword: e.target.value})}
                       placeholder="Confirm new password"
                     />
                   </div>
@@ -260,7 +412,11 @@ const Settings = () => {
                         <input
                           type="checkbox"
                           checked={notificationSettings[item.key as keyof typeof notificationSettings]}
-                          onChange={(e) => setNotificationSettings({...notificationSettings, [item.key]: e.target.checked})}
+                          onChange={(e) => {
+                            const val = e.target.checked;
+                            setNotificationSettings({...notificationSettings, [item.key]: val});
+                            savePreferences({ [item.key]: val });
+                          }}
                           className="sr-only peer"
                         />
                         <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-blue-600 peer-checked:to-blue-700 border-2 border-gray-400"></div>
@@ -292,7 +448,11 @@ const Settings = () => {
                         <input
                           type="checkbox"
                           checked={!!securitySettings[item.key as keyof typeof securitySettings]}
-                          onChange={(e) => setSecuritySettings({...securitySettings, [item.key]: e.target.checked})}
+                          onChange={(e) => {
+                            const val = e.target.checked;
+                            setSecuritySettings({...securitySettings, [item.key]: val});
+                            savePreferences({ [item.key]: val });
+                          }}
                           className="sr-only peer"
                         />
                         <div className="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-blue-600 peer-checked:to-blue-700 border-2 border-gray-400"></div>
@@ -344,7 +504,11 @@ const Settings = () => {
                       <label className={labelClasses}>Language</label>
                       <select
                         value={preferences.language}
-                        onChange={(e) => setPreferences({...preferences, language: e.target.value})}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setPreferences({...preferences, language: val});
+                          savePreferences({ language: val });
+                        }}
                         className={inputClasses}
                       >
                         <option value="english" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>English</option>
@@ -356,7 +520,11 @@ const Settings = () => {
                       <label className={labelClasses}>Timezone</label>
                       <select
                         value={preferences.timezone}
-                        onChange={(e) => setPreferences({...preferences, timezone: e.target.value})}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setPreferences({...preferences, timezone: val});
+                          savePreferences({ timezone: val });
+                        }}
                         className={inputClasses}
                       >
                         <option value="Asia/Kathmandu" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>Asia/Kathmandu</option>

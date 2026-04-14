@@ -5,13 +5,18 @@ const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    // Reset messages
+    setError('');
+    setSuccess('');
+
     // Basic validation
     if (!email || !password) {
-      alert('Please enter both email and password');
+      setError('Please enter both email and password');
       return;
     }
 
@@ -33,14 +38,14 @@ const Login = () => {
           localStorage.setItem('userRole', data.user.role);
           localStorage.setItem('userName', `${data.user.firstName} ${data.user.lastName}`);
         }
-        alert(data.message);
-        navigate('/dashboard');
+        setSuccess(data.message || 'Login successful!');
+        setTimeout(() => navigate('/dashboard'), 1000);
       } else {
-        alert(data.message || 'Login failed');
+        setError(data.message || 'Login failed. Please check your credentials.');
       }
     } catch (error) {
       console.error('Login error:', error);
-      alert('Server error. Please try again.');
+      setError('Connection error. Please ensure the backend is running.');
     }
   };
 
@@ -94,18 +99,38 @@ const Login = () => {
               <input type="checkbox" className="w-4 h-4 text-teal-500 border-gray-300 rounded focus:ring-teal-400 bg-white border-gray-300" />
               Remember me
             </label>
-            <a href="#" className="text-teal-600 hover:text-teal-700 font-medium transition-colors">
+            <Link to="/forgot-password" data-id="forgot-password-link" className="text-teal-600 hover:text-teal-700 font-medium transition-colors">
               Forgot password?
-            </a>
+            </Link>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm font-medium animate-in fade-in slide-in-from-top-2">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                {error}
+              </div>
+            </div>
+          )}
+
+          {/* Success Message */}
+          {success && (
+            <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-600 rounded-xl text-sm font-medium animate-in fade-in slide-in-from-top-2">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                {success}
+              </div>
+            </div>
+          )}
 
           {/* Login Button */}
           <button type="submit" className="w-full bg-gradient-to-r from-teal-500 to-cyan-600 text-white py-3 rounded-xl font-semibold hover:from-teal-600 hover:to-cyan-700 transition-all duration-300 transform hover:scale-[1.02] shadow-lg border border-teal-400/30">
             Log In
           </button>
 
-          
-          
+
+
           {/* Sign up link */}
           <p className="text-gray-700 text-center">
             New to Suite Dreams?{" "}

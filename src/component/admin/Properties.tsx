@@ -40,20 +40,20 @@ const Properties = () => {
     try {
       setIsLoading(true);
       console.log('🔍 Fetching admin properties from backend...');
-      
+
       // Temporarily remove token requirement for testing
       const token = localStorage.getItem('token');
       console.log('📋 Token available:', !!token);
-      
+
       const headers: any = {
         'Content-Type': 'application/json',
       };
-      
+
       // Only add authorization if token exists
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
-      
+
       const response = await fetch('http://localhost:5000/api/admin/properties', {
         headers: headers,
       });
@@ -65,7 +65,7 @@ const Properties = () => {
         console.log('✅ Admin properties response:', data);
         const properties = data.properties || [];
         console.log('📊 Properties count:', properties.length);
-        
+
         if (properties.length > 0) {
           console.log('🏠 Sample property:', properties[0]);
         }
@@ -93,13 +93,13 @@ const Properties = () => {
         console.log('🔄 Transformed properties:', transformedProperties);
         setProperties(transformedProperties);
         setFilteredProperties(transformedProperties);
-        
+
         console.log('✅ Successfully loaded', transformedProperties.length, 'properties from backend');
       } else {
         console.error('❌ Backend response not OK:', response.status);
         const errorText = await response.text();
         console.error('❌ Error response:', errorText);
-        
+
         // Try to get properties from localStorage as fallback
         console.log('🔄 Checking localStorage for properties...');
         const allProperties = localStorage.getItem('allProperties');
@@ -107,7 +107,7 @@ const Properties = () => {
           try {
             const properties = JSON.parse(allProperties);
             console.log('📦 Properties from localStorage:', properties);
-            
+
             const transformedProperties = properties.map((property: any) => ({
               id: property._id || property.id,
               title: property.title || property.propertyName || 'Untitled Property',
@@ -126,7 +126,7 @@ const Properties = () => {
               createdAt: property.createdAt || new Date().toISOString(),
               updatedAt: property.updatedAt || new Date().toISOString()
             }));
-            
+
             setProperties(transformedProperties);
             setFilteredProperties(transformedProperties);
             console.log('✅ Loaded', transformedProperties.length, 'properties from localStorage');
@@ -143,7 +143,7 @@ const Properties = () => {
       }
     } catch (error) {
       console.error('❌ Fetch properties error:', error);
-      
+
       // Try localStorage as last resort
       const allProperties = localStorage.getItem('allProperties');
       if (allProperties) {
@@ -167,7 +167,7 @@ const Properties = () => {
             createdAt: property.createdAt || new Date().toISOString(),
             updatedAt: property.updatedAt || new Date().toISOString()
           }));
-          
+
           setProperties(transformedProperties);
           setFilteredProperties(transformedProperties);
           console.log('✅ Loaded', transformedProperties.length, 'properties from localStorage (fallback)');
@@ -212,23 +212,23 @@ const Properties = () => {
   const getStatusColor = (status: Property['status']) => {
     switch (status) {
       case 'active':
-        return isDarkMode 
+        return isDarkMode
           ? 'bg-green-900/30 text-green-400 border-green-700'
           : 'bg-green-100 text-green-800 border-green-200';
       case 'inactive':
-        return isDarkMode 
+        return isDarkMode
           ? 'bg-gray-900/30 text-gray-400 border-gray-700'
           : 'bg-gray-100 text-gray-800 border-gray-200';
       case 'pending':
-        return isDarkMode 
+        return isDarkMode
           ? 'bg-yellow-900/30 text-yellow-400 border-yellow-700'
           : 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'suspended':
-        return isDarkMode 
+        return isDarkMode
           ? 'bg-red-900/30 text-red-400 border-red-700'
           : 'bg-red-100 text-red-800 border-red-200';
       default:
-        return isDarkMode 
+        return isDarkMode
           ? 'bg-gray-900/30 text-gray-400 border-gray-700'
           : 'bg-gray-100 text-gray-800 border-gray-200';
     }
@@ -369,15 +369,15 @@ const Properties = () => {
             placeholder="Search by title, location, or landlord..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className={`flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${isDarkMode 
-              ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+            className={`flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${isDarkMode
+              ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
               : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'}`}
           />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
-            className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${isDarkMode 
-              ? 'bg-gray-700 border-gray-600 text-white' 
+            className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${isDarkMode
+              ? 'bg-gray-700 border-gray-600 text-white'
               : 'bg-white border-gray-300 text-gray-900'}`}
           >
             <option value="all">All Status</option>
@@ -389,8 +389,8 @@ const Properties = () => {
           <select
             value={typeFilter}
             onChange={(e) => setTypeFilter(e.target.value as any)}
-            className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${isDarkMode 
-              ? 'bg-gray-700 border-gray-600 text-white' 
+            className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${isDarkMode
+              ? 'bg-gray-700 border-gray-600 text-white'
               : 'bg-white border-gray-300 text-gray-900'}`}
           >
             <option value="all">All Types</option>
@@ -506,8 +506,8 @@ const Properties = () => {
             {/* Property Image */}
             <div className="mb-6">
               <div className={`w-full h-64 ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'} rounded-xl overflow-hidden`}>
-                <img 
-                  src={selectedProperty.images[0] || '/api/placeholder/600/400'} 
+                <img
+                  src={selectedProperty.images[0] || '/api/placeholder/600/400'}
                   alt={selectedProperty.title}
                   className="w-full h-full object-cover"
                   onError={(e) => {
@@ -581,8 +581,8 @@ const Properties = () => {
               <h4 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-3`}>Amenities</h4>
               <div className="flex flex-wrap gap-2">
                 {selectedProperty.amenities.map((amenity, index) => (
-                  <span key={index} className={`px-3 py-1 rounded-full text-sm font-medium ${isDarkMode 
-                    ? 'bg-blue-900/30 text-blue-400' 
+                  <span key={index} className={`px-3 py-1 rounded-full text-sm font-medium ${isDarkMode
+                    ? 'bg-blue-900/30 text-blue-400'
                     : 'bg-blue-100 text-blue-800'}`}>
                     {amenity}
                   </span>

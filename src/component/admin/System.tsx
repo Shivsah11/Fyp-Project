@@ -108,7 +108,7 @@ const System = () => {
   const handleSave = async () => {
     setIsLoadingSave(true);
     setSaveMessage('');
-    
+
     // Simulate API call
     setTimeout(() => {
       setIsLoadingSave(false);
@@ -135,7 +135,7 @@ const System = () => {
 
   const updateSetting = (category: keyof SystemSettings, field: string, value: any) => {
     if (!settings) return;
-    
+
     setSettings(prev => ({
       ...prev!,
       [category]: {
@@ -215,11 +215,10 @@ const System = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === tab.id
+              className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors ${activeTab === tab.id
                   ? 'border-blue-500 text-blue-600'
                   : `border-transparent ${isDarkMode ? 'text-gray-500 hover:text-gray-300 hover:border-gray-600' : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'}`
-              }`}
+                }`}
             >
               <span className="mr-2">{tab.icon}</span>
               {tab.label}
@@ -234,7 +233,7 @@ const System = () => {
         {activeTab === 'general' && (
           <div className="p-6 space-y-6">
             <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4`}>General Settings</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Site Name</label>
@@ -242,31 +241,31 @@ const System = () => {
                   type="text"
                   value={settings.general.siteName}
                   onChange={(e) => updateSetting('general', 'siteName', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode 
-                    ? 'bg-gray-700 border-gray-600 text-white' 
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode
+                    ? 'bg-gray-700 border-gray-600 text-white'
                     : 'bg-white border-gray-300 text-gray-900'}`}
                 />
               </div>
-              
+
               <div>
                 <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Site Email</label>
                 <input
                   type="email"
                   value={settings.general.siteEmail}
                   onChange={(e) => updateSetting('general', 'siteEmail', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode 
-                    ? 'bg-gray-700 border-gray-600 text-white' 
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode
+                    ? 'bg-gray-700 border-gray-600 text-white'
                     : 'bg-white border-gray-300 text-gray-900'}`}
                 />
               </div>
-              
+
               <div>
                 <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Timezone</label>
                 <select
                   value={settings.general.timezone}
                   onChange={(e) => updateSetting('general', 'timezone', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode 
-                    ? 'bg-gray-700 border-gray-600 text-white' 
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode
+                    ? 'bg-gray-700 border-gray-600 text-white'
                     : 'bg-white border-gray-300 text-gray-900'}`}
                 >
                   <option value="Asia/Kathmandu">Asia/Kathmandu</option>
@@ -274,14 +273,14 @@ const System = () => {
                   <option value="UTC">UTC</option>
                 </select>
               </div>
-              
+
               <div>
                 <label className={`block text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'} mb-2`}>Currency</label>
                 <select
                   value={settings.general.currency}
                   onChange={(e) => updateSetting('general', 'currency', e.target.value)}
-                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode 
-                    ? 'bg-gray-700 border-gray-600 text-white' 
+                  className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode
+                    ? 'bg-gray-700 border-gray-600 text-white'
                     : 'bg-white border-gray-300 text-gray-900'}`}
                 >
                   <option value="NPR">NPR (Nepalese Rupee)</option>
@@ -290,7 +289,7 @@ const System = () => {
                 </select>
               </div>
             </div>
-            
+
             <div className="flex items-center">
               <input
                 type="checkbox"
@@ -309,7 +308,7 @@ const System = () => {
         {activeTab === 'booking' && (
           <div className="p-6 space-y-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Booking Settings</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Minimum Booking Days</label>
@@ -320,7 +319,7 @@ const System = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Maximum Booking Days</label>
                 <input
@@ -330,7 +329,7 @@ const System = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Cancellation Policy</label>
                 <textarea
@@ -341,7 +340,7 @@ const System = () => {
                 />
               </div>
             </div>
-            
+
             <div className="space-y-4">
               <div className="flex items-center">
                 <input
@@ -354,7 +353,7 @@ const System = () => {
                   Auto-confirm Bookings
                 </label>
               </div>
-              
+
               <div className="flex items-center">
                 <input
                   type="checkbox"
@@ -374,7 +373,7 @@ const System = () => {
         {activeTab === 'payment' && (
           <div className="p-6 space-y-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Payment Settings</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Default Gateway</label>
@@ -388,7 +387,7 @@ const System = () => {
                   <option value="bank-transfer">Bank Transfer</option>
                 </select>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Auto Refund Days</label>
                 <input
@@ -398,7 +397,7 @@ const System = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Payment Reminder Days</label>
                 <input
@@ -409,7 +408,7 @@ const System = () => {
                 />
               </div>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Enabled Payment Gateways</label>
               <div className="space-y-2">
@@ -440,7 +439,7 @@ const System = () => {
         {activeTab === 'notifications' && (
           <div className="p-6 space-y-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Notification Settings</h3>
-            
+
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -454,7 +453,7 @@ const System = () => {
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">SMS Notifications</label>
@@ -467,7 +466,7 @@ const System = () => {
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Booking Alerts</label>
@@ -480,7 +479,7 @@ const System = () => {
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Payment Alerts</label>
@@ -493,7 +492,7 @@ const System = () => {
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
               </div>
-              
+
               <div className="flex items-center justify-between">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">System Alerts</label>
@@ -514,7 +513,7 @@ const System = () => {
         {activeTab === 'security' && (
           <div className="p-6 space-y-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Security Settings</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Session Timeout (minutes)</label>
@@ -525,7 +524,7 @@ const System = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Password Minimum Length</label>
                 <input
@@ -535,7 +534,7 @@ const System = () => {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Max Login Attempts</label>
                 <input
@@ -546,7 +545,7 @@ const System = () => {
                 />
               </div>
             </div>
-            
+
             <div className="space-y-4">
               <div className="flex items-center">
                 <input
@@ -560,7 +559,7 @@ const System = () => {
                 </label>
               </div>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">IP Whitelist</label>
               <div className="space-y-2">
@@ -602,7 +601,7 @@ const System = () => {
         {activeTab === 'backup' && (
           <div className="p-6 space-y-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Backup Settings</h3>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Backup Frequency</label>
@@ -617,7 +616,7 @@ const System = () => {
                   <option value="monthly">Monthly</option>
                 </select>
               </div>
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Retention Days</label>
                 <input
@@ -628,7 +627,7 @@ const System = () => {
                 />
               </div>
             </div>
-            
+
             <div className="space-y-4">
               <div className="flex items-center">
                 <input
@@ -642,7 +641,7 @@ const System = () => {
                 </label>
               </div>
             </div>
-            
+
             <div className="bg-gray-50 p-4 rounded-lg">
               <p className="text-sm text-gray-700">
                 <strong>Last Backup:</strong> {settings.backup.lastBackup}

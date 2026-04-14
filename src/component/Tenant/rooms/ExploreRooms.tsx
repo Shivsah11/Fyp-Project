@@ -36,7 +36,7 @@ const ExploreRooms = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
+  const [viewMode, _setViewMode] = useState<'grid' | 'map'>('grid');
 
   useEffect(() => {
     const fetchRooms = async () => {
@@ -236,6 +236,7 @@ const ExploreRooms = () => {
           image: room.images?.[0] || '',
           amenities: room.amenities || [],
           landlord: room.landlord,
+          landlordId: room.landlordId,
           landlordContact: room.contactInfo
         };
 
@@ -279,6 +280,7 @@ const ExploreRooms = () => {
           image: room.images?.[0] || '',
           amenities: room.amenities || [],
           landlord: room.landlord,
+          landlordId: room.landlordId,
           landlordContact: room.contactInfo
         };
 
@@ -397,8 +399,8 @@ const ExploreRooms = () => {
     <div className={`w-full h-full min-h-screen ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
 
       {/* Search and Filters Header */}
-      <div className={`relative pt-8 pb-6 px-6 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
-        <div className="max-w-7xl mx-auto">
+      <div className={`relative pt-8 pb-6 ${isDarkMode ? 'bg-gray-900' : 'bg-white'}`}>
+        <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-8">
             <h1 className={`text-4xl font-black italic mb-2 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Explore Rooms</h1>
             <p className={`text-[10px] font-bold uppercase tracking-[0.2rem] ${isDarkMode ? 'text-emerald-500' : 'text-emerald-600'}`}>Find your perfect stay in the city</p>
@@ -500,7 +502,7 @@ const ExploreRooms = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-12">
+      <div className="w-full mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-32 space-y-8">
             <div className="w-24 h-24 border-[6px] border-emerald-500 border-t-transparent rounded-full animate-spin"></div>

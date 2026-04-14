@@ -101,23 +101,23 @@ const Analytics = () => {
   const getActivityColor = (type: string) => {
     switch (type) {
       case 'booking':
-        return isDarkMode 
+        return isDarkMode
           ? 'bg-blue-900/30 text-blue-400'
           : 'bg-blue-100 text-blue-800';
       case 'payment':
-        return isDarkMode 
+        return isDarkMode
           ? 'bg-green-900/30 text-green-400'
           : 'bg-green-100 text-green-800';
       case 'property':
-        return isDarkMode 
+        return isDarkMode
           ? 'bg-purple-900/30 text-purple-400'
           : 'bg-purple-100 text-purple-800';
       case 'user':
-        return isDarkMode 
+        return isDarkMode
           ? 'bg-orange-900/30 text-orange-400'
           : 'bg-orange-100 text-orange-800';
       default:
-        return isDarkMode 
+        return isDarkMode
           ? 'bg-gray-900/30 text-gray-400'
           : 'bg-gray-100 text-gray-800';
     }
@@ -162,19 +162,27 @@ const Analytics = () => {
     <div className="space-y-6">
       {/* Header with Time Range Selector */}
       <div className="flex justify-between items-center">
-        <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Analytics Dashboard</h2>
-        <select
-          value={timeRange}
-          onChange={(e) => setTimeRange(e.target.value as any)}
-          className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode 
-            ? 'bg-gray-700 border-gray-600 text-white' 
-            : 'bg-white border-gray-300 text-gray-900'}`}
-        >
-          <option value="7days">Last 7 Days</option>
-          <option value="30days">Last 30 Days</option>
-          <option value="90days">Last 90 Days</option>
-          <option value="1year">Last Year</option>
-        </select>
+        <div className="flex flex-col">
+          <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>Analytics Dashboard</h2>
+        </div>
+        <div className="flex flex-col items-end gap-2">
+          <p className={`text-[10px] font-black uppercase tracking-[0.2em] mb-1 ${isDarkMode ? 'text-blue-400/40' : 'text-blue-600/40'}`}>
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          </p>
+          <select
+            value={timeRange}
+            onChange={(e) => setTimeRange(e.target.value as any)}
+            className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${isDarkMode
+              ? 'bg-gray-700 border-gray-600 text-white'
+              : 'bg-white border-gray-300 text-gray-900'}`}
+          >
+
+            <option value="7days">Last 7 Days</option>
+            <option value="30days">Last 30 Days</option>
+            <option value="90days">Last 90 Days</option>
+            <option value="1year">Last Year</option>
+          </select>
+        </div>
       </div>
 
       {/* Key Metrics Cards */}
@@ -237,44 +245,52 @@ const Analytics = () => {
         {/* Revenue Chart */}
         <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} rounded-lg p-6`}>
           <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4`}>Monthly Revenue Trend</h3>
-          <div className="h-40 flex items-end justify-between space-x-2">
-            {analyticsData.monthlyRevenue.slice(-6).map((revenue, index) => (
-              <div key={index} className="flex-1 flex flex-col items-center">
-                <div 
-                  className={`w-full bg-blue-500 rounded-t hover:bg-blue-600 transition-colors`}
-                  style={{ 
-                    height: `${(revenue / Math.max(...analyticsData.monthlyRevenue)) * 120}px`,
-                    minHeight: '20px'
-                  }}
-                  title={formatCurrency(revenue)}
-                ></div>
-                <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-2`}>
-                  {new Date(2024, index + 6).toLocaleDateString('en', { month: 'short' })}
-                </span>
-              </div>
-            ))}
+          <div className="h-40 flex items-end justify-between space-x-1">
+            {analyticsData.monthlyRevenue.map((revenue, index) => {
+              const now = new Date();
+              const monthDate = new Date(now.getFullYear(), now.getMonth() - (11 - index), 1);
+              return (
+                <div key={index} className="flex-1 flex flex-col items-center">
+                  <div
+                    className={`w-full bg-blue-500 rounded-t hover:bg-blue-600 transition-all duration-500`}
+                    style={{
+                      height: `${Math.max((revenue / (Math.max(...analyticsData.monthlyRevenue) || 1)) * 120, 5)}px`,
+                      minHeight: '4px'
+                    }}
+                    title={`${monthDate.toLocaleDateString('en', { month: 'long', year: 'numeric' })}: ${formatCurrency(revenue)}`}
+                  ></div>
+                  <span className={`text-[9px] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-2 rotate-45 origin-left`}>
+                    {monthDate.toLocaleDateString('en', { month: 'short' })}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
 
         {/* Bookings Chart */}
         <div className={`${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} rounded-lg p-6`}>
           <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-gray-900'} mb-4`}>Monthly Bookings Trend</h3>
-          <div className="h-40 flex items-end justify-between space-x-2">
-            {analyticsData.monthlyBookings.slice(-6).map((bookings, index) => (
-              <div key={index} className="flex-1 flex flex-col items-center">
-                <div 
-                  className={`w-full bg-green-500 rounded-t hover:bg-green-600 transition-colors`}
-                  style={{ 
-                    height: `${(bookings / Math.max(...analyticsData.monthlyBookings)) * 120}px`,
-                    minHeight: '20px'
-                  }}
-                  title={`${bookings} bookings`}
-                ></div>
-                <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'} mt-2`}>
-                  {new Date(2024, index + 6).toLocaleDateString('en', { month: 'short' })}
-                </span>
-              </div>
-            ))}
+          <div className="h-40 flex items-end justify-between space-x-1">
+            {analyticsData.monthlyBookings.map((bookings, index) => {
+              const now = new Date();
+              const monthDate = new Date(now.getFullYear(), now.getMonth() - (11 - index), 1);
+              return (
+                <div key={index} className="flex-1 flex flex-col items-center">
+                  <div
+                    className={`w-full bg-green-500 rounded-t hover:bg-green-600 transition-all duration-500`}
+                    style={{
+                      height: `${Math.max((bookings / (Math.max(...analyticsData.monthlyBookings) || 1)) * 120, 5)}px`,
+                      minHeight: '4px'
+                    }}
+                    title={`${monthDate.toLocaleDateString('en', { month: 'long', year: 'numeric' })}: ${bookings} bookings`}
+                  ></div>
+                  <span className={`text-[9px] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} mt-2 rotate-45 origin-left`}>
+                    {monthDate.toLocaleDateString('en', { month: 'short' })}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

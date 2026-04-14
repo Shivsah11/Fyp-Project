@@ -23,14 +23,14 @@ const RequestList = ({ refreshKey }: { refreshKey?: number }) => {
       setRequests([]);
       return;
     }
-    
+
     // Create user-specific storage key
     const userId = JSON.parse(atob(token.split('.')[1])).userId;
     const tenantRequestsKey = `tenantRequests_${userId}`;
-    
+
     // Load requests from user-specific localStorage
     const storedRequests = JSON.parse(localStorage.getItem(tenantRequestsKey) || '[]');
-    
+
     // Add some mock requests if none exist
     if (storedRequests.length === 0) {
       const mockRequests: Request[] = [
@@ -79,11 +79,11 @@ const RequestList = ({ refreshKey }: { refreshKey?: number }) => {
   const handleDelete = (id: string) => {
     const token = localStorage.getItem('token');
     if (!token) return;
-    
+
     // Create user-specific storage key
     const userId = JSON.parse(atob(token.split('.')[1])).userId;
     const tenantRequestsKey = `tenantRequests_${userId}`;
-    
+
     const updated = requests.filter(r => r.id !== id);
     setRequests(updated);
     localStorage.setItem(tenantRequestsKey, JSON.stringify(updated));
@@ -105,23 +105,23 @@ const RequestList = ({ refreshKey }: { refreshKey?: number }) => {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'low': 
-        return isDarkMode 
+      case 'low':
+        return isDarkMode
           ? 'bg-green-900/30 text-green-400 border-green-700'
           : 'bg-green-100 text-green-800 border-green-200';
-      case 'normal': 
+      case 'normal':
         return isDarkMode
           ? 'bg-blue-900/30 text-blue-400 border-blue-700'
           : 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'high': 
+      case 'high':
         return isDarkMode
           ? 'bg-orange-900/30 text-orange-400 border-orange-700'
           : 'bg-orange-100 text-orange-800 border-orange-200';
-      case 'urgent': 
+      case 'urgent':
         return isDarkMode
           ? 'bg-red-900/30 text-red-400 border-red-700'
           : 'bg-red-100 text-red-800 border-red-200';
-      default: 
+      default:
         return isDarkMode
           ? 'bg-gray-700 text-gray-300 border-gray-600'
           : 'bg-gray-100 text-gray-800 border-gray-200';
@@ -130,37 +130,36 @@ const RequestList = ({ refreshKey }: { refreshKey?: number }) => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pending': 
+      case 'pending':
         return isDarkMode
           ? 'bg-yellow-900/30 text-yellow-400 border-yellow-700'
           : 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'in-progress': 
+      case 'in-progress':
         return isDarkMode
           ? 'bg-blue-900/30 text-blue-400 border-blue-700'
           : 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'resolved': 
+      case 'resolved':
         return isDarkMode
           ? 'bg-green-900/30 text-green-400 border-green-700'
           : 'bg-green-100 text-green-800 border-green-200';
-      case 'rejected': 
+      case 'rejected':
         return isDarkMode
           ? 'bg-red-900/30 text-red-400 border-red-700'
           : 'bg-red-100 text-red-800 border-red-200';
-      default: 
+      default:
         return isDarkMode
           ? 'bg-gray-700 text-gray-300 border-gray-600'
           : 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
-  const filteredRequests = requests.filter(request => 
+  const filteredRequests = requests.filter(request =>
     filter === 'all' || request.status === filter
   );
 
   return (
-    <div className={`rounded-xl p-6 border ${
-      isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
-    }`}>
+    <div className={`rounded-xl p-6 border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+      }`}>
       <div className="flex justify-between items-center mb-6">
         <h3 className={`text-lg font-bold ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>My Requests</h3>
         <div className="flex gap-2">
@@ -173,13 +172,12 @@ const RequestList = ({ refreshKey }: { refreshKey?: number }) => {
             <button
               key={filterOption.value}
               onClick={() => setFilter(filterOption.value as any)}
-              className={`px-3 py-1 text-xs rounded-full border transition-all duration-300 ${
-                filter === filterOption.value
-                  ? 'bg-blue-500 text-white border-blue-600'
-                  : isDarkMode
-                    ? 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600'
-                    : 'bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200'
-              }`}
+              className={`px-3 py-1 text-xs rounded-full border transition-all duration-300 ${filter === filterOption.value
+                ? 'bg-blue-500 text-white border-blue-600'
+                : isDarkMode
+                  ? 'bg-gray-700 text-gray-300 border-gray-600 hover:bg-gray-600'
+                  : 'bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200'
+                }`}
             >
               {filterOption.label}
             </button>
@@ -196,11 +194,10 @@ const RequestList = ({ refreshKey }: { refreshKey?: number }) => {
           </div>
         ) : (
           filteredRequests.map((request) => (
-            <div key={request.id} className={`rounded-lg p-4 border transition-all duration-300 group ${
-              isDarkMode
-                ? 'bg-gray-700 border-gray-600 hover:bg-gray-600'
-                : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-            }`}>
+            <div key={request.id} className={`rounded-lg p-4 border transition-all duration-300 group ${isDarkMode
+              ? 'bg-gray-700 border-gray-600 hover:bg-gray-600'
+              : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+              }`}>
               <div className="flex items-start gap-3">
                 <div className="text-2xl">{getRequestIcon(request.type)}</div>
                 <div className="flex-1">
@@ -223,11 +220,10 @@ const RequestList = ({ refreshKey }: { refreshKey?: number }) => {
                 <button
                   onClick={() => handleDelete(request.id)}
                   title="Delete request"
-                  className={`opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-2 rounded-lg flex-shrink-0 ${
-                    isDarkMode
-                      ? 'hover:bg-red-900/30 text-gray-400 hover:text-red-400'
-                      : 'hover:bg-red-100 text-gray-400 hover:text-red-500'
-                  }`}
+                  className={`opacity-0 group-hover:opacity-100 transition-opacity duration-200 p-2 rounded-lg flex-shrink-0 ${isDarkMode
+                    ? 'hover:bg-red-900/30 text-gray-400 hover:text-red-400'
+                    : 'hover:bg-red-100 text-gray-400 hover:text-red-500'
+                    }`}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="3 6 5 6 21 6" />
@@ -243,12 +239,11 @@ const RequestList = ({ refreshKey }: { refreshKey?: number }) => {
       </div>
 
       {requests.length > 0 && (
-        <button className={`w-full mt-4 text-sm font-medium transition-colors ${
-          isDarkMode
-            ? 'text-blue-400 hover:text-blue-300'
-            : 'text-blue-600 hover:text-blue-700'
-        }`}>
-          View All Requests ({requests.length}) 
+        <button className={`w-full mt-4 text-sm font-medium transition-colors ${isDarkMode
+          ? 'text-blue-400 hover:text-blue-300'
+          : 'text-blue-600 hover:text-blue-700'
+          }`}>
+          View All Requests ({requests.length})
         </button>
       )}
     </div>

@@ -24,68 +24,102 @@ const NotificationContext = createContext<NotificationContextType | undefined>(u
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode; userType: 'tenant' | 'landlord' }> = ({ children, userType }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const storageKey = userType === 'tenant' ? 'tenantNotifications' : 'landlordNotifications';
+  const [loading, setLoading] = useState(false);
 
-  // Load notifications from local storage
-  const loadNotifications = useCallback(() => {
-    const stored = localStorage.getItem(storageKey);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          setNotifications(parsed);
-        } else {
-          setNotifications([]);
+  // Load notifications from Backend
+  const loadNotifications = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      setLoading(true);
+      const response = await fetch('http://localhost:5000/api/notifications', {
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
-      } catch (e) {
-        console.error('Failed to parse notifications', e);
-        setNotifications([]);
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        // Map _id to id for frontend compatibility
+        const mapped = result.data.map((n: any) => ({
+          ...n,
+          id: n._id
+        }));
+        setNotifications(mapped);
       }
+    } catch (e) {
+      console.error('Failed to load notifications from backend', e);
+    } finally {
+      setLoading(false);
     }
-  }, [storageKey]);
+  }, []);
 
   useEffect(() => {
     loadNotifications();
-    
-    // Listen for changes in other tabs/components
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === storageKey) {
-        loadNotifications();
-      }
-    };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, [loadNotifications, storageKey]);
+  }, [loadNotifications]);
 
-  const saveNotifications = (newNotifications: Notification[]) => {
-    setNotifications(newNotifications);
-    localStorage.setItem(storageKey, JSON.stringify(newNotifications));
-    // Manually trigger storage event for the same window to pick up changes
-    window.dispatchEvent(new StorageEvent('storage', { key: storageKey, newValue: JSON.stringify(newNotifications) }));
+  const markAsRead = async (id: string) => {
+    // Optimistic update
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`http://localhost:5000/api/notifications/${id}/read`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+    } catch (e) {
+      console.error('Failed to mark notification as read', e);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    // Optimistic update
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+
+    try {
+      const token = localStorage.getItem('token');
+      await fetch('http://localhost:5000/api/notifications/read-all', {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+    } catch (e) {
+      console.error('Failed to mark all as read', e);
+    }
+  };
+
+  const clearAll = async () => {
+    // Optimistic update
+    setNotifications([]);
+
+    try {
+      const token = localStorage.getItem('token');
+      await fetch('http://localhost:5000/api/notifications', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+    } catch (e) {
+      console.error('Failed to clear notifications', e);
+    }
   };
 
   const addNotification = (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
+    // Note: In a fully connected app, the backend usually creates notifications.
+    // However, we'll keep this for local UI-driven notifications if any remain.
     const newNoti: Notification = {
       ...notification,
       id: Date.now().toString(),
       timestamp: new Date().toISOString(),
       read: false,
     };
-    saveNotifications([newNoti, ...notifications]);
-  };
-
-  const markAsRead = (id: string) => {
-    saveNotifications(
-      notifications.map((n) => (n.id === id ? { ...n, read: true } : n))
-    );
-  };
-
-  const markAllAsRead = () => {
-    saveNotifications(notifications.map((n) => ({ ...n, read: true })));
-  };
-
-  const clearAll = () => {
-    saveNotifications([]);
+    setNotifications([newNoti, ...notifications]);
   };
 
   const unreadCount = notifications.filter((n) => !n.read).length;

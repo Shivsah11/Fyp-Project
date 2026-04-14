@@ -11,6 +11,7 @@ interface Booking {
   tenantPhone: string;
   propertyName: string;
   propertyType: string;
+  tenantId?: string;
   location: string;
   checkIn: string;
   checkOut: string;
@@ -29,9 +30,12 @@ const Bookings: React.FC = () => {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showMessageModal, setShowMessageModal] = useState(false);
-  const [selectedTenant, setSelectedTenant] = useState<string>('');
+  const [messageText, setMessageText] = useState<string>('');
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [_loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(5);
+
 
   useEffect(() => {
     fetchBookings();
@@ -190,6 +194,23 @@ const Bookings: React.FC = () => {
         return true;
     }
   });
+
+  // Pagination Logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentBookings = filteredBookings.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
+
+  const paginate = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Reset page when tab changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeTab]);
+
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -384,14 +405,52 @@ const Bookings: React.FC = () => {
     }
   };
 
-  const handleContactTenant = (tenantPhone: string) => {
-    window.open(`tel:${tenantPhone}`);
-  };
 
   const handleMessageTenant = (booking: any) => {
     console.log('Message button clicked - booking data:', booking);
     setSelectedBooking(booking);
+    setMessageText('');
     setShowMessageModal(true);
+  };
+
+  const sendDirectMessage = async () => {
+    if (!messageText.trim() || !selectedBooking) return;
+    
+    if (!selectedBooking.tenantId) {
+      alert("Cannot send message: Tenant ID is missing from this booking data.");
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const payload = {
+        recipientId: selectedBooking.tenantId,
+        subject: `Regarding ${selectedBooking.propertyName}`,
+        content: messageText,
+        type: 'sent'
+      };
+
+      const response = await fetch('http://localhost:5000/api/messages', {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      const result = await response.json();
+      if (result.success) {
+        alert("Message sent successfully!");
+        setShowMessageModal(false);
+        setMessageText('');
+      } else {
+        alert(`Error: ${result.message}`);
+      }
+    } catch (err) {
+      console.error("Message send error:", err);
+      alert("Failed to send message. Please try again later.");
+    }
   };
 
   const calculateTotalRevenue = () => {
@@ -486,8 +545,8 @@ const Bookings: React.FC = () => {
       </div>
 
       {/* Bookings Grid */}
-      <div className="grid gap-4">
-        {filteredBookings.map((booking) => (
+      <div className="grid gap-4 mb-8">
+        {currentBookings.map((booking) => (
           <div key={booking.id} className={`rounded-xl border shadow-sm hover:shadow-md transition-all duration-300 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
             <div className="grid md:grid-cols-3 gap-4">
               {/* Property Image */}
@@ -617,6 +676,42 @@ const Bookings: React.FC = () => {
         ))}
       </div>
 
+      {filteredBookings.length > 0 && totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-12 py-6 border-t border-gray-100 dark:border-gray-700/50">
+          <button
+            onClick={() => paginate(Math.max(currentPage - 1, 1))}
+            disabled={currentPage === 1}
+            className={`flex items-center justify-center w-12 h-12 rounded-2xl transition-all ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-100 border border-gray-200'} disabled:opacity-30 disabled:cursor-not-allowed shadow-sm group`}
+            title="Previous Page"
+          >
+            <svg className="w-6 h-6 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
+          </button>
+          
+          <div className="flex items-center gap-2 mx-4">
+            {[...Array(totalPages)].map((_, i) => (
+              <button
+                key={i}
+                onClick={() => paginate(i + 1)}
+                className={`w-12 h-12 rounded-2xl font-bold transition-all duration-300 transform ${currentPage === i + 1 
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xl shadow-blue-500/30 ring-4 ring-blue-500/10 scale-110' 
+                  : isDarkMode ? 'bg-gray-800 text-gray-400 hover:bg-gray-700' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm hover:scale-105'}`}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </div>
+
+          <button
+            onClick={() => paginate(Math.min(currentPage + 1, totalPages))}
+            disabled={currentPage === totalPages}
+            className={`flex items-center justify-center w-12 h-12 rounded-2xl transition-all ${isDarkMode ? 'bg-gray-800 hover:bg-gray-700' : 'bg-white hover:bg-gray-100 border border-gray-200'} disabled:opacity-30 disabled:cursor-not-allowed shadow-sm group`}
+            title="Next Page"
+          >
+            <svg className="w-6 h-6 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+          </button>
+        </div>
+      )}
+
       {filteredBookings.length === 0 && (
         <div className="text-center py-16">
           <h3 className={`text-2xl font-bold mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>No {activeTab} bookings</h3>
@@ -707,6 +802,8 @@ const Bookings: React.FC = () => {
               </h4>
               <div className="space-y-4">
                 <textarea
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
                   placeholder="Type your message to the tenant..."
                   className={`w-full px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-none ${isDarkMode
                       ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400'
@@ -725,11 +822,9 @@ const Bookings: React.FC = () => {
                     Cancel
                   </button>
                   <button
-                    onClick={() => {
-                      alert('Message functionality would be connected to backend here');
-                      setShowMessageModal(false);
-                    }}
-                    className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors"
+                    onClick={sendDirectMessage}
+                    disabled={!messageText.trim()}
+                    className="flex-1 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50"
                   >
                     Send Message
                   </button>

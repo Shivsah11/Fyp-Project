@@ -38,6 +38,10 @@ const Booking = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+
+
   // Fetch bookings from backend
   useEffect(() => {
     fetchBookings();
@@ -92,7 +96,7 @@ const Booking = () => {
     if (dateFilter !== 'all') {
       const today = new Date();
       const filterDate = new Date();
-      
+
       switch (dateFilter) {
         case 'today':
           filterDate.setHours(0, 0, 0, 0);
@@ -107,39 +111,51 @@ const Booking = () => {
           filterDate.setFullYear(today.getFullYear() - 1);
           break;
       }
-      
-      filtered = filtered.filter(booking => 
+
+      filtered = filtered.filter(booking =>
         new Date(booking.bookingDate) >= filterDate
       );
     }
 
     setFilteredBookings(filtered);
+    setCurrentPage(1); // Reset to first page when filters change
   }, [bookings, searchTerm, statusFilter, paymentFilter, dateFilter]);
+
+  // Pagination Logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentBookings = filteredBookings.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredBookings.length / itemsPerPage);
+
+  const paginate = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+  };
+
 
   const getStatusColor = (status: Booking['status']) => {
     switch (status) {
       case 'confirmed':
-        return isDarkMode 
+        return isDarkMode
           ? 'bg-green-900/30 text-green-400 border-green-700'
           : 'bg-green-100 text-green-800 border-green-200';
       case 'pending':
-        return isDarkMode 
+        return isDarkMode
           ? 'bg-yellow-900/30 text-yellow-400 border-yellow-700'
           : 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'cancelled':
-        return isDarkMode 
+        return isDarkMode
           ? 'bg-red-900/30 text-red-400 border-red-700'
           : 'bg-red-100 text-red-800 border-red-200';
       case 'completed':
-        return isDarkMode 
+        return isDarkMode
           ? 'bg-blue-900/30 text-blue-400 border-blue-700'
           : 'bg-blue-100 text-blue-800 border-blue-200';
       case 'refunded':
-        return isDarkMode 
+        return isDarkMode
           ? 'bg-purple-900/30 text-purple-400 border-purple-700'
           : 'bg-purple-100 text-purple-800 border-purple-200';
       default:
-        return isDarkMode 
+        return isDarkMode
           ? 'bg-gray-900/30 text-gray-400 border-gray-700'
           : 'bg-gray-100 text-gray-800 border-gray-200';
     }
@@ -148,23 +164,23 @@ const Booking = () => {
   const getPaymentStatusColor = (status: Booking['paymentStatus']) => {
     switch (status) {
       case 'paid':
-        return isDarkMode 
+        return isDarkMode
           ? 'bg-green-900/30 text-green-400 border-green-700'
           : 'bg-green-100 text-green-800 border-green-200';
       case 'pending':
-        return isDarkMode 
+        return isDarkMode
           ? 'bg-yellow-900/30 text-yellow-400 border-yellow-700'
           : 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'failed':
-        return isDarkMode 
+        return isDarkMode
           ? 'bg-red-900/30 text-red-400 border-red-700'
           : 'bg-red-100 text-red-800 border-red-200';
       case 'refunded':
-        return isDarkMode 
+        return isDarkMode
           ? 'bg-purple-900/30 text-purple-400 border-purple-700'
           : 'bg-purple-100 text-purple-800 border-purple-200';
       default:
-        return isDarkMode 
+        return isDarkMode
           ? 'bg-gray-900/30 text-gray-400 border-gray-700'
           : 'bg-gray-100 text-gray-800 border-gray-200';
     }
@@ -304,15 +320,15 @@ const Booking = () => {
             placeholder="Search by property, tenant, or landlord..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className={`flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${isDarkMode 
-              ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+            className={`flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${isDarkMode
+              ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
               : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'}`}
           />
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as any)}
-            className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${isDarkMode 
-              ? 'bg-gray-700 border-gray-600 text-white' 
+            className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${isDarkMode
+              ? 'bg-gray-700 border-gray-600 text-white'
               : 'bg-white border-gray-300 text-gray-900'}`}
           >
             <option value="all">All Status</option>
@@ -325,8 +341,8 @@ const Booking = () => {
           <select
             value={paymentFilter}
             onChange={(e) => setPaymentFilter(e.target.value as any)}
-            className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${isDarkMode 
-              ? 'bg-gray-700 border-gray-600 text-white' 
+            className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${isDarkMode
+              ? 'bg-gray-700 border-gray-600 text-white'
               : 'bg-white border-gray-300 text-gray-900'}`}
           >
             <option value="all">All Payment</option>
@@ -338,8 +354,8 @@ const Booking = () => {
           <select
             value={dateFilter}
             onChange={(e) => setDateFilter(e.target.value as any)}
-            className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${isDarkMode 
-              ? 'bg-gray-700 border-gray-600 text-white' 
+            className={`px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${isDarkMode
+              ? 'bg-gray-700 border-gray-600 text-white'
               : 'bg-white border-gray-300 text-gray-900'}`}
           >
             <option value="all">All Time</option>
@@ -376,7 +392,7 @@ const Booking = () => {
               </tr>
             </thead>
             <tbody className={`${isDarkMode ? 'bg-gray-800 divide-gray-700' : 'bg-white divide-gray-200'} divide-y`}>
-              {filteredBookings.map((booking) => (
+              {currentBookings.map((booking) => (
                 <tr key={booking.id} className={`${isDarkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-50'} transition-colors`}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>#{booking.id}</div>
@@ -453,6 +469,50 @@ const Booking = () => {
             No bookings found matching your criteria.
           </div>
         )}
+
+        {/* Pagination UI */}
+        {filteredBookings.length > 0 && totalPages > 1 && (
+          <div className={`px-6 py-4 flex items-center justify-between border-t ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
+            <div className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-700'}`}>
+              Showing <span className="font-medium">{indexOfFirstItem + 1}</span> to <span className="font-medium">{Math.min(indexOfLastItem, filteredBookings.length)}</span> of <span className="font-medium">{filteredBookings.length}</span> results
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => paginate(Math.max(currentPage - 1, 1))}
+                disabled={currentPage === 1}
+                className={`px-3 py-1 rounded border text-sm font-medium transition-colors ${currentPage === 1
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : isDarkMode ? 'bg-gray-700 border-gray-600 text-white hover:bg-gray-600' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+              >
+                Previous
+              </button>
+
+              <div className="flex items-center space-x-1">
+                {[...Array(totalPages)].map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => paginate(i + 1)}
+                    className={`px-3 py-1 rounded border text-sm font-medium transition-all ${currentPage === i + 1
+                      ? 'bg-blue-600 border-blue-600 text-white'
+                      : isDarkMode ? 'bg-gray-700 border-gray-600 text-gray-400 hover:text-white' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+              </div>
+
+              <button
+                onClick={() => paginate(Math.min(currentPage + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className={`px-3 py-1 rounded border text-sm font-medium transition-colors ${currentPage === totalPages
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : isDarkMode ? 'bg-gray-700 border-gray-600 text-white hover:bg-gray-600' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Booking Details Modal */}
@@ -468,7 +528,7 @@ const Booking = () => {
                 ✕
               </button>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Property Information */}
               <div className="space-y-4">

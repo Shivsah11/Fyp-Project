@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import { useDarkMode } from '../../context/DarkModeContext';
 import { Icon, LatLngBounds } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -31,6 +31,7 @@ interface PropertyMapProps {
   center?: [number, number];
   zoom?: number;
   showPopups?: boolean;
+  onMapClick?: (lat: number, lng: number) => void;
 }
 
 // Component to fit map to all markers
@@ -49,16 +50,29 @@ const MapBounds: React.FC<{ properties: Property[] }> = ({ properties }) => {
   return null;
 };
 
+// Component to handle map clicks
+const MapClickHandler: React.FC<{ onMapClick?: (lat: number, lng: number) => void }> = ({ onMapClick }) => {
+  useMapEvents({
+    click: (e) => {
+      if (onMapClick) {
+        onMapClick(e.latlng.lat, e.latlng.lng);
+      }
+    },
+  });
+  return null;
+};
+
 const PropertyMap: React.FC<PropertyMapProps> = ({
   properties,
   height = '400px',
   onPropertyClick,
   center = [27.7172, 85.3240], // Default to Kathmandu
   zoom = 12,
-  showPopups = true
+  showPopups = true,
+  onMapClick
 }) => {
   const { isDarkMode } = useDarkMode();
-  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [_selectedProperty, setSelectedProperty] = useState<Property | null>(null);
 
   // Custom marker icon based on property status and price
   const getMarkerIcon = (property: Property) => {
@@ -110,6 +124,8 @@ const PropertyMap: React.FC<PropertyMapProps> = ({
             : "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           }
         />
+        
+        <MapClickHandler onMapClick={onMapClick} />
         
         {properties.length > 1 && <MapBounds properties={properties} />}
         

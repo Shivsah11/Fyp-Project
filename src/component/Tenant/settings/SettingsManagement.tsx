@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDarkMode } from '../../../context/DarkModeContext';
 
 interface SettingsSection {
@@ -21,13 +21,14 @@ interface SettingsItem {
 const SettingsManagement: React.FC = () => {
   const { isDarkMode, setDarkMode } = useDarkMode();
   const [activeSection, setActiveSection] = useState('profile');
+  const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john.doe@example.com',
-    phone: '+977-9841234567',
-    address: 'Thamel, Kathmandu',
-    bio: 'I am a responsible tenant looking for comfortable living spaces.',
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    address: '',
+    bio: '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
@@ -38,6 +39,35 @@ const SettingsManagement: React.FC = () => {
     timezone: 'Asia/Kathmandu',
     theme: 'dark'
   });
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/users/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setFormData(prev => ({
+          ...prev,
+          ...data.user,
+          ...data.user.preferences
+        }));
+      } else {
+        console.error(`Failed to fetch profile: ${response.status} ${data.message}`);
+      }
+    } catch (error: any) {
+      console.error('Error fetching profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const settingsSections: SettingsSection[] = [
     {
@@ -56,11 +86,11 @@ const SettingsManagement: React.FC = () => {
     {
       id: 'security',
       title: 'Security',
-      icon: '�',
+      icon: '🔐',
       items: [
-        { id: 'currentPassword', label: 'Current Password', type: 'input', placeholder: 'Enter current password' },
-        { id: 'newPassword', label: 'New Password', type: 'input', placeholder: 'Enter new password' },
-        { id: 'confirmPassword', label: 'Confirm New Password', type: 'input', placeholder: 'Confirm new password' }
+        { id: 'currentPassword', label: 'Current Password', type: 'input', value: formData.currentPassword, placeholder: 'Enter current password' },
+        { id: 'newPassword', label: 'New Password', type: 'input', value: formData.newPassword, placeholder: 'Enter new password' },
+        { id: 'confirmPassword', label: 'Confirm New Password', type: 'input', value: formData.confirmPassword, placeholder: 'Confirm new password' }
       ]
     },
     {
@@ -120,12 +150,63 @@ const SettingsManagement: React.FC = () => {
     }
   };
 
-  const handleSaveSection = (sectionId: string) => {
-    console.log(`Saving ${sectionId}:`, formData);
-    alert(`${settingsSections.find(s => s.id === sectionId)?.title} saved successfully!`);
+  const handleSaveSection = async (sectionId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      let endpoint = 'http://localhost:5000/api/users/profile';
+      let method = 'PUT';
+      let payload = {};
+
+      if (sectionId === 'profile') {
+        payload = {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          phone: formData.phone,
+          address: formData.address,
+          bio: formData.bio
+        };
+      } else if (sectionId === 'notifications' || sectionId === 'preferences') {
+        endpoint = 'http://localhost:5000/api/users/preferences';
+        method = 'PATCH';
+        payload = sectionId === 'notifications' 
+          ? { 
+              notifications: formData.notifications, 
+              emailAlerts: formData.emailAlerts, 
+              smsAlerts: formData.smsAlerts 
+            }
+          : { 
+              language: formData.language, 
+              timezone: formData.timezone, 
+              theme: formData.theme 
+            };
+      }
+
+      const response = await fetch(endpoint, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        alert(`${settingsSections.find(s => s.id === sectionId)?.title} saved successfully!`);
+      } else {
+        alert(`Failed to save: ${response.status} ${data.message || 'Error'}`);
+      }
+    } catch (error: any) {
+      console.error('Error saving settings:', error);
+      alert(`Connection Error: ${error.message}. Please ensure the backend is running.`);
+    }
   };
 
-  const handlePasswordChange = () => {
+  const handlePasswordChange = async () => {
+    if (!formData.currentPassword || !formData.newPassword || !formData.confirmPassword) {
+      alert('All password fields are required!');
+      return;
+    }
     if (formData.newPassword !== formData.confirmPassword) {
       alert('New passwords do not match!');
       return;
@@ -134,19 +215,63 @@ const SettingsManagement: React.FC = () => {
       alert('Password must be at least 6 characters long!');
       return;
     }
-    alert('Password changed successfully!');
-    setFormData(prev => ({
-      ...prev,
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: ''
-    }));
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/users/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          currentPassword: formData.currentPassword,
+          newPassword: formData.newPassword
+        })
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        alert('Password changed successfully!');
+        setFormData(prev => ({
+          ...prev,
+          currentPassword: '',
+          newPassword: '',
+          confirmPassword: ''
+        }));
+      } else {
+        alert(data.message || 'Failed to change password');
+      }
+    } catch (error) {
+      console.error('Error changing password:', error);
+      alert('Error connecting to server');
+    }
   };
 
-  const handleDeleteAccount = () => {
+  const handleDeleteAccount = async () => {
     if (window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
       if (window.confirm('This will permanently delete all your data. Are you absolutely sure?')) {
-        alert('Account deletion requested. You will receive a confirmation email.');
+        try {
+          const token = localStorage.getItem('token');
+          const response = await fetch('http://localhost:5000/api/users/account', {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+
+          if (response.ok) {
+            alert('Account deleted successfully. You will be logged out.');
+            localStorage.clear();
+            window.location.href = '/login';
+          } else {
+            const data = await response.json();
+            alert(data.message || 'Failed to delete account');
+          }
+        } catch (error) {
+          console.error('Error deleting account:', error);
+          alert('Error connecting to server');
+        }
       }
     }
   };
@@ -237,6 +362,14 @@ const SettingsManagement: React.FC = () => {
         );
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">

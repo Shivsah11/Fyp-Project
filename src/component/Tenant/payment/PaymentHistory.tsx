@@ -1,4 +1,3 @@
-import React from 'react';
 import { useDarkMode } from '../../../context/DarkModeContext';
 
 interface Payment {
@@ -10,9 +9,8 @@ interface Payment {
   description: string;
 }
 
-const PaymentHistory = ({ payments, onDeletePayment, onViewAllPayments, limit }: { 
+const PaymentHistory = ({ payments, onViewAllPayments, limit }: { 
   payments: Payment[], 
-  onDeletePayment?: (id: string) => void,
   onViewAllPayments?: () => void,
   limit?: number
 }) => {

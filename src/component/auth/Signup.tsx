@@ -15,20 +15,26 @@ const Signup = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
+  const [error, setError] = useState<string>("");
+  const [success, setSuccess] = useState<string>("");
 
   // --- Handle form submission ---
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault(); // Prevent page reload
 
+    // Reset messages
+    setError("");
+    setSuccess("");
+
     // Password validation
     if (password !== confirmPassword) {
-      alert("Passwords do not match");
+      setError("Passwords do not match");
       return;
     }
 
-    // Simple email validation (optional)
+    // Simple email validation
     if (!email.includes("@")) {
-      alert("Enter a valid email");
+      setError("Enter a valid email");
       return;
     }
 
@@ -44,6 +50,7 @@ const Signup = () => {
           email,
           password,
           role,
+          ref: refCode,
         }),
       });
 
@@ -54,31 +61,19 @@ const Signup = () => {
         if (data.token) {
           localStorage.setItem('token', data.token);
           localStorage.setItem('userRole', role);
+          // NEW: Store coins and referral code from backend if available
+          if (data.user?.coins !== undefined) localStorage.setItem('userCoins', String(data.user.coins));
+          if (data.user?.referralCode) localStorage.setItem('referralCode', data.user.referralCode);
         }
 
-        // --- Referral reward logic ---
-        if (refCode) {
-          // Award 50 coins to the referrer (stored by their ref code key)
-          const referrerCoinsKey = `coins_for_${refCode}`;
-          const current = parseInt(localStorage.getItem(referrerCoinsKey) || '0', 10);
-          localStorage.setItem(referrerCoinsKey, String(current + 50));
-
-          // If this user's referral code matches the logged-in referral code, update immediately
-          const myRefCode = localStorage.getItem('referralCode');
-          if (myRefCode === refCode) {
-            const myCoins = parseInt(localStorage.getItem('userCoins') || '0', 10);
-            localStorage.setItem('userCoins', String(myCoins + 50));
-          }
-        }
-
-        alert(data.message);
-        navigate("/dashboard");
+        setSuccess(data.message || "Account created successfully!");
+        setTimeout(() => navigate("/dashboard"), 1500);
       } else {
-        alert(data.message || "Signup failed");
+        setError(data.message || "Signup failed. Please check your information.");
       }
     } catch (error) {
       console.error("Fetch error:", error);
-      alert("Network error. Please check your connection.");
+      setError("Network error. Please ensure the backend is running.");
     }
   };
 
@@ -216,6 +211,26 @@ const Signup = () => {
               I agree to the <a href="#" className="text-teal-600 hover:text-teal-700 font-medium transition-colors">Terms of Service</a> and <a href="#" className="text-teal-600 hover:text-teal-700 font-medium transition-colors">Privacy Policy</a>
             </p>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl text-sm font-medium animate-in fade-in slide-in-from-top-2">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                {error}
+              </div>
+            </div>
+          )}
+
+          {/* Success Message */}
+          {success && (
+            <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-600 rounded-xl text-sm font-medium animate-in fade-in slide-in-from-top-2">
+              <div className="flex items-center gap-2">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                {success}
+              </div>
+            </div>
+          )}
 
           {/* Submit Button */}
           <button

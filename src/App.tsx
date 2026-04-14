@@ -4,6 +4,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import Login from "./component/auth/Login";
 import Signup from "./component/auth/Signup";
+import ForgotPassword from "./component/auth/ForgotPassword";
+import ResetPassword from "./component/auth/ResetPassword";
 import AdminLogin from "./component/admin/AdminLogin";
 import AdminDashboard from "./component/admin/AdminDashboard";
 import TenantDashboard from "./component/Tenant/dashboard/Dashboard";
@@ -73,8 +75,9 @@ function App() {
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<Login />} />
-          <Route path="/dashboard" element={<Navigate to="/landlord/dashboard" replace />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
           <Route path="/admin/login" element={<AdminLogin />} />
 
           {/* Tenant Routes */}

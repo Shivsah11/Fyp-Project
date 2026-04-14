@@ -22,6 +22,13 @@ const PaymentHistory = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'completed' | 'pending' | 'failed'>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 4;
+
+  // Reset page when filter changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter]);
 
   const fetchPayments = async () => {
     try {
@@ -123,20 +130,6 @@ const PaymentHistory = () => {
     }
   };
 
-  const getMethodIcon = (method: string) => {
-    switch (method.toLowerCase()) {
-      case 'esewa':
-        return '';
-      case 'bank transfer':
-        return '';
-      case 'credit card':
-        return '';
-      case 'paypal':
-        return '';
-      default:
-        return '';
-    }
-  };
 
   const filteredPayments = filter === 'all' 
     ? paymentList 
@@ -326,87 +319,113 @@ const PaymentHistory = () => {
             </p>
           </div>
         ) : (
-          filteredPayments.map((payment) => (
-            <div 
-              key={payment.id} 
-              className={`rounded-xl border p-5 hover:shadow-lg transition-all duration-300 ${isDarkMode ? 'bg-gray-800 border-gray-700 hover:border-blue-600' : 'bg-white border-gray-200 hover:border-blue-300'}`}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  {/* Payment Header */}
-                  <div className="flex items-center gap-4 mb-3">
-                    <div className="text-2xl">
-                      {getMethodIcon(payment.method)}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <h4 className={`font-semibold text-lg ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
-                          NPR {payment.amount.toLocaleString()}
-                        </h4>
-                        <span className={`px-3 py-1 text-xs rounded-full border font-medium ${getStatusColor(payment.status)}`}>
-                          {payment.status}
-                        </span>
+          <>
+            {filteredPayments.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((payment) => (
+              <div 
+                key={payment.id} 
+                className={`rounded-xl border p-5 hover:shadow-lg transition-all duration-300 ${isDarkMode ? 'bg-gray-800 border-gray-700 hover:border-blue-600' : 'bg-white border-gray-200 hover:border-blue-300'}`}
+              >
+                <div className="flex items-center justify-between">
+                  {/* ... existing card content ... */}
+                  <div className="flex-1">
+                    <div className="flex items-center gap-4 mb-3">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3">
+                          <h4 className={`font-semibold text-lg ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>
+                            NPR {payment.amount.toLocaleString()}
+                          </h4>
+                          <span className={`px-3 py-1 text-xs rounded-full border font-medium ${getStatusColor(payment.status)}`}>
+                            {payment.status}
+                          </span>
+                        </div>
+                        <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{payment.description}</p>
                       </div>
-                      <p className={`text-sm mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{payment.description}</p>
                     </div>
-                  </div>
 
-                  {/* Payment Details */}
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}></span>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="space-y-1">
                         <div>
                           <span className={`font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{payment.tenantName}</span>
                           <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>{payment.tenantEmail}</p>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}></span>
                         <div>
                           <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>{payment.propertyName}</span>
                           <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-500'}`}>{payment.propertyLocation}</p>
                         </div>
                       </div>
-                    </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}></span>
-                        <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>{payment.method}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}></span>
-                        <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>{payment.date}</span>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs uppercase tracking-wider ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Method:</span>
+                          <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>{payment.method}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs uppercase tracking-wider ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Date:</span>
+                          <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>{payment.date}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Actions */}
-                <div className="flex flex-col gap-2 ml-4">
-                  {payment.status === 'pending' && (
-                    <>
-                      <button 
-                        onClick={() => updatePaymentStatus(payment.id, 'completed')}
-                        className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded-lg transition-colors"
-                      >
-                        Approve
-                      </button>
-                      <button 
-                        onClick={() => updatePaymentStatus(payment.id, 'failed')}
-                        className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded-lg transition-colors"
-                      >
-                        Reject
-                      </button>
-                    </>
-                  )}
-                  <button className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-lg transition-colors">
-                    View Details
-                  </button>
+                  <div className="flex flex-col gap-2 ml-4">
+                    {payment.status === 'pending' && (
+                      <>
+                        <button 
+                          onClick={() => updatePaymentStatus(payment.id, 'completed')}
+                          className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded-lg transition-colors"
+                        >
+                          Approve
+                        </button>
+                        <button 
+                          onClick={() => updatePaymentStatus(payment.id, 'failed')}
+                          className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded-lg transition-colors"
+                        >
+                          Reject
+                        </button>
+                      </>
+                    )}
+                    <button className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-lg transition-colors">
+                      Details
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            ))}
+
+            {/* Pagination Controls */}
+            {filteredPayments.length > 0 && (
+              <div className="flex items-center justify-center gap-2 mt-8 py-2 border-t border-gray-100 dark:border-gray-700/50">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className={`flex items-center justify-center w-10 h-10 rounded-xl transition-all ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'} disabled:opacity-30 disabled:cursor-not-allowed shadow-sm`}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
+                </button>
+                
+                <div className="flex items-center gap-2 mx-2">
+                  {[...Array(Math.ceil(filteredPayments.length / itemsPerPage))].map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setCurrentPage(i + 1)}
+                      className={`w-10 h-10 rounded-xl font-bold transition-all duration-300 ${currentPage === i + 1 
+                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg' 
+                        : isDarkMode ? 'bg-gray-800 text-gray-400 hover:bg-gray-700' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm'}`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredPayments.length / itemsPerPage)))}
+                  disabled={currentPage === Math.ceil(filteredPayments.length / itemsPerPage)}
+                  className={`flex items-center justify-center w-10 h-10 rounded-xl transition-all ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'} disabled:opacity-30 disabled:cursor-not-allowed shadow-sm`}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
 
