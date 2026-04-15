@@ -61,7 +61,6 @@ const LandlordDashboard = () => {
   const [propertyPrice, setPropertyPrice] = useState('');
   const [propertyType, setPropertyType] = useState('');
   const [propertyStatus, setPropertyStatus] = useState('');
-  const [propertyImages, setPropertyImages] = useState<{ [key: number]: string }>({});
   const [newPropertyImages, setNewPropertyImages] = useState<string[]>([]);
   const [editingPropertyImages, setEditingPropertyImages] = useState<string[]>([]);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
@@ -164,6 +163,7 @@ const LandlordDashboard = () => {
         type: typeMap[propertyType] || 'apartment',
         status: 'Available',
         image: newPropertyImages.length > 0 ? newPropertyImages[0] : '',
+        images: newPropertyImages,
         description: `${propertyName} located in ${propertyLocation}. A fine ${propertyType} property.`,
         beds: propertyType.includes('Bedroom') ? parseInt(propertyType) : (propertyType === 'Studio' ? 0 : 1),
         baths: 1,
@@ -263,28 +263,49 @@ const LandlordDashboard = () => {
 
 
 
-  const handlePropertyImageUpload = (e: React.ChangeEvent<HTMLInputElement>, propertyId: number) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const imageUrl = reader.result as string;
-        setPropertyImages(prev => ({ ...prev, [propertyId]: imageUrl }));
-        // Store in localStorage for persistence
-        const storedImages = JSON.parse(localStorage.getItem('propertyImages') || '{}');
-        storedImages[propertyId] = imageUrl;
-        localStorage.setItem('propertyImages', JSON.stringify(storedImages));
-        alert('Room image uploaded successfully!');
-      };
-      reader.readAsDataURL(file);
+  const handlePropertyImageUpload = (e: React.ChangeEvent<HTMLInputElement>, propertyId: string) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const imageReaders: Promise<string>[] = [];
+
+      Array.from(files).forEach((file) => {
+        const reader = new FileReader();
+        const promise = new Promise<string>((resolve) => {
+          reader.onload = () => {
+            resolve(reader.result as string);
+          };
+          reader.readAsDataURL(file);
+        });
+        imageReaders.push(promise);
+      });
+
+      Promise.all(imageReaders).then(async (images) => {
+        try {
+          const token = localStorage.getItem('token');
+          const response = await fetch(`http://localhost:5000/api/properties/${propertyId}`, {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              images: images // For simplicity we replace, but realistically we might append
+            }),
+          });
+
+          if (response.ok) {
+            alert('Property images updated successfully!');
+            fetchDashboardData();
+          } else {
+            alert('Failed to update images');
+          }
+        } catch (error) {
+          console.error('Error updating property images:', error);
+          alert('Error updating images');
+        }
+      });
     }
   };
-
-  // Load stored property images on mount
-  useEffect(() => {
-    const storedImages = JSON.parse(localStorage.getItem('propertyImages') || '{}');
-    setPropertyImages(storedImages);
-  }, []);
 
   if (loading) {
     return (
@@ -794,30 +815,42 @@ const LandlordDashboard = () => {
 
                         {/* Image Upload Section */}
                         <div className="flex items-center justify-between">
-                          <span className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Images:</span>
                           <div className="flex items-center gap-2">
-                            {propertyImages[property.id] ? (
-                              <div className="w-8 h-8 rounded overflow-hidden border border-gray-300">
-                                <img src={propertyImages[property.id]} alt="Property" className="w-full h-full object-cover" />
+                            {property.images && property.images.length > 0 ? (
+                              <div className="flex -space-x-2">
+                                {property.images.slice(0, 3).map((imgUrl: string, idx: number) => (
+                                  <div key={idx} className="w-8 h-8 rounded-lg overflow-hidden border-2 border-white dark:border-gray-800 shadow-sm">
+                                    <img src={imgUrl} alt="Property" className="w-full h-full object-cover" />
+                                  </div>
+                                ))}
+                                {property.images.length > 3 && (
+                                  <div className="w-8 h-8 rounded-lg bg-gray-200 dark:bg-gray-700 border-2 border-white dark:border-gray-800 flex items-center justify-center text-[10px] font-bold text-gray-600 dark:text-gray-400">
+                                    +{property.images.length - 3}
+                                  </div>
+                                )}
+                              </div>
+                            ) : property.image ? (
+                              <div className="w-8 h-8 rounded-lg overflow-hidden border border-gray-300">
+                                <img src={property.image} alt="Property" className="w-full h-full object-cover" />
                               </div>
                             ) : (
-                              <div className={`w-8 h-8 rounded flex items-center justify-center ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                                <span className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-400'}`}>📷</span>
+                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
+                                <span className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>📷</span>
                               </div>
                             )}
                             <input
                               type="file"
                               accept="image/*"
                               multiple
-                              onChange={(e) => handlePropertyImageUpload(e, property.id)}
+                              onChange={(e) => handlePropertyImageUpload(e, property._id)}
                               className="hidden"
-                              id={`property-images-${property.id}`}
+                              id={`property-images-${property._id}`}
                             />
                             <label
-                              htmlFor={`property-images-${property.id}`}
-                              className="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded-lg cursor-pointer transition-colors"
+                              htmlFor={`property-images-${property._id}`}
+                              className="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white text-[10px] rounded-lg cursor-pointer transition-colors font-bold uppercase"
                             >
-                              📷 Upload
+                              📷 Update
                             </label>
                           </div>
                         </div>
@@ -840,6 +873,7 @@ const LandlordDashboard = () => {
                             setPropertyPrice(property.price.replace('NPR ', ''));
                             setPropertyType(property.type);
                             setPropertyStatus(property.status);
+                            setEditingPropertyImages(property.images || (property.image ? [property.image] : []));
                             setShowEditForm(true);
                           }}
                           className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-800 py-2 px-3 rounded-lg text-sm font-medium transition-all duration-300 border border-gray-300 hover:border-gray-400">
@@ -1108,7 +1142,9 @@ const LandlordDashboard = () => {
                               location: propertyLocation,
                               price: `NPR ${propertyPrice}`,
                               type: typeMap[propertyType] || propertyType.toLowerCase(),
-                              status: propertyStatus
+                              status: propertyStatus,
+                              images: editingPropertyImages,
+                              image: editingPropertyImages.length > 0 ? editingPropertyImages[0] : ''
                             }),
                           });
 
@@ -1168,7 +1204,48 @@ const LandlordDashboard = () => {
                           <option value="" className="bg-gray-800">Select Status</option>
                           <option value="Available" className="bg-gray-800">Available</option>
                           <option value="Occupied" className="bg-gray-800">Occupied</option>
+                          <option value="Maintenance" className="bg-gray-800">Maintenance</option>
                         </select>
+
+                        {/* Edit Property Images Section */}
+                        <div className="space-y-3">
+                          <label className="block text-xs font-black uppercase tracking-widest text-emerald-200">Property Images</label>
+                          <div className="grid grid-cols-4 gap-2">
+                            {editingPropertyImages.map((img, idx) => (
+                              <div key={idx} className="relative group h-16 rounded-lg overflow-hidden border border-white/20">
+                                <img src={img} alt="Preview" className="w-full h-full object-cover" />
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingPropertyImages(prev => prev.filter((_, i) => i !== idx))}
+                                  className="absolute top-0.5 right-0.5 bg-red-500 text-white w-4 h-4 rounded-full flex items-center justify-center text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+                            <label className="h-16 rounded-lg border-2 border-dashed border-white/20 flex items-center justify-center cursor-pointer hover:bg-white/5 transition-colors">
+                              <span className="text-xl text-emerald-400">+</span>
+                              <input
+                                type="file"
+                                multiple
+                                accept="image/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const files = e.target.files;
+                                  if (files) {
+                                    Array.from(files).forEach(file => {
+                                      const reader = new FileReader();
+                                      reader.onload = () => {
+                                        setEditingPropertyImages(prev => [...prev, reader.result as string]);
+                                      };
+                                      reader.readAsDataURL(file);
+                                    });
+                                  }
+                                }}
+                              />
+                            </label>
+                          </div>
+                        </div>
                         <div className="flex gap-3">
                           <button
                             type="submit"

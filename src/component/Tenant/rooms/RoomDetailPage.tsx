@@ -40,6 +40,38 @@ const RoomDetailPage = () => {
   const [specialRequests, setSpecialRequests] = useState('');
   const [showGalleryModal, setShowGalleryModal] = useState(false);
   const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [totalPrice, setTotalPrice] = useState<number>(0);
+  const [bookingDuration, setBookingDuration] = useState<number>(0);
+
+  // Helper function to calculate months from days
+  const calculateMonths = (days: number): number => {
+    if (days <= 30) return 1;
+
+    const fullMonths = Math.floor(days / 30);
+    const remainingDays = days % 30;
+
+    // If there are more than 15 remaining days, count as another month
+    return remainingDays > 15 ? fullMonths + 1 : fullMonths;
+  };
+
+  // Calculate total price whenever dates change
+  useEffect(() => {
+    if (checkInDate && checkOutDate && room) {
+      const start = new Date(checkInDate);
+      const end = new Date(checkOutDate);
+      const timeDiff = end.getTime() - start.getTime();
+      const days = Math.ceil(timeDiff / (1000 * 3600 * 24));
+
+      setBookingDuration(days);
+
+      // Calculate total price
+      const months = calculateMonths(days);
+      setTotalPrice(room.price * months);
+    } else {
+      setTotalPrice(room ? room.price : 0);
+      setBookingDuration(0);
+    }
+  }, [checkInDate, checkOutDate, room]);
 
   useEffect(() => {
     const fetchRoomDetails = async () => {
@@ -73,7 +105,7 @@ const RoomDetailPage = () => {
             sqft: result.data.area || 0,
             available: result.data.status === 'Available' || result.data.status === 'active',
             rating: result.data.rating || 0,
-            images: result.data.image ? [result.data.image] : [],
+            images: result.data.images && result.data.images.length > 0 ? result.data.images : (result.data.image ? [result.data.image] : []),
             amenities: result.data.amenities || [],
             description: result.data.description || '',
             landlordId: result.data.landlordId ? result.data.landlordId._id : '',
@@ -165,7 +197,9 @@ const RoomDetailPage = () => {
         checkInDate: checkInDate,
         checkOutDate: checkOutDate,
         numberOfGuests: 1,
-        specialRequests: specialRequests
+        specialRequests: specialRequests,
+        totalPrice: totalPrice,
+        bookingDuration: bookingDuration
       };
 
       const response = await fetch('http://localhost:5000/api/bookings', {
@@ -191,6 +225,7 @@ const RoomDetailPage = () => {
           checkIn: checkInDate,
           checkOut: checkOutDate,
           price: room.price,
+          totalAmount: totalPrice,
           status: 'pending',
           paymentStatus: 'pending',
           image: room.images?.[0] || '',
@@ -460,22 +495,34 @@ const RoomDetailPage = () => {
               {/* Sidebar with Host & Action */}
               <div className="space-y-4">
                 {/* Landlord Information */}
-                <div className={`p-4 rounded-2xl border ${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-50 border-emerald-100'
+                <div className={`p-6 rounded-2xl border ${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-white border-gray-200'
                   }`}>
-                  <h3 className={`text-[10px] font-black uppercase tracking-widest mb-2 ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>Meet Your Host</h3>
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-2xl border transform rotate-3 ${isDarkMode ? 'bg-gray-700 border-gray-600 text-emerald-400' : 'bg-emerald-100 border-emerald-200 text-emerald-700'
-                      }`}>
-                      {room.landlord.charAt(0)}
+                  <h3 className={`text-xs font-bold uppercase tracking-widest mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>YOUR LANDLORD</h3>
+                  <div className="flex items-center justify-between">
+                    {/* Avatar with green background */}
+                    <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center text-white font-black text-xl flex-shrink-0">
+                      {room.landlord.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                     </div>
-                    <div>
-                      <p className={`text-base font-black italic mb-0 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{room.landlord}</p>
-                      <p className={`text-xs font-bold ${isDarkMode ? 'text-gray-500' : 'text-gray-500 italic'}`}>Verified Professional Host</p>
+
+                    <div className="text-right ml-4">
+                      {/* Landlord name */}
+                      <h4 className={`text-lg font-bold mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        {room.landlord}
+                      </h4>
+
+                      {/* Phone number */}
+                      <p className={`text-sm mb-3 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        {room.contactInfo}
+                      </p>
+
+                      {/* Message button */}
+                      <button
+                        onClick={() => setShowContactModal(true)}
+                        className="px-4 py-2 border border-green-500 text-green-500 hover:bg-green-500 hover:text-white font-medium rounded-lg transition-colors duration-200"
+                      >
+                        MESSAGE
+                      </button>
                     </div>
-                  </div>
-                  <div className={`flex flex-col gap-3 p-4 rounded-2xl ${isDarkMode ? 'bg-gray-900/50' : 'bg-white/50 border border-emerald-100'}`}>
-                    <p className="text-xs font-black uppercase tracking-tighter text-emerald-500">Contact Point</p>
-                    <p className={`text-sm font-black truncate ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>{room.contactInfo}</p>
                   </div>
                 </div>
 
@@ -530,7 +577,7 @@ const RoomDetailPage = () => {
                         className="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110"
                       />
                       <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md text-white px-4 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest border border-white/20">
-                        Capture {index + 1}
+                        Image {index + 1}
                       </div>
                     </div>
                   ))}
@@ -621,8 +668,32 @@ const RoomDetailPage = () => {
                 }`}>
                 <h4 className="font-black italic text-emerald-500 text-xl mb-1">{room.title}</h4>
                 <p className={`text-xs font-black uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-emerald-700'}`}>{room.location}</p>
-                <div className={`mt-4 text-3xl font-black ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
-                  NPR {room.price.toLocaleString()}
+                <div className="space-y-3">
+                  {(() => {
+                    const months = calculateMonths(bookingDuration);
+                    return months > 1 && (
+                      <div className={`text-sm font-medium ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'} animate-pulse`}>
+                        {bookingDuration} days · {months} month{months > 1 ? 's' : ''}
+                      </div>
+                    );
+                  })()}
+                  <div className={`relative`}>
+                    <div className={`text-3xl font-black ${isDarkMode ? 'text-white' : 'text-gray-900'} transition-all duration-500 ${totalPrice > room.price ? 'text-emerald-500 scale-110' : ''
+                      }`}>
+                      NPR {totalPrice.toLocaleString()}
+                    </div>
+                    {totalPrice > room.price && (
+                      <div className={`absolute -top-2 -right-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white text-xs font-bold px-2 py-1 rounded-full animate-bounce`}>
+                        +{calculateMonths(bookingDuration) - 1}mo
+                      </div>
+                    )}
+                  </div>
+                  {totalPrice > room.price && (
+                    <div className={`text-xs font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-500'} bg-gradient-to-r ${isDarkMode ? 'from-emerald-900/20 to-teal-900/20' : 'from-emerald-50 to-teal-50'
+                      } px-3 py-1 rounded-full inline-block`}>
+                      Total for {calculateMonths(bookingDuration)} month{calculateMonths(bookingDuration) > 1 ? 's' : ''}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -681,4 +752,5 @@ const RoomDetailPage = () => {
 };
 
 export default RoomDetailPage;
+
 

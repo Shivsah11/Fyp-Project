@@ -64,6 +64,7 @@ const Signup = () => {
           // NEW: Store coins and referral code from backend if available
           if (data.user?.coins !== undefined) localStorage.setItem('userCoins', String(data.user.coins));
           if (data.user?.referralCode) localStorage.setItem('referralCode', data.user.referralCode);
+          localStorage.setItem('userImage', data.user?.profilePicture || '');
         }
 
         setSuccess(data.message || "Account created successfully!");

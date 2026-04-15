@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDarkMode } from '../../../context/DarkModeContext';
+import ProfilePictureUpload from './ProfilePictureUpload';
 
 interface SettingsSection {
   id: string;
@@ -29,6 +30,7 @@ const SettingsManagement: React.FC = () => {
     phone: '',
     address: '',
     bio: '',
+    profileImage: '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
@@ -168,17 +170,17 @@ const SettingsManagement: React.FC = () => {
       } else if (sectionId === 'notifications' || sectionId === 'preferences') {
         endpoint = 'http://localhost:5000/api/users/preferences';
         method = 'PATCH';
-        payload = sectionId === 'notifications' 
-          ? { 
-              notifications: formData.notifications, 
-              emailAlerts: formData.emailAlerts, 
-              smsAlerts: formData.smsAlerts 
-            }
-          : { 
-              language: formData.language, 
-              timezone: formData.timezone, 
-              theme: formData.theme 
-            };
+        payload = sectionId === 'notifications'
+          ? {
+            notifications: formData.notifications,
+            emailAlerts: formData.emailAlerts,
+            smsAlerts: formData.smsAlerts
+          }
+          : {
+            language: formData.language,
+            timezone: formData.timezone,
+            theme: formData.theme
+          };
       }
 
       const response = await fetch(endpoint, {
@@ -248,6 +250,58 @@ const SettingsManagement: React.FC = () => {
     }
   };
 
+  const handleProfileImageUpdate = async (imageDataUrl: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/users/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ profileImage: imageDataUrl })
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setFormData(prev => ({ ...prev, profileImage: imageDataUrl }));
+        localStorage.setItem('userImage', imageDataUrl);
+        alert('Profile picture updated successfully!');
+      } else {
+        alert(`Failed to update profile picture: ${response.status} ${data.message || 'Error'}`);
+      }
+    } catch (error: any) {
+      console.error('Error updating profile picture:', error);
+      alert(`Connection Error: ${error.message}. Please ensure the backend is running.`);
+    }
+  };
+
+  const handleProfileImageRemove = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/users/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ profileImage: '' })
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        setFormData(prev => ({ ...prev, profileImage: '' }));
+        localStorage.removeItem('userImage');
+        alert('Profile picture removed successfully!');
+      } else {
+        alert(`Failed to remove profile picture: ${response.status} ${data.message || 'Error'}`);
+      }
+    } catch (error: any) {
+      console.error('Error removing profile picture:', error);
+      alert(`Connection Error: ${error.message}. Please ensure the backend is running.`);
+    }
+  };
+
   const handleDeleteAccount = async () => {
     if (window.confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
       if (window.confirm('This will permanently delete all your data. Are you absolutely sure?')) {
@@ -296,8 +350,8 @@ const SettingsManagement: React.FC = () => {
                 className="sr-only peer"
               />
               <div className={`w-14 h-7 rounded-full peer transition-all duration-300 ${isDarkMode
-                  ? 'bg-gray-600 border-2 border-gray-500 peer-checked:bg-gradient-to-r peer-checked:from-blue-600 peer-checked:to-blue-700'
-                  : 'bg-gray-300 border-2 border-gray-400 peer-checked:bg-gradient-to-r peer-checked:from-blue-500 peer-checked:to-blue-600'
+                ? 'bg-gray-600 border-2 border-gray-500 peer-checked:bg-gradient-to-r peer-checked:from-blue-600 peer-checked:to-blue-700'
+                : 'bg-gray-300 border-2 border-gray-400 peer-checked:bg-gradient-to-r peer-checked:from-blue-500 peer-checked:to-blue-600'
                 } peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300`}>
                 <div className={`absolute top-[2px] left-[2px] bg-white rounded-full h-6 w-6 transition-all duration-300 peer-checked:translate-x-7 border-2 ${isDarkMode ? 'border-gray-400' : 'border-gray-300'
                   }`}></div>
@@ -314,8 +368,8 @@ const SettingsManagement: React.FC = () => {
               value={(item.value as string) || ''}
               onChange={(e) => handleInputChange(item.id, e.target.value)}
               className={`w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 ${isDarkMode
-                  ? 'bg-gray-700 border-gray-600 text-gray-100 hover:bg-gray-600'
-                  : 'bg-white border-gray-400 text-gray-900 hover:bg-gray-50 shadow-sm'
+                ? 'bg-gray-700 border-gray-600 text-gray-100 hover:bg-gray-600'
+                : 'bg-white border-gray-400 text-gray-900 hover:bg-gray-50 shadow-sm'
                 }`}
             >
               {item.options?.map((option) => (
@@ -337,8 +391,8 @@ const SettingsManagement: React.FC = () => {
               placeholder={item.placeholder}
               rows={3}
               className={`w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-none ${isDarkMode
-                  ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400/60 hover:bg-gray-600'
-                  : 'bg-white border-gray-400 text-gray-900 placeholder-gray-500 hover:bg-gray-50 shadow-sm'
+                ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400/60 hover:bg-gray-600'
+                : 'bg-white border-gray-400 text-gray-900 placeholder-gray-500 hover:bg-gray-50 shadow-sm'
                 }`}
             />
           </div>
@@ -354,8 +408,8 @@ const SettingsManagement: React.FC = () => {
               onChange={(e) => handleInputChange(item.id, e.target.value)}
               placeholder={item.placeholder}
               className={`w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 ${isDarkMode
-                  ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400/60 hover:bg-gray-600'
-                  : 'bg-white border-gray-400 text-gray-900 placeholder-gray-500 hover:bg-gray-50 shadow-sm'
+                ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400/60 hover:bg-gray-600'
+                : 'bg-white border-gray-400 text-gray-900 placeholder-gray-500 hover:bg-gray-50 shadow-sm'
                 }`}
             />
           </div>
@@ -391,10 +445,10 @@ const SettingsManagement: React.FC = () => {
                     <button
                       onClick={() => setActiveSection(section.id)}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeSection === section.id
-                          ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
-                          : isDarkMode
-                            ? 'text-gray-300 hover:bg-gray-700 hover:text-blue-400'
-                            : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'
+                        ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg'
+                        : isDarkMode
+                          ? 'text-gray-300 hover:bg-gray-700 hover:text-blue-400'
+                          : 'text-gray-700 hover:bg-gray-100 hover:text-blue-600'
                         }`}
                     >
                       <span className="text-xl">{section.icon}</span>
@@ -427,6 +481,15 @@ const SettingsManagement: React.FC = () => {
 
               {/* Settings Form */}
               <div className="space-y-6">
+                {/* Profile Picture Upload - Only show in profile section */}
+                {activeSection === 'profile' && (
+                  <ProfilePictureUpload
+                    currentImage={formData.profileImage || localStorage.getItem('userImage') || ''}
+                    onImageUpdate={handleProfileImageUpdate}
+                    onImageRemove={handleProfileImageRemove}
+                  />
+                )}
+                
                 {settingsSections
                   .find(s => s.id === activeSection)
                   ?.items.map((item) => (
@@ -491,8 +554,8 @@ const SettingsManagement: React.FC = () => {
           {/* Danger Zone */}
           {activeSection === 'security' && (
             <div className={`mt-6 rounded-xl border p-6 ${isDarkMode
-                ? 'bg-red-900/20 border-red-800'
-                : 'bg-red-50 border-red-300'
+              ? 'bg-red-900/20 border-red-800'
+              : 'bg-red-50 border-red-300'
               }`}>
               <h4 className={`font-bold text-lg mb-3 ${isDarkMode ? 'text-red-400' : 'text-red-700'}`}>Danger Zone</h4>
               <p className={`text-sm mb-4 ${isDarkMode ? 'text-red-400' : 'text-red-600'}`}>

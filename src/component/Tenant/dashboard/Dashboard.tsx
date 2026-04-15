@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useDarkMode } from '../../../context/DarkModeContext';
-import PaymentModal from '../payment/PaymentModal';
 import PaymentHistory from '../payment/PaymentHistory';
 import RequestModal from '../request/RequestModal';
 import ExploreRooms from '../rooms/ExploreRooms';
@@ -24,14 +23,15 @@ interface Payment {
 const Dashboard = () => {
   const { isDarkMode } = useDarkMode();
   const location = useLocation();
+  const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState('dashboard');
   const [friendEmail, setFriendEmail] = useState('');
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [recommendedRooms, setRecommendedRooms] = useState<any[]>([]);
   const [recentBookings, setRecentBookings] = useState<any[]>([]);
   const [stats, setStats] = useState({ daysUntilRent: 0, activeRequests: 0, currentRoom: 'None' });
+  const [activeBooking, setActiveBooking] = useState<any>(null);
   const [userName, setUserName] = useState('Alex');
   const [coins, setCoins] = useState(0);
   const [referralCode, setReferralCode] = useState('');
@@ -59,12 +59,14 @@ const Dashboard = () => {
 
         if (response.ok) {
           const result = await response.json();
-          const { user, stats, recentBookings, recommendedRooms, payments } = result.data;
+          console.log('[DEBUG] Dashboard Result:', result.data);
+          const { user, stats, recentBookings, recommendedRooms, payments, activeBooking } = result.data;
           setUserName(user?.firstName || 'User');
-          const img = user?.profileImage || '';
+          const img = user?.profileImage || localStorage.getItem('userImage') || '';
           setProfileImage(img);
           if (img) localStorage.setItem('userImage', img);
           setStats(stats || { daysUntilRent: 0, activeRequests: 0, currentRoom: 'None' });
+          setActiveBooking(activeBooking || null);
           setRecentBookings(recentBookings || []);
           setRecommendedRooms(recommendedRooms || []);
           setPayments(payments || []);
@@ -76,6 +78,7 @@ const Dashboard = () => {
           // Clear data if authentication fails
           setUserName('User');
           setStats({ daysUntilRent: 0, activeRequests: 0, currentRoom: 'None' });
+          setActiveBooking(null);
           setRecentBookings([]);
           setRecommendedRooms([]);
           setPayments([]);
@@ -85,6 +88,7 @@ const Dashboard = () => {
         // Clear all data on error to prevent data leakage
         setUserName('User');
         setStats({ daysUntilRent: 0, activeRequests: 0, currentRoom: 'None' });
+        setActiveBooking(null);
         setRecentBookings([]);
         setRecommendedRooms([]);
         setPayments([]);
@@ -93,6 +97,32 @@ const Dashboard = () => {
 
     fetchDashboardData();
   }, []);
+
+  // Listen for localStorage changes to sync profile image across components
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'userImage') {
+        setProfileImage(e.newValue || '');
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    // Also check for changes in the same tab
+    const checkForChanges = () => {
+      const currentImage = localStorage.getItem('userImage') || '';
+      if (currentImage !== profileImage) {
+        setProfileImage(currentImage);
+      }
+    };
+
+    const interval = setInterval(checkForChanges, 1000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [profileImage]);
 
   // Check if we should navigate to messages from bookings
   useEffect(() => {
@@ -328,7 +358,7 @@ const Dashboard = () => {
 
                     <div className="flex gap-4">
                       <button
-                        onClick={() => setIsPaymentModalOpen(true)}
+                        onClick={() => navigate('/esewa-checkout')}
                         className="group relative overflow-hidden bg-gray-900 text-white px-7 py-3 rounded-xl font-black text-[10px] uppercase tracking-[0.2em] transition-all duration-500 hover:shadow-[0_12px_24px_-8px_rgba(16,185,129,0.3)] hover:-translate-y-1 active:scale-95"
                       >
                         <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-600 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
@@ -348,34 +378,179 @@ const Dashboard = () => {
               <div className="px-6">
                 {/* Square Info Cards - Forced single row */}
                 <div className="flex flex-row gap-6 mb-12 w-full">
-                  {[
-                    { label: 'Days until Rent', value: stats.daysUntilRent || 0, color: 'emerald', progress: 85 },
-                    { label: 'Active Request', value: stats.activeRequests || 0, color: 'amber', badge: 'Pending Action' },
-                    { label: 'Current Room', value: stats.currentRoom || 'None', color: 'indigo', badge: 'Active Lease' }
-                  ].map((card, idx) => (
-                    <div key={idx} className={`group relative flex-1 rounded-[2rem] p-8 h-48 shadow-sm border transition-all duration-500 hover:shadow-md ${isDarkMode ? 'bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/60' : 'bg-white border-gray-100 hover:bg-gray-50/50'}`}>
-                      <div className="flex flex-col justify-between h-full relative z-10">
-                        <div className="flex items-center justify-between">
-                          <p className={`text-[10px] font-bold uppercase tracking-[0.2em] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{card.label}</p>
+                  {/* Days Until Rent Card */}
+                  <div className={`group relative flex-1 rounded-[2rem] p-8 h-48 shadow-sm border transition-all duration-500 hover:shadow-md ${isDarkMode ? 'bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/60' : 'bg-white border-gray-100 hover:bg-gray-50/50'}`}>
+                    <div className="flex flex-col justify-between h-full relative z-10">
+                      <div className="flex items-center justify-between">
+                        <p className={`text-[10px] font-bold uppercase tracking-[0.2em] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{stats.daysLabel || "Days until Rent"}</p>
+                      </div>
+                      <div>
+                        <p className={`text-4xl font-black tracking-tight ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>{stats.daysUntilRent || 0}</p>
+                      </div>
+                      <div className="w-full bg-emerald-500/10 rounded-full h-1.5 overflow-hidden">
+                        <div className="bg-gradient-to-r from-emerald-500 to-teal-600 h-full rounded-full transition-all duration-1000" style={{ width: '85%' }}></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Active Request Card */}
+                  <div className={`group relative flex-1 rounded-[2rem] p-8 h-48 shadow-sm border transition-all duration-500 hover:shadow-md ${isDarkMode ? 'bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/60' : 'bg-white border-gray-100 hover:bg-gray-50/50'}`}>
+                    <div className="flex flex-col justify-between h-full relative z-10">
+                      <div className="flex items-center justify-between">
+                        <p className={`text-[10px] font-bold uppercase tracking-[0.2em] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Active Request</p>
+                      </div>
+                      <div>
+                        <p className={`text-4xl font-black tracking-tight ${isDarkMode ? 'text-amber-400' : 'text-amber-600'}`}>{stats.activeRequests || 0}</p>
+                      </div>
+                      <div className="h-6 flex items-end">
+                        <span className={`px-3 py-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] font-black uppercase tracking-wider rounded-lg border border-amber-500/10`}>Pending Action</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Premium Current Room / Active Booking Card */}
+                  <div className={`group relative flex-[1.5] rounded-[2rem] shadow-sm border transition-all duration-500 overflow-hidden ${isDarkMode ? 'bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/60' : 'bg-white border-gray-100 hover:bg-gray-50/50'}`}>
+                    {activeBooking ? (
+                      <div className="flex h-full relative">
+                        {/* Image Left */}
+                        <div className="w-2/5 h-full relative overflow-hidden">
+                          <img
+                            src={activeBooking.image || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80'}
+                            alt={activeBooking.title}
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-transparent"></div>
+                          <div className="absolute top-4 left-4">
+                            <span className="px-3 py-1 bg-emerald-500 text-white text-[8px] font-black uppercase tracking-widest rounded-lg shadow-lg">Active Stay</span>
+                          </div>
                         </div>
 
-                        <div>
-                          <p className={`text-2xl font-black tracking-tight ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{card.value}</p>
-                        </div>
-
-                        <div className="h-6 flex items-end">
-                          {card.progress ? (
-                            <div className="w-full bg-emerald-500/10 rounded-full h-1.5 overflow-hidden">
-                              <div className="bg-gradient-to-r from-emerald-500 to-teal-600 h-full rounded-full transition-all duration-1000" style={{ width: '85%' }}></div>
+                        {/* Details Right */}
+                        <div className="w-3/5 p-6 flex flex-col justify-between">
+                          <div>
+                            <p className={`text-[10px] font-bold uppercase tracking-[0.2em] mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Current Stay</p>
+                            <h3 className={`text-lg font-black tracking-tight truncate mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{activeBooking.title}</h3>
+                            <div className="flex items-center gap-1.5 opacity-70">
+                              <svg className="w-3 h-3 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                              <span className={`text-[10px] font-bold truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{activeBooking.location}</span>
                             </div>
-                          ) : card.badge ? (
-                            <span className={`px-3 py-1 bg-${card.color}-500/10 text-${card.color}-600 dark:text-${card.color}-400 text-[9px] font-black uppercase tracking-wider rounded-lg border border-${card.color}-500/10`}>{card.badge}</span>
-                          ) : null}
+                          </div>
+
+                          <div className="flex justify-between items-end border-t border-gray-500/10 pt-4">
+                            <div>
+                              <p className={`text-[9px] font-bold opacity-60 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Check-in</p>
+                              <p className={`text-xs font-black ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>{activeBooking.checkIn}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className={`text-[9px] font-bold opacity-60 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Price</p>
+                              <p className="text-sm font-black text-emerald-500">{activeBooking.price}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col justify-between h-full p-8 relative z-10">
+                        <div className="flex items-center justify-between">
+                          <p className={`text-[10px] font-bold uppercase tracking-[0.2em] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Current Room</p>
+                        </div>
+                        <div>
+                          <p className={`text-2xl font-black tracking-tight opacity-30 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>No active room</p>
+                        </div>
+                        <div className="h-6 flex items-end">
+                          <span className={`px-3 py-1 bg-gray-500/10 text-gray-600 dark:text-gray-400 text-[9px] font-black uppercase tracking-wider rounded-lg border border-gray-500/10`}>Active Lease</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Full Structure Active Stay Overview */}
+                {activeBooking && (
+                  <div className={`mb-12 rounded-[2.5rem] overflow-hidden border shadow-xl transition-all duration-700 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
+                    <div className="flex flex-col lg:flex-row h-full">
+                      {/* Left: Image Gallery / Main Image */}
+                      <div className="lg:w-1/2 h-[450px] relative">
+                        <img
+                          src={activeBooking.image || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80'}
+                          alt={activeBooking.title}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                        <div className="absolute bottom-8 left-8 text-white">
+                          <span className="px-4 py-1.5 bg-emerald-500 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-full shadow-lg mb-4 inline-block">Officially Booked</span>
+                          <h2 className="text-4xl font-black tracking-tight">{activeBooking.title}</h2>
+                          <div className="flex items-center gap-2 mt-2 opacity-90">
+                            <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            <span className="text-sm font-bold uppercase tracking-wider">{activeBooking.location}</span>
+                          </div>
+                        </div>
+
+                        {/* Image Thumbnails if multiple available */}
+                        {activeBooking.images && activeBooking.images.length > 1 && (
+                          <div className="absolute bottom-8 right-8 flex gap-2">
+                            {activeBooking.images.slice(0, 3).map((img: string, idx: number) => (
+                              <div key={idx} className="w-12 h-12 rounded-xl border-2 border-white/50 overflow-hidden cursor-pointer hover:border-white transition-all">
+                                <img src={img} className="w-full h-full object-cover" alt="thumbnail" />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Right: Stay Details & Landlord */}
+                      <div className="lg:w-1/2 p-10 flex flex-col justify-between">
+                        <div className="grid grid-cols-2 gap-8 mb-10">
+                          <div>
+                            <p className={`text-[10px] font-bold uppercase tracking-[0.2em] mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Room Details</p>
+                            <div className={`space-y-4 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                              <p className="line-clamp-4 leading-relaxed italic opacity-80 backdrop-blur-sm p-4 rounded-2xl bg-gray-500/5">"{activeBooking.description || 'Experience comfort and style in your newly booked home. Every detail is curated for your perfect stay.'}"</p>
+
+                              <div className="flex flex-wrap gap-2 pt-2">
+                                {(activeBooking.amenities && activeBooking.amenities.length > 0 ? activeBooking.amenities : ['Wifi', 'Water', 'Cleaning']).map((amenity: string, idx: number) => (
+                                  <span key={idx} className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider border ${isDarkMode ? 'bg-gray-700/50 border-gray-600 text-gray-400' : 'bg-gray-50 border-gray-100 text-gray-500'}`}>{amenity}</span>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className={`rounded-3xl p-6 ${isDarkMode ? 'bg-gray-900/40' : 'bg-gray-50'}`}>
+                            <p className={`text-[10px] font-bold uppercase tracking-[0.2em] mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Your Landlord</p>
+                            <div className="flex items-center gap-4">
+                              <div className="w-14 h-14 rounded-2xl overflow-hidden shadow-md">
+                                <img
+                                  src={activeBooking.landlord?.image || `https://ui-avatars.com/api/?name=${activeBooking.landlord?.name || 'Landlord'}&background=10b981&color=fff`}
+                                  className="w-full h-full object-cover"
+                                  alt="landlord"
+                                />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h4 className={`text-sm font-black truncate ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{activeBooking.landlord?.name || 'Property Manager'}</h4>
+                                <p className="text-xs text-emerald-500 font-bold mb-1">{activeBooking.landlord?.phone || '+977-9800000000'}</p>
+                                <button className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg border border-emerald-500/20 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all`}>Message</button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between pt-8 border-t border-gray-500/10">
+                          <div className="flex gap-12">
+                            <div>
+                              <p className={`text-[10px] font-bold uppercase tracking-[0.2em] mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Stay Period</p>
+                              <p className={`text-lg font-black ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{activeBooking.checkIn} — {activeBooking.checkOut || 'Ongoing'}</p>
+                            </div>
+                            <div>
+                              <p className={`text-[10px] font-bold uppercase tracking-[0.2em] mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Monthly Rent</p>
+                              <p className="text-lg font-black text-emerald-500">{activeBooking.price}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <button onClick={() => navigate('/bookings')} className={`px-6 py-3 rounded-2xl bg-gray-900 text-white text-xs font-black shadow-xl hover:bg-black transition-all hover:scale-105 active:scale-95`}>MANAGE STAY</button>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                )}
 
 
                 <div className="grid grid-cols-2 gap-8 mb-8 items-start">
@@ -570,12 +745,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Modals - Standardized */}
-        <PaymentModal
-          isOpen={isPaymentModalOpen}
-          onClose={() => setIsPaymentModalOpen(false)}
-          onPaymentSuccess={handleAddPayment}
-        />
         <RequestModal
           isOpen={isRequestModalOpen}
           onClose={() => setIsRequestModalOpen(false)}

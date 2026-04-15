@@ -72,7 +72,7 @@ const ExploreRooms = () => {
             sqft: p.area || 0,
             available: p.status === 'Available' || p.status === 'active',
             rating: p.rating || 4.5,
-            images: p.image ? [p.image] : [],
+            images: p.images && p.images.length > 0 ? p.images : (p.image ? [p.image] : []),
             amenities: p.amenities || [],
             description: p.description || '',
             landlordId: p.landlordId ? (typeof p.landlordId === 'object' ? p.landlordId._id : p.landlordId) : '',

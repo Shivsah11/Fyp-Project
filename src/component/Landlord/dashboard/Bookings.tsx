@@ -17,6 +17,7 @@ interface Booking {
   checkOut: string;
   status: 'confirmed' | 'pending' | 'cancelled' | 'completed';
   price: number;
+  totalAmount: number;
   paymentStatus: 'paid' | 'pending' | 'overdue';
   image: string;
   amenities: string[];
@@ -96,6 +97,7 @@ const Bookings: React.FC = () => {
             checkOut: booking.checkOut || new Date().toISOString(),
             status: booking.status || 'pending',
             price: booking.price || 25000,
+            totalAmount: booking.totalAmount || booking.price || 25000,
             paymentStatus: booking.paymentStatus || 'pending',
             image: booking.image || '/api/placeholder/300/200',
             amenities: booking.amenities || ['WiFi', 'Parking'],
@@ -125,6 +127,7 @@ const Bookings: React.FC = () => {
           checkOut: '2024-06-15',
           status: 'confirmed',
           price: 25000,
+          totalAmount: 125000, // 25000 * 5 months
           paymentStatus: 'paid',
           image: '/api/placeholder/300/200',
           amenities: ['WiFi', 'Parking', 'Gym', 'Security'],
@@ -144,6 +147,7 @@ const Bookings: React.FC = () => {
           checkOut: '2024-08-01',
           status: 'confirmed',
           price: 15000,
+          totalAmount: 90000, // 15000 * 6 months
           paymentStatus: 'paid',
           image: '/api/placeholder/300/200',
           amenities: ['WiFi', 'Balcony', 'Security'],
@@ -162,6 +166,7 @@ const Bookings: React.FC = () => {
           checkOut: '2024-09-01',
           status: 'pending',
           price: 35000,
+          totalAmount: 210000, // 35000 * 6 months
           paymentStatus: 'pending',
           image: '/api/placeholder/300/200',
           amenities: ['WiFi', 'Parking', 'Garden', 'Security'],
@@ -456,13 +461,13 @@ const Bookings: React.FC = () => {
   const calculateTotalRevenue = () => {
     return bookings
       .filter(b => b.paymentStatus === 'paid')
-      .reduce((total, booking) => total + booking.price, 0);
+      .reduce((total, booking) => total + (booking.totalAmount || booking.price), 0);
   };
 
   const calculatePendingRevenue = () => {
     return bookings
       .filter(b => b.paymentStatus === 'pending' && b.status === 'confirmed')
-      .reduce((total, booking) => total + booking.price, 0);
+      .reduce((total, booking) => total + (booking.totalAmount || booking.price), 0);
   };
 
   return (
@@ -581,8 +586,14 @@ const Bookings: React.FC = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className={`text-xl font-bold mb-1 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>NPR {booking.price.toLocaleString()}</p>
-                    <p className={`text-xs ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>per month</p>
+                    <p className={`text-xl font-bold mb-1 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                      NPR {(booking.totalAmount || booking.price).toLocaleString()}
+                    </p>
+                    <p className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                      {booking.totalAmount && booking.totalAmount !== booking.price 
+                        ? `Total Stay · NPR ${booking.price.toLocaleString()}/mo` 
+                        : 'Monthly Stays'}
+                    </p>
                   </div>
                 </div>
 
@@ -790,7 +801,10 @@ const Bookings: React.FC = () => {
                 </div>
                 <div className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
                   <p className={`text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Price</p>
-                  <p className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>NPR {selectedBooking.price ? selectedBooking.price.toLocaleString() : '0'}/month</p>
+                  <p className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
+                    NPR {(selectedBooking.totalAmount || selectedBooking.price).toLocaleString()} 
+                    {selectedBooking.totalAmount && selectedBooking.totalAmount !== selectedBooking.price && ` (NPR ${selectedBooking.price.toLocaleString()}/mo)`}
+                  </p>
                 </div>
               </div>
             </div>

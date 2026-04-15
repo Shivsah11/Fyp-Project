@@ -91,7 +91,7 @@ const Settings = () => {
     e.preventDefault();
     try {
       const token = localStorage.getItem('token');
-      
+
       // Update basic profile
       const profResp = await fetch('http://localhost:5000/api/users/profile', {
         method: 'PUT',
@@ -195,11 +195,10 @@ const Settings = () => {
     { id: 'preferences', label: 'Preferences' }
   ];
 
-  const inputClasses = `w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 ${
-    isDarkMode 
-      ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400'
-      : 'bg-gray-50 border-gray-300 text-gray-800 placeholder-gray-500'
-  }`;
+  const inputClasses = `w-full px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent transition-all duration-300 ${isDarkMode
+    ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400'
+    : 'bg-gray-50 border-gray-300 text-gray-800 placeholder-gray-500'
+    }`;
 
   const labelClasses = `block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`;
 
@@ -228,13 +227,12 @@ const Settings = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as any)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${
-                    activeTab === tab.id
-                      ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg border border-emerald-400/30'
-                      : isDarkMode
-                        ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600 hover:border-gray-500'
-                        : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300 hover:border-gray-400'
-                  }`}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeTab === tab.id
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg border border-emerald-400/30'
+                    : isDarkMode
+                      ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600 hover:border-gray-500'
+                      : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300 hover:border-gray-400'
+                    }`}
                 >
                   <span className="font-medium">{tab.label}</span>
                 </button>
@@ -257,7 +255,7 @@ const Settings = () => {
                       <input
                         type="text"
                         value={formData.firstName}
-                        onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                         className={inputClasses}
                       />
                     </div>
@@ -266,7 +264,7 @@ const Settings = () => {
                       <input
                         type="text"
                         value={formData.lastName}
-                        onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                         className={inputClasses}
                       />
                     </div>
@@ -277,7 +275,7 @@ const Settings = () => {
                     <input
                       type="email"
                       value={formData.email}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       className={inputClasses}
                     />
                   </div>
@@ -287,7 +285,7 @@ const Settings = () => {
                     <input
                       type="tel"
                       value={formData.phone}
-                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                       className={inputClasses}
                     />
                   </div>
@@ -297,7 +295,7 @@ const Settings = () => {
                     <input
                       type="text"
                       value={formData.address}
-                      onChange={(e) => setFormData({...formData, address: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                       className={inputClasses}
                     />
                   </div>
@@ -306,7 +304,7 @@ const Settings = () => {
                     <label className={labelClasses}>Bio</label>
                     <textarea
                       value={formData.bio}
-                      onChange={(e) => setFormData({...formData, bio: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                       rows={3}
                       className={inputClasses}
                     />
@@ -318,7 +316,7 @@ const Settings = () => {
                       <input
                         type="text"
                         value={formData.company}
-                        onChange={(e) => setFormData({...formData, company: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                         className={inputClasses}
                       />
                     </div>
@@ -327,7 +325,7 @@ const Settings = () => {
                       <input
                         type="url"
                         value={formData.website}
-                        onChange={(e) => setFormData({...formData, website: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, website: e.target.value })}
                         className={inputClasses}
                       />
                     </div>
@@ -352,7 +350,7 @@ const Settings = () => {
                       type="password"
                       className={inputClasses}
                       value={passwords.currentPassword}
-                      onChange={(e) => setPasswords({...passwords, currentPassword: e.target.value})}
+                      onChange={(e) => setPasswords({ ...passwords, currentPassword: e.target.value })}
                       placeholder="Enter current password"
                     />
                   </div>
@@ -362,7 +360,7 @@ const Settings = () => {
                       type="password"
                       className={inputClasses}
                       value={passwords.newPassword}
-                      onChange={(e) => setPasswords({...passwords, newPassword: e.target.value})}
+                      onChange={(e) => setPasswords({ ...passwords, newPassword: e.target.value })}
                       placeholder="Enter new password"
                     />
                   </div>
@@ -372,7 +370,7 @@ const Settings = () => {
                       type="password"
                       className={inputClasses}
                       value={passwords.confirmPassword}
-                      onChange={(e) => setPasswords({...passwords, confirmPassword: e.target.value})}
+                      onChange={(e) => setPasswords({ ...passwords, confirmPassword: e.target.value })}
                       placeholder="Confirm new password"
                     />
                   </div>
@@ -401,9 +399,8 @@ const Settings = () => {
                     { key: 'monthlyReports', label: 'Monthly Reports', description: 'Receive monthly performance reports' },
                     { key: 'marketingEmails', label: 'Marketing Emails', description: 'Receive promotional offers and updates' }
                   ].map((item) => (
-                    <div key={item.key} className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-300 ${
-                      isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'
-                    }`}>
+                    <div key={item.key} className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-300 ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'
+                      }`}>
                       <div>
                         <h5 className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{item.label}</h5>
                         <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{item.description}</p>
@@ -414,7 +411,7 @@ const Settings = () => {
                           checked={notificationSettings[item.key as keyof typeof notificationSettings]}
                           onChange={(e) => {
                             const val = e.target.checked;
-                            setNotificationSettings({...notificationSettings, [item.key]: val});
+                            setNotificationSettings({ ...notificationSettings, [item.key]: val });
                             savePreferences({ [item.key]: val });
                           }}
                           className="sr-only peer"
@@ -437,9 +434,8 @@ const Settings = () => {
                     { key: 'twoFactorAuth', label: 'Two-Factor Authentication', description: 'Add an extra layer of security to your account' },
                     { key: 'loginAlerts', label: 'Login Alerts', description: 'Get notified when someone logs into your account' }
                   ].map((item) => (
-                    <div key={item.key} className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-300 ${
-                      isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'
-                    }`}>
+                    <div key={item.key} className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-300 ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'
+                      }`}>
                       <div>
                         <h5 className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>{item.label}</h5>
                         <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>{item.description}</p>
@@ -450,7 +446,7 @@ const Settings = () => {
                           checked={!!securitySettings[item.key as keyof typeof securitySettings]}
                           onChange={(e) => {
                             const val = e.target.checked;
-                            setSecuritySettings({...securitySettings, [item.key]: val});
+                            setSecuritySettings({ ...securitySettings, [item.key]: val });
                             savePreferences({ [item.key]: val });
                           }}
                           className="sr-only peer"
@@ -465,7 +461,7 @@ const Settings = () => {
                       <label className={labelClasses}>Session Timeout (minutes)</label>
                       <select
                         value={securitySettings.sessionTimeout}
-                        onChange={(e) => setSecuritySettings({...securitySettings, sessionTimeout: e.target.value})}
+                        onChange={(e) => setSecuritySettings({ ...securitySettings, sessionTimeout: e.target.value })}
                         className={inputClasses}
                       >
                         <option value="15" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>15 minutes</option>
@@ -478,7 +474,7 @@ const Settings = () => {
                       <label className={labelClasses}>Password Expiry (days)</label>
                       <select
                         value={securitySettings.passwordExpiry}
-                        onChange={(e) => setSecuritySettings({...securitySettings, passwordExpiry: e.target.value})}
+                        onChange={(e) => setSecuritySettings({ ...securitySettings, passwordExpiry: e.target.value })}
                         className={inputClasses}
                       >
                         <option value="30" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>30 days</option>
@@ -506,7 +502,7 @@ const Settings = () => {
                         value={preferences.language}
                         onChange={(e) => {
                           const val = e.target.value;
-                          setPreferences({...preferences, language: val});
+                          setPreferences({ ...preferences, language: val });
                           savePreferences({ language: val });
                         }}
                         className={inputClasses}
@@ -522,7 +518,7 @@ const Settings = () => {
                         value={preferences.timezone}
                         onChange={(e) => {
                           const val = e.target.value;
-                          setPreferences({...preferences, timezone: val});
+                          setPreferences({ ...preferences, timezone: val });
                           savePreferences({ timezone: val });
                         }}
                         className={inputClasses}
@@ -540,7 +536,7 @@ const Settings = () => {
                       <label className={labelClasses}>Currency</label>
                       <select
                         value={preferences.currency}
-                        onChange={(e) => setPreferences({...preferences, currency: e.target.value})}
+                        onChange={(e) => setPreferences({ ...preferences, currency: e.target.value })}
                         className={inputClasses}
                       >
                         <option value="NPR" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>NPR - Nepalese Rupee</option>
@@ -553,7 +549,7 @@ const Settings = () => {
                       <label className={labelClasses}>Date Format</label>
                       <select
                         value={preferences.dateFormat}
-                        onChange={(e) => setPreferences({...preferences, dateFormat: e.target.value})}
+                        onChange={(e) => setPreferences({ ...preferences, dateFormat: e.target.value })}
                         className={inputClasses}
                       >
                         <option value="DD/MM/YYYY" className={isDarkMode ? 'bg-gray-800' : 'bg-white'}>DD/MM/YYYY</option>
@@ -563,9 +559,8 @@ const Settings = () => {
                     </div>
                   </div>
 
-                  <div className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-300 ${
-                    isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'
-                  }`}>
+                  <div className={`flex items-center justify-between p-4 rounded-xl border transition-all duration-300 ${isDarkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'
+                    }`}>
                     <div>
                       <h5 className={`font-medium ${isDarkMode ? 'text-gray-200' : 'text-gray-900'}`}>Dark Mode</h5>
                       <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Use dark theme across the application</p>
@@ -576,7 +571,7 @@ const Settings = () => {
                         checked={isDarkMode}
                         onChange={(e) => {
                           const newDarkMode = e.target.checked;
-                          setPreferences({...preferences, darkMode: newDarkMode});
+                          setPreferences({ ...preferences, darkMode: newDarkMode });
                           setDarkMode(newDarkMode);
                         }}
                         className="sr-only peer"

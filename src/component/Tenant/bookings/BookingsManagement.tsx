@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDarkMode } from '../../../context/DarkModeContext';
-import PaymentModal from '../payment/PaymentModal';
 import MessagePortal from './MessagePortal';
 
 interface Booking {
@@ -12,8 +11,8 @@ interface Booking {
   location: string;
   checkIn: string;
   checkOut: string;
-  status: 'confirmed' | 'pending' | 'cancelled' | 'completed';
   price: number;
+  totalAmount?: number;
   paymentStatus: 'paid' | 'pending' | 'overdue' | 'cancelled';
   image: string;
   amenities: string[];
@@ -33,8 +32,6 @@ const BookingsManagement: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [selectedBookingForPayment, setSelectedBookingForPayment] = useState<Booking | null>(null);
   const [isMessagePortalOpen, setIsMessagePortalOpen] = useState(false);
   const [selectedBookingForMessage, setSelectedBookingForMessage] = useState<Booking | null>(null);
   
@@ -44,8 +41,6 @@ const BookingsManagement: React.FC = () => {
 
   useEffect(() => {
     const fetchBookings = async () => {
-      console.log('=== BookingsManagement useEffect triggered ===');
-
       const token = localStorage.getItem('token');
       if (!token) {
         setError('No authentication token found');
@@ -58,18 +53,14 @@ const BookingsManagement: React.FC = () => {
       const userBookingsKey = `userBookings_${userId}`;
       const newBookingKey = `newBooking_${userId}`;
 
-      // First check for new booking data before anything else
       const newBookingData = localStorage.getItem(newBookingKey);
-      console.log('New booking data from localStorage at start:', newBookingData);
-
       let bookingsData = [];
 
-      // Try to get persistent bookings from user-specific localStorage first
+      // Try to get persistent bookings from localStorage first
       const persistentBookings = localStorage.getItem(userBookingsKey);
       if (persistentBookings) {
         try {
           bookingsData = JSON.parse(persistentBookings);
-          console.log('Loaded persistent bookings from localStorage:', bookingsData);
         } catch (error) {
           console.error('Error parsing persistent bookings:', error);
         }
@@ -86,21 +77,17 @@ const BookingsManagement: React.FC = () => {
         const result = await response.json();
 
         if (result.success) {
-          console.log('✅ API fetch successful:', result.data.length, 'bookings');
           bookingsData = result.data;
           localStorage.setItem(userBookingsKey, JSON.stringify(bookingsData));
         } else {
-          console.warn('⚠️ API returned failure status:', result.message);
           setError(result.message || 'Failed to fetch bookings');
-          if (persistentBookings) bookingsData = JSON.parse(persistentBookings);
         }
       } catch (err) {
         console.error('❌ Network error fetching bookings:', err);
         setError('Error connecting to server. Displaying cached data.');
-        if (persistentBookings) bookingsData = JSON.parse(persistentBookings);
       }
 
-      // Check for new booking in local storage (immediate feedback after booking)
+      // Check for new booking in local storage
       if (newBookingData) {
         try {
           const newBooking = JSON.parse(newBookingData);
@@ -112,22 +99,83 @@ const BookingsManagement: React.FC = () => {
           }
           localStorage.removeItem(newBookingKey);
         } catch (e) {
-          console.error('Error parsing new booking:', e);
           localStorage.removeItem(newBookingKey);
         }
       }
 
       setBookings(bookingsData);
       setLoading(false);
-
-      // Debug: Log bookings data
-      console.log('Final bookings loaded:', bookingsData);
-      console.log('Active tab:', activeTab);
-      console.log('Filtered bookings:', bookingsData.filter((b: any) => b.status === 'confirmed' || b.status === 'pending'));
     };
 
     fetchBookings();
-  }, [location]); // Add location dependency to trigger on navigation
+  }, [location.pathname]); // Trigger only on navigation, not on state updates
+
+  // Listen for room navigation from ExploreRooms
+  useEffect(() => {
+    const handleRoomNavigation = (e: StorageEvent) => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      const userId = JSON.parse(atob(token.split('.')[1])).userId;
+      const userBookingsKey = `userBookings_${userId}`;
+
+      // Check if this is a room navigation event
+      if (e.key === userBookingsKey) {
+        try {
+          const newBookingData = e.newValue;
+          if (newBookingData) {
+            const parsedBooking = JSON.parse(newBookingData);
+            console.log('Room navigation detected:', parsedBooking);
+            
+            // Add the new booking to the current bookings list
+            setBookings((prevBookings) => {
+              const existingIndex = prevBookings.findIndex((b) => 
+                (b.id === parsedBooking.id || b._id === parsedBooking._id)
+              );
+              
+              if (existingIndex >= 0) {
+                // Update existing booking
+                return prevBookings.map((b, index) => 
+                  index === existingIndex ? parsedBooking : b
+                );
+              } else {
+                // Add new booking to the list
+                return [parsedBooking, ...prevBookings];
+              }
+            });
+            
+            // Update localStorage
+            localStorage.setItem(userBookingsKey, JSON.stringify(
+              existingIndex >= 0 
+                ? setBookings((prevBookings) => {
+                    const existingIndex = prevBookings.findIndex((b) => 
+                      (b.id === parsedBooking.id || b._id === parsedBooking.id)
+                    );
+                    
+                    if (existingIndex >= 0) {
+                      // Update existing booking
+                      return prevBookings.map((b, index) => 
+                        index === existingIndex ? parsedBooking : b
+                      );
+                    } else {
+                      // Add new booking to the list
+                      return [parsedBooking, ...prevBookings];
+                    }
+                  })
+                : [parsedBooking, ...prevBookings]
+            ));
+          }
+        } catch (error) {
+          console.error('Error handling room navigation:', error);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleRoomNavigation);
+    return () => {
+      window.removeEventListener('storage', handleRoomNavigation);
+    };
+  }, [bookings]); // Add bookings dependency to ensure room navigation updates are handled
 
   // Add effect to listen for landlord approval/rejection/cancellation updates
   useEffect(() => {
@@ -318,102 +366,24 @@ const BookingsManagement: React.FC = () => {
 
   const handleMakePayment = (booking: Booking) => {
     try {
-      // Validate booking data
       if (!booking || !booking.id) {
         alert('Invalid booking data');
         return;
       }
-
-      // Set the selected booking and open payment modal
-      setSelectedBookingForPayment(booking);
-      setIsPaymentModalOpen(true);
+      // Redirect to the new high-fidelity checkout page
+      const paymentAmount = booking.totalAmount || (() => {
+        const checkInDate = new Date(booking.checkIn);
+        const checkOutDate = new Date(booking.checkOut);
+        const daysDifference = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 3600 * 24));
+        const monthsDifference = Math.max(1, Math.ceil(daysDifference / 30));
+        return booking.price * monthsDifference;
+      })();
+      
+      navigate('/esewa-checkout', { state: { bookingId: booking.id, amount: paymentAmount } });
     } catch (error) {
-      console.error('Payment modal error:', error);
-      alert('Unable to open payment modal. Please try again.');
+      console.error('Payment redirect error:', error);
+      alert('Unable to initiate payment. Please try again.');
     }
-  };
-
-  const handlePaymentSuccess = async (amount: string, esewaNumber: string) => {
-    if (selectedBookingForPayment) {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('Authentication required. Please login again.');
-        setIsPaymentModalOpen(false);
-        setSelectedBookingForPayment(null);
-        return;
-      }
-
-      const bookingId = selectedBookingForPayment.id || selectedBookingForPayment._id;
-      if (!bookingId) {
-        alert('Booking ID missing. Cannot process payment.');
-        return;
-      }
-
-      try {
-        // Call API to update payment status
-        const response = await fetch(`http://localhost:5000/api/bookings/${bookingId}/status`, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            paymentStatus: 'paid',
-            paymentMethod: 'esewa',
-            paymentAmount: amount,
-            paymentReference: esewaNumber
-          })
-        });
-
-        if (response.ok) {
-          // Update local state
-          const updatedBookings = bookings.map(booking => {
-            const currentId = booking.id || booking._id;
-            if (currentId === bookingId) {
-              return {
-                ...booking,
-                paymentStatus: 'paid' as const
-              };
-            }
-            return booking;
-          });
-
-          setBookings(updatedBookings);
-
-          // Update user-specific localStorage
-          const userId = JSON.parse(atob(token.split('.')[1])).userId;
-          const userBookingsKey = `userBookings_${userId}`;
-          localStorage.setItem(userBookingsKey, JSON.stringify(updatedBookings));
-
-          alert(`Payment of Rs. ${amount} successful for ${selectedBookingForPayment.propertyName}!`);
-        } else {
-          alert('Payment recorded but failed to update status. Please contact support.');
-        }
-      } catch (error) {
-        console.error('Payment update error:', error);
-        // Fallback: Update local state even if API fails
-        const updatedBookings = bookings.map(booking => {
-          const currentId = booking.id || booking._id;
-          if (currentId === bookingId) {
-            return {
-              ...booking,
-              paymentStatus: 'paid' as const
-            };
-          }
-          return booking;
-        });
-
-        setBookings(updatedBookings);
-
-        const userId = JSON.parse(atob(token.split('.')[1])).userId;
-        const userBookingsKey = `userBookings_${userId}`;
-        localStorage.setItem(userBookingsKey, JSON.stringify(updatedBookings));
-
-        alert(`Payment of Rs. ${amount} recorded locally for ${selectedBookingForPayment.propertyName}!`);
-      }
-    }
-    setIsPaymentModalOpen(false);
-    setSelectedBookingForPayment(null);
   };
 
   const handleContactLandlord = (booking: Booking) => {
@@ -539,7 +509,7 @@ const BookingsManagement: React.FC = () => {
           <p className={`font-bold italic ${isDarkMode ? 'text-red-400/80' : 'text-red-600/80'}`}>{error}</p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-2">
           {currentBookings.length > 0 ? (
             currentBookings.map((booking) => (
               <div key={booking.id} className={`group relative rounded-3xl border overflow-hidden transition-all duration-500 transform hover:scale-[1.01] hover:shadow-2xl ${isDarkMode
@@ -548,7 +518,7 @@ const BookingsManagement: React.FC = () => {
                 }`}>
                 <div className="grid md:grid-cols-5 gap-0">
                   {/* Property Image */}
-                  <div className="relative md:col-span-2 h-72 overflow-hidden">
+                  <div className="relative md:col-span-2 h-24 overflow-hidden">
                     <img
                       src={booking.image || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop'}
                       alt={booking.propertyName}
@@ -557,7 +527,7 @@ const BookingsManagement: React.FC = () => {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                     <div className="absolute top-6 left-6 flex flex-wrap gap-2">
                       <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border backdrop-blur-md ${getStatusColor(booking.status)}`}>
-                        {booking.status}
+                        {booking.status === 'confirmed' ? 'Booked' : booking.status}
                       </span>
                       <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border backdrop-blur-md ${getPaymentStatusColor(booking.paymentStatus)}`}>
                         {booking.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
@@ -570,7 +540,7 @@ const BookingsManagement: React.FC = () => {
                   </div>
 
                   {/* Property Details */}
-                  <div className="md:col-span-3 p-8 flex flex-col">
+                  <div className="md:col-span-3 p-1 flex flex-col">
                     <div className="flex justify-between items-start mb-8">
                       <div className="space-y-3">
                         <p className={`text-sm font-bold flex items-center gap-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
@@ -586,10 +556,60 @@ const BookingsManagement: React.FC = () => {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className={`text-2xl font-black ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>NPR {booking.price.toLocaleString()}</p>
-                        <p className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>Monthly Total</p>
+                        <p className={`text-2xl font-black ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                          NPR {(booking.totalAmount || (() => {
+                            const checkInDate = new Date(booking.checkIn);
+                            const checkOutDate = new Date(booking.checkOut);
+                            const daysDifference = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 3600 * 24));
+                            const monthsDifference = Math.max(1, Math.ceil(daysDifference / 30));
+                            return booking.price * monthsDifference;
+                          })()).toLocaleString()}
+                        </p>
+                        <p className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                          {(() => {
+                            const checkInDate = new Date(booking.checkIn);
+                            const checkOutDate = new Date(booking.checkOut);
+                            const daysDifference = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 3600 * 24));
+                            const monthsDifference = Math.ceil(daysDifference / 30);
+                            return monthsDifference > 1 ? `${monthsDifference} Months Total` : 'Monthly Total';
+                          })()}
+                        </p>
                       </div>
                     </div>
+
+                    {/* Days Remaining for Confirmed Bookings */}
+                    {booking.status === 'confirmed' && (
+                      <div className={`grid grid-cols-1 gap-4 p-4 mb-8 rounded-2xl border ${isDarkMode ? 'bg-gray-900/50 border-gray-700' : 'bg-gray-50 border-gray-100'
+                        }`}>
+                        <div className="text-center">
+                          <p className={`text-[10px] font-black uppercase tracking-widest mb-2 ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>Days Remaining</p>
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="text-3xl font-black text-emerald-500">
+                              {(() => {
+                                const today = new Date();
+                                const checkOutDate = new Date(booking.checkOut);
+                                const daysLeft = Math.ceil((checkOutDate.getTime() - today.getTime()) / (1000 * 3600 * 24));
+                                return Math.max(0, daysLeft);
+                              })()}
+                            </div>
+                            <div className={`text-sm font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                              days
+                            </div>
+                          </div>
+                          {(() => {
+                            const today = new Date();
+                            const checkOutDate = new Date(booking.checkOut);
+                            const daysLeft = Math.ceil((checkOutDate.getTime() - today.getTime()) / (1000 * 3600 * 24));
+                            if (daysLeft <= 7) {
+                              return (
+                                <p className="text-xs text-red-500 font-medium mt-2">Your stay is ending soon!</p>
+                              );
+                            }
+                            return null;
+                          })()}
+                        </div>
+                      </div>
+                    )}
 
                     <div className={`grid grid-cols-2 gap-8 p-6 mb-8 rounded-2xl border ${isDarkMode ? 'bg-gray-900/50 border-gray-700' : 'bg-gray-50 border-gray-100'
                       }`}>
@@ -629,9 +649,15 @@ const BookingsManagement: React.FC = () => {
                         {booking.status === 'confirmed' && booking.paymentStatus === 'pending' && (
                           <button
                             onClick={() => handleMakePayment(booking)}
-                            className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-2xl font-black text-sm uppercase shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:-translate-y-0.5 transition-all duration-300"
+                            className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-2xl font-black text-sm uppercase shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:-translate-y-0.5 transition-all duration-300 relative overflow-hidden group"
                           >
-                            Pay Now
+                            <div className="flex items-center gap-2">
+                              <span>Pay Now</span>
+                              <div className="bg-white/20 backdrop-blur-sm px-2 py-1 rounded-full text-xs font-bold animate-pulse">
+                                NPR {(booking.totalAmount || (booking.price * Math.max(1, Math.ceil(Math.ceil((new Date(booking.checkOut).getTime() - new Date(booking.checkIn).getTime()) / (1000 * 3600 * 24)) / 30)))).toLocaleString()}
+                              </div>
+                            </div>
+                            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                           </button>
                         )}
 
@@ -740,16 +766,6 @@ const BookingsManagement: React.FC = () => {
         </div>
       )}
 
-      {/* Payment Modal */}
-      <PaymentModal
-        isOpen={isPaymentModalOpen}
-        onClose={() => {
-          setIsPaymentModalOpen(false);
-          setSelectedBookingForPayment(null);
-        }}
-        onPaymentSuccess={handlePaymentSuccess}
-        defaultAmount={selectedBookingForPayment?.price?.toString()}
-      />
 
       {/* Message Portal */}
       {selectedBookingForMessage && (

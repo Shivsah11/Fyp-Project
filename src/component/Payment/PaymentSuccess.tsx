@@ -34,9 +34,12 @@ const PaymentSuccess = () => {
     existing.unshift(newPayment);
     localStorage.setItem('pendingPayments', JSON.stringify(existing));
 
-    // --- Step 2: Also try to record in backend (best effort) ---
+    // --- Step 2: Record in backend (generic dashboard record) ---
     const token = localStorage.getItem('token');
+    const bookingId = searchParams.get("bookingId");
+
     if (token) {
+      // 2a. Record generic payment
       fetch('http://localhost:5000/api/dashboard/record-payment', {
         method: 'POST',
         headers: {
@@ -57,12 +60,32 @@ const PaymentSuccess = () => {
             const stored = JSON.parse(localStorage.getItem('pendingPayments') || '[]');
             const filtered = stored.filter((p: any) => p.id !== newPayment.id);
             localStorage.setItem('pendingPayments', JSON.stringify(filtered));
-            console.log("Payment also recorded in backend DB.");
           }
         })
-        .catch(() => {
-          console.log("Backend unavailable, payment stored locally only.");
-        });
+        .catch(err => console.error("Generic recording error:", err));
+
+      // 2b. If associated with a booking, update booking status to 'paid' and 'confirmed'
+      if (bookingId) {
+        fetch(`http://localhost:5000/api/bookings/${bookingId}/pay`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            transactionId,
+            amount: Number(amount),
+            paymentMethod: 'eSewa'
+          })
+        })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              console.log("Booking successfully updated to Booked/Confirmed.");
+            }
+          })
+          .catch(err => console.error("Booking status update error:", err));
+      }
     }
   }, [status, navigate, amount, transactionId]);
 
