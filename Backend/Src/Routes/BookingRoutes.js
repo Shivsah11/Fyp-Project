@@ -1,5 +1,5 @@
 import express from "express";
-import { getLandlordBookings, updateBookingStatus, getTenantBookings, createBooking } from "../Controllers/BookingController.js";
+import { getLandlordBookings, updateBookingStatus, getTenantBookings, createBooking, getBookingById, completeBookingPayment } from "../Controllers/BookingController.js";
 import { authenticateToken, authorizeRoles } from "../Middleware/Auth.js";
 
 const router = express.Router();
@@ -19,5 +19,11 @@ router.get("/tenant", authorizeRoles("Tenant", "Admin"), getTenantBookings);
 
 // Create a new booking
 router.post("/", authorizeRoles("Tenant"), createBooking);
+
+// Get a single booking by ID
+router.get("/:id", authorizeRoles("Tenant", "Landlord", "Admin"), getBookingById);
+
+// Complete payment for a booking
+router.put("/:id/pay", authorizeRoles("Tenant", "Admin"), completeBookingPayment);
 
 export default router;

@@ -36,18 +36,25 @@ export const updateProfile = async (req, res) => {
   console.log(`[USER_CONTROLLER] PUT /profile - User: ${req.user?.userId}`);
   try {
     const { userId, role } = req.user;
-    const { firstName, lastName, phone, address, bio } = req.body;
+    const { firstName, lastName, phone, address, bio, profileImage } = req.body;
     const UserModel = getModelByRole(role);
+
+    const updateData = {
+      firstName,
+      lastName,
+      phone,
+      address,
+      bio
+    };
+
+    // Only update profileImage if it's provided in the request
+    if (profileImage !== undefined) {
+      updateData.profileImage = profileImage;
+    }
 
     const updatedUser = await UserModel.findByIdAndUpdate(
       userId,
-      {
-        firstName,
-        lastName,
-        phone,
-        address,
-        bio
-      },
+      updateData,
       { new: true, runValidators: true }
     ).select('-password');
 

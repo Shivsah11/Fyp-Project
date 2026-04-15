@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import User from "../Models/User.js";
 import Tenant from "../Models/Tenant.js";
 import Landlord from "../Models/Landlord.js";
@@ -147,15 +148,62 @@ export const getDashboardData = async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(10);
 
+    // Find the most recent active (confirmed/paid) booking specifically
+    // Use explicit ObjectId casting for reliability
+    const activeBookingRaw = await Booking.findOne({ 
+      tenantId: new mongoose.Types.ObjectId(userId), 
+      status: { $regex: /^(confirmed|paid)$/i } 
+    }).populate({
+      path: 'propertyId',
+      populate: { path: 'landlordId', select: 'firstName lastName email phone profileImage' }
+    }).sort({ createdAt: -1 });
+
+    let activeBooking = null;
+    let daysRemaining = daysUntilRent;
+    let daysLabel = "Days until Rent";
+
+    if (activeBookingRaw && activeBookingRaw.propertyId) {
+      const prop = activeBookingRaw.propertyId;
+      activeBooking = {
+        id: activeBookingRaw._id,
+        title: prop.title,
+        description: prop.description,
+        location: prop.location,
+        image: prop.image || (prop.images && prop.images.length > 0 ? prop.images[0] : ''),
+        images: prop.images || [],
+        amenities: prop.amenities || [],
+        price: activeBookingRaw.price,
+        checkIn: activeBookingRaw.checkInDate,
+        checkOut: activeBookingRaw.checkOutDate,
+        status: activeBookingRaw.status,
+        landlord: prop.landlordId ? {
+          name: `${prop.landlordId.firstName} ${prop.landlordId.lastName}`,
+          email: prop.landlordId.email,
+          phone: prop.landlordId.phone,
+          image: prop.landlordId.profileImage
+        } : null
+      };
+
+      // Calculate days until checkout if available
+      if (activeBookingRaw.checkOutDate) {
+        const checkout = new Date(activeBookingRaw.checkOutDate);
+        if (!isNaN(checkout.getTime())) {
+          const diff = checkout.getTime() - now.getTime();
+          daysRemaining = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+          daysLabel = "Days Remaining";
+        }
+      }
+    }
+
     const dashboardData = {
       user,
       stats: {
-        daysUntilRent,
+        daysUntilRent: daysRemaining,
+        daysLabel,
         activeRequests: activeRequestsCount,
-        currentRoom: recentBookingsRaw.length > 0 && recentBookingsRaw[0].status.toLowerCase() === 'confirmed'
-          ? (recentBookingsRaw[0].propertyId ? recentBookingsRaw[0].propertyId.title : 'Owned')
-          : "No active room"
+        currentRoom: activeBooking ? activeBooking.title : "No active room"
       },
+      activeBooking,
       recentBookings: recentBookingsRaw.map(b => ({
         id: b._id,
         room: b.propertyId ? b.propertyId.title : 'Unknown Property',

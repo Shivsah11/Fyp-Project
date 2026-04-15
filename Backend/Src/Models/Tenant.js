@@ -9,6 +9,7 @@ const tenantSchema = new mongoose.Schema({
   phone: { type: String, default: '' },
   address: { type: String, default: '' },
   bio: { type: String, default: '' },
+  profileImage: { type: String, default: '' },
   preferences: {
     notifications: { type: Boolean, default: true },
     emailAlerts: { type: Boolean, default: true },
