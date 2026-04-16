@@ -69,6 +69,8 @@ const LandlordDashboard = () => {
   const [showMapPicker, setShowMapPicker] = useState(false);
   const [propertyPage, setPropertyPage] = useState(1);
   const propertiesPerPage = 4;
+  const [bookingPage, setBookingPage] = useState(1);
+  const bookingsPerPage = 4;
   const [analytics, setAnalytics] = useState({
     totalIncome: 0,
     totalProperties: 0,
@@ -81,10 +83,7 @@ const LandlordDashboard = () => {
   });
 
   const [recentBookings, setRecentBookings] = useState<any[]>([]);
-  const [messages] = useState<any[]>([
-    { id: 1, sender: 'John Doe', subject: 'Maintenance Request', time: '2 hours ago', unread: true },
-    { id: 2, sender: 'Jane Smith', subject: 'Payment Confirmation', time: '5 hours ago', unread: false },
-  ]);
+
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard' },
@@ -492,11 +491,11 @@ const LandlordDashboard = () => {
                 </div>
 
                 {/* Recent Booking Requests */}
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 gap-6">
                   <div className={`rounded-xl border p-6 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
                     <h3 className={`text-lg font-bold mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>Recent Booking Requests</h3>
                     <div className="space-y-3">
-                      {recentBookings.map((booking) => (
+                      {recentBookings.slice((bookingPage - 1) * bookingsPerPage, bookingPage * bookingsPerPage).map((booking) => (
                         <div key={booking.id} className={`rounded-lg p-3 border transition-all duration-300 ${isDarkMode ? 'bg-gray-700 border-gray-600 hover:bg-gray-600' : 'bg-gray-50 border-gray-100 hover:bg-gray-100'}`}>
                           <div className="flex items-center justify-between">
                             <div>
@@ -517,32 +516,41 @@ const LandlordDashboard = () => {
                         </div>
                       ))}
                     </div>
-                  </div>
 
-                  {/* Inbox */}
-                  <div className={`rounded-xl border p-6 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
-                    <h3 className={`text-lg font-bold mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>Inbox</h3>
-                    <div className="space-y-3">
-                      {messages.map((message) => (
-                        <div key={message.id} className={`rounded-lg p-3 border transition-all duration-300 ${isDarkMode ? 'bg-gray-700 border-gray-600 hover:bg-gray-600' : 'bg-gray-50 border-gray-100 hover:bg-gray-100'}`}>
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              {message.unread && (
-                                <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                              )}
-                              <div>
-                                <h4 className={`font-semibold ${isDarkMode ? 'text-gray-200' : 'text-gray-800'}`}>{message.sender}</h4>
-                                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{message.subject}</p>
-                                <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>{message.time}</p>
-                              </div>
-                            </div>
-                            <button className={`${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-700'}`}>
-                              →
+                    {/* Booking Pagination Controls */}
+                    {recentBookings.length > bookingsPerPage && (
+                      <div className="flex items-center justify-center gap-2 mt-6 py-3 border-t border-gray-100 dark:border-gray-700/50">
+                        <button
+                          onClick={() => setBookingPage(prev => Math.max(prev - 1, 1))}
+                          disabled={bookingPage === 1}
+                          className={`flex items-center justify-center w-9 h-9 rounded-xl transition-all ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'} disabled:opacity-30 disabled:cursor-not-allowed shadow-sm`}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
+                        </button>
+
+                        <div className="flex items-center gap-2 mx-1">
+                          {[...Array(Math.ceil(recentBookings.length / bookingsPerPage))].map((_, i) => (
+                            <button
+                              key={i}
+                              onClick={() => setBookingPage(i + 1)}
+                              className={`w-9 h-9 rounded-xl font-bold transition-all duration-300 ${bookingPage === i + 1
+                                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
+                                : isDarkMode ? 'bg-gray-800 text-gray-400 hover:bg-gray-700' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'}`}
+                            >
+                              {i + 1}
                             </button>
-                          </div>
+                          ))}
                         </div>
-                      ))}
-                    </div>
+
+                        <button
+                          onClick={() => setBookingPage(prev => Math.min(prev + 1, Math.ceil(recentBookings.length / bookingsPerPage)))}
+                          disabled={bookingPage === Math.ceil(recentBookings.length / bookingsPerPage)}
+                          className={`flex items-center justify-center w-9 h-9 rounded-xl transition-all ${isDarkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-100 hover:bg-gray-200'} disabled:opacity-30 disabled:cursor-not-allowed shadow-sm`}
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
 

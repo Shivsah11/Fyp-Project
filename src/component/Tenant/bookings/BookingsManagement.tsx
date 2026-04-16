@@ -512,43 +512,43 @@ const BookingsManagement: React.FC = () => {
         <div className="space-y-2">
           {currentBookings.length > 0 ? (
             currentBookings.map((booking) => (
-              <div key={booking.id} className={`group relative rounded-3xl border overflow-hidden transition-all duration-500 transform hover:scale-[1.01] hover:shadow-2xl ${isDarkMode
+              <div key={booking.id} className={`group relative rounded-2xl border overflow-hidden transition-all duration-500 transform hover:scale-[1.01] hover:shadow-2xl max-h-80 ${isDarkMode
                 ? 'bg-gray-800 border-gray-700 hover:border-emerald-500/50'
                 : 'bg-white border-gray-200 hover:border-emerald-400'
                 }`}>
-                <div className="grid md:grid-cols-5 gap-0">
+                <div className="grid md:grid-cols-5 gap-0 h-80">
                   {/* Property Image */}
-                  <div className="relative md:col-span-2 h-24 overflow-hidden">
+                  <div className="relative md:col-span-2 h-80 overflow-hidden">
                     <img
                       src={booking.image || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop'}
                       alt={booking.propertyName}
                       className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
-                    <div className="absolute top-6 left-6 flex flex-wrap gap-2">
-                      <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border backdrop-blur-md ${getStatusColor(booking.status)}`}>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
+                    <div className="absolute top-1 left-1 flex flex-wrap gap-0.5">
+                      <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border backdrop-blur-md ${getStatusColor(booking.status)}`}>
                         {booking.status === 'confirmed' ? 'Booked' : booking.status}
                       </span>
-                      <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border backdrop-blur-md ${getPaymentStatusColor(booking.paymentStatus)}`}>
+                      <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest border backdrop-blur-md ${getPaymentStatusColor(booking.paymentStatus)}`}>
                         {booking.paymentStatus === 'paid' ? 'Paid' : 'Pending'}
                       </span>
                     </div>
-                    <div className="absolute bottom-6 left-6 right-6">
-                      <p className="text-emerald-400 text-xs font-black uppercase tracking-widest mb-1">{booking.propertyType}</p>
-                      <h3 className="text-white text-xl font-black italic">{booking.propertyName}</h3>
+                    <div className="absolute bottom-1 left-1 right-1">
+                      <p className="text-emerald-400 text-[7px] font-black uppercase tracking-[0.2em] mb-0.5">{booking.propertyType}</p>
+                      <h3 className="text-white text-sm font-black italic tracking-tight">{booking.propertyName}</h3>
                     </div>
                   </div>
 
                   {/* Property Details */}
-                  <div className="md:col-span-3 p-1 flex flex-col">
-                    <div className="flex justify-between items-start mb-8">
-                      <div className="space-y-3">
-                        <p className={`text-sm font-bold flex items-center gap-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-                          <span className="text-lg">📍</span> {booking.location}
+                  <div className="md:col-span-3 p-6 flex flex-col">
+                    <div className="flex justify-between items-start mb-5">
+                      <div className="space-y-2">
+                        <p className={`text-xs font-bold flex items-center gap-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                          <span className="text-base">📍</span> {booking.location}
                         </p>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-1.5">
                           {booking.amenities.slice(0, 4).map((amenity, index) => (
-                            <span key={index} className={`px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-tighter ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
+                            <span key={index} className={`px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-tighter ${isDarkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-100 text-gray-700'
                               }`}>
                               {amenity}
                             </span>
@@ -556,7 +556,7 @@ const BookingsManagement: React.FC = () => {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className={`text-2xl font-black ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+                        <p className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
                           NPR {(booking.totalAmount || (() => {
                             const checkInDate = new Date(booking.checkIn);
                             const checkOutDate = new Date(booking.checkOut);
@@ -565,13 +565,13 @@ const BookingsManagement: React.FC = () => {
                             return booking.price * monthsDifference;
                           })()).toLocaleString()}
                         </p>
-                        <p className={`text-[10px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                        <p className={`text-[9px] font-bold uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
                           {(() => {
                             const checkInDate = new Date(booking.checkIn);
                             const checkOutDate = new Date(booking.checkOut);
                             const daysDifference = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 3600 * 24));
                             const monthsDifference = Math.ceil(daysDifference / 30);
-                            return monthsDifference > 1 ? `${monthsDifference} Months Total` : 'Monthly Total';
+                            return monthsDifference > 1 ? `${monthsDifference}` : 'Monthly';
                           })()}
                         </p>
                       </div>
@@ -579,12 +579,12 @@ const BookingsManagement: React.FC = () => {
 
                     {/* Days Remaining for Confirmed Bookings */}
                     {booking.status === 'confirmed' && (
-                      <div className={`grid grid-cols-1 gap-4 p-4 mb-8 rounded-2xl border ${isDarkMode ? 'bg-gray-900/50 border-gray-700' : 'bg-gray-50 border-gray-100'
+                      <div className={`grid grid-cols-1 gap-2 p-2 mb-4 rounded-xl border ${isDarkMode ? 'bg-gray-900/50 border-gray-700' : 'bg-gray-50 border-gray-100'
                         }`}>
                         <div className="text-center">
-                          <p className={`text-[10px] font-black uppercase tracking-widest mb-2 ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>Days Remaining</p>
-                          <div className="flex items-center justify-center gap-2">
-                            <div className="text-3xl font-black text-emerald-500">
+                          <p className={`text-[7px] font-black uppercase tracking-widest mb-0.5 ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>Days Remaining</p>
+                          <div className="flex items-center justify-center gap-1">
+                            <div className="text-lg font-black text-emerald-500">
                               {(() => {
                                 const today = new Date();
                                 const checkOutDate = new Date(booking.checkOut);
@@ -592,7 +592,7 @@ const BookingsManagement: React.FC = () => {
                                 return Math.max(0, daysLeft);
                               })()}
                             </div>
-                            <div className={`text-sm font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                            <div className={`text-[10px] font-bold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                               days
                             </div>
                           </div>
@@ -602,7 +602,7 @@ const BookingsManagement: React.FC = () => {
                             const daysLeft = Math.ceil((checkOutDate.getTime() - today.getTime()) / (1000 * 3600 * 24));
                             if (daysLeft <= 7) {
                               return (
-                                <p className="text-xs text-red-500 font-medium mt-2">Your stay is ending soon!</p>
+                                <p className="text-[9px] text-red-500 font-medium mt-0.5">Your stay is ending soon!</p>
                               );
                             }
                             return null;
@@ -611,15 +611,15 @@ const BookingsManagement: React.FC = () => {
                       </div>
                     )}
 
-                    <div className={`grid grid-cols-2 gap-8 p-6 mb-8 rounded-2xl border ${isDarkMode ? 'bg-gray-900/50 border-gray-700' : 'bg-gray-50 border-gray-100'
+                    <div className={`grid grid-cols-2 gap-6 p-4 mb-4 rounded-xl border ${isDarkMode ? 'bg-gray-900/50 border-gray-700' : 'bg-gray-50 border-gray-100'
                       }`}>
                       <div>
-                        <p className={`text-[10px] font-black uppercase tracking-widest mb-2 ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>Check-in</p>
-                        <p className={`text-lg font-black italic ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{formatDate(booking.checkIn)}</p>
+                        <p className={`text-[9px] font-black uppercase tracking-widest mb-1 ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>Check-in</p>
+                        <p className={`text-base font-black italic ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{formatDate(booking.checkIn)}</p>
                       </div>
                       <div>
-                        <p className={`text-[10px] font-black uppercase tracking-widest mb-2 ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>Check-out</p>
-                        <p className={`text-lg font-black italic ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{formatDate(booking.checkOut)}</p>
+                        <p className={`text-[9px] font-black uppercase tracking-widest mb-1 ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>Check-out</p>
+                        <p className={`text-base font-black italic ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{formatDate(booking.checkOut)}</p>
                       </div>
                     </div>
 

@@ -22,7 +22,7 @@ interface NotificationContextType {
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
-export const NotificationProvider: React.FC<{ children: React.ReactNode; userType: 'tenant' | 'landlord' }> = ({ children, userType }) => {
+export const NotificationProvider: React.FC<{ children: React.ReactNode; userType: 'tenant' | 'landlord' | 'Admin' }> = ({ children, userType }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
 

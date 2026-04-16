@@ -7,6 +7,7 @@ import ExploreRooms from '../rooms/ExploreRooms';
 import BookingsManagement from '../bookings/BookingsManagement';
 import MessagesManagement from '../messages/MessagesManagement';
 import SettingsManagement from '../settings/SettingsManagement';
+import MessagePortal from '../bookings/MessagePortal';
 import { NotificationProvider } from '../../../context/NotificationContext';
 import type { Notification as _Notification } from '../../../context/NotificationContext';
 import NotificationDropdown from '../../Shared/NotificationDropdown';
@@ -39,6 +40,7 @@ const Dashboard = () => {
   const [inviteSent, setInviteSent] = useState(false);
   const [profileImage, setProfileImage] = useState(localStorage.getItem('userImage') || '');
   const [currentBookingPage, setCurrentBookingPage] = useState(1);
+  const [isMessagePortalOpen, setIsMessagePortalOpen] = useState(false);
   const itemsPerPage = 3;
 
   useEffect(() => {
@@ -203,6 +205,42 @@ const Dashboard = () => {
 
   const handleViewAllPayments = () => {
     setActiveSection('payments');
+  };
+  
+  const handleMessageSent = async (message: string) => {
+    const token = localStorage.getItem('token');
+    if (!token || !activeBooking) return;
+
+    try {
+      const recipientId = activeBooking.landlord?.id;
+      if (!recipientId) throw new Error("No recipient ID found");
+
+      const messagePayload = {
+        recipientId: recipientId,
+        subject: `Regarding active stay at ${activeBooking.title}`,
+        content: message,
+        type: 'landlord'
+      };
+
+      const response = await fetch('http://localhost:5000/api/messages', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(messagePayload)
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        alert("Message sent successfully!");
+      } else {
+        throw new Error(result.message || "Failed to send message");
+      }
+    } catch (err) {
+      console.error("Message send error:", err);
+      alert('Error sending message. Please try again later.');
+    }
   };
 
   return (
@@ -379,7 +417,7 @@ const Dashboard = () => {
                 {/* Square Info Cards - Forced single row */}
                 <div className="flex flex-row gap-6 mb-12 w-full">
                   {/* Days Until Rent Card */}
-                  <div className={`group relative flex-1 rounded-[2rem] p-8 h-48 shadow-sm border transition-all duration-500 hover:shadow-md ${isDarkMode ? 'bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/60' : 'bg-white border-gray-100 hover:bg-gray-50/50'}`}>
+                  <div className={`group relative flex-1 rounded-[2rem] p-8 h-40 shadow-sm border transition-all duration-500 hover:shadow-md ${isDarkMode ? 'bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/60' : 'bg-white border-gray-100 hover:bg-gray-50/50'}`}>
                     <div className="flex flex-col justify-between h-full relative z-10">
                       <div className="flex items-center justify-between">
                         <p className={`text-[10px] font-bold uppercase tracking-[0.2em] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{stats.daysLabel || "Days until Rent"}</p>
@@ -394,7 +432,7 @@ const Dashboard = () => {
                   </div>
 
                   {/* Active Request Card */}
-                  <div className={`group relative flex-1 rounded-[2rem] p-8 h-48 shadow-sm border transition-all duration-500 hover:shadow-md ${isDarkMode ? 'bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/60' : 'bg-white border-gray-100 hover:bg-gray-50/50'}`}>
+                  <div className={`group relative flex-1 rounded-[2rem] p-8 h-40 shadow-sm border transition-all duration-500 hover:shadow-md ${isDarkMode ? 'bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/60' : 'bg-white border-gray-100 hover:bg-gray-50/50'}`}>
                     <div className="flex flex-col justify-between h-full relative z-10">
                       <div className="flex items-center justify-between">
                         <p className={`text-[10px] font-bold uppercase tracking-[0.2em] ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Active Request</p>
@@ -409,7 +447,7 @@ const Dashboard = () => {
                   </div>
 
                   {/* Premium Current Room / Active Booking Card */}
-                  <div className={`group relative flex-[1.5] rounded-[2rem] shadow-sm border transition-all duration-500 overflow-hidden ${isDarkMode ? 'bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/60' : 'bg-white border-gray-100 hover:bg-gray-50/50'}`}>
+                  <div className={`group relative flex-[1.5] h-40 rounded-[2rem] shadow-sm border transition-all duration-500 overflow-hidden ${isDarkMode ? 'bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/60' : 'bg-white border-gray-100 hover:bg-gray-50/50'}`}>
                     {activeBooking ? (
                       <div className="flex h-full relative">
                         {/* Image Left */}
@@ -426,7 +464,7 @@ const Dashboard = () => {
                         </div>
 
                         {/* Details Right */}
-                        <div className="w-3/5 p-6 flex flex-col justify-between">
+                        <div className="w-3/5 p-5 flex flex-col justify-between">
                           <div>
                             <p className={`text-[10px] font-bold uppercase tracking-[0.2em] mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Current Stay</p>
                             <h3 className={`text-lg font-black tracking-tight truncate mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{activeBooking.title}</h3>
@@ -467,13 +505,13 @@ const Dashboard = () => {
                 {/* Full Structure Active Stay Overview */}
                 {activeBooking && (
                   <div className={`mb-12 rounded-[2.5rem] overflow-hidden border shadow-xl transition-all duration-700 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-100'}`}>
-                    <div className="flex flex-col lg:flex-row h-full">
+                    <div className="flex flex-row items-stretch min-h-[500px]">
                       {/* Left: Image Gallery / Main Image */}
-                      <div className="lg:w-1/2 h-[450px] relative">
+                      <div className="w-1/2 relative shrink-0 overflow-hidden">
                         <img
                           src={activeBooking.image || 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=1200&q=80'}
                           alt={activeBooking.title}
-                          className="w-full h-full object-cover"
+                          className="absolute inset-0 w-full h-full object-cover"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                         <div className="absolute bottom-8 left-8 text-white">
@@ -498,8 +536,8 @@ const Dashboard = () => {
                       </div>
 
                       {/* Right: Stay Details & Landlord */}
-                      <div className="lg:w-1/2 p-10 flex flex-col justify-between">
-                        <div className="grid grid-cols-2 gap-8 mb-10">
+                      <div className="w-1/2 p-10 flex flex-col justify-between bg-gradient-to-br from-transparent to-gray-500/5">
+                        <div className="flex flex-col gap-8 mb-10">
                           <div>
                             <p className={`text-[10px] font-bold uppercase tracking-[0.2em] mb-4 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Room Details</p>
                             <div className={`space-y-4 text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
@@ -526,7 +564,12 @@ const Dashboard = () => {
                               <div className="flex-1 min-w-0">
                                 <h4 className={`text-sm font-black truncate ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{activeBooking.landlord?.name || 'Property Manager'}</h4>
                                 <p className="text-xs text-emerald-500 font-bold mb-1">{activeBooking.landlord?.phone || '+977-9800000000'}</p>
-                                <button className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg border border-emerald-500/20 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all`}>Message</button>
+                                <button 
+                                  onClick={() => setIsMessagePortalOpen(true)}
+                                  className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-lg border border-emerald-500/20 text-emerald-500 hover:bg-emerald-50 hover:text-emerald-700 transition-all`}
+                                >
+                                  Message
+                                </button>
                               </div>
                             </div>
                           </div>
@@ -544,7 +587,7 @@ const Dashboard = () => {
                             </div>
                           </div>
                           <div className="text-right">
-                            <button onClick={() => navigate('/bookings')} className={`px-6 py-3 rounded-2xl bg-gray-900 text-white text-xs font-black shadow-xl hover:bg-black transition-all hover:scale-105 active:scale-95`}>MANAGE STAY</button>
+                            <button onClick={() => setActiveSection('bookings')} className={`px-6 py-3 rounded-2xl bg-gray-900 text-white text-xs font-black shadow-xl hover:bg-black transition-all hover:scale-105 active:scale-95`}>MANAGE STAY</button>
                           </div>
                         </div>
                       </div>
@@ -562,24 +605,24 @@ const Dashboard = () => {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       {recommendedRooms && recommendedRooms.length > 0 ? recommendedRooms.slice(0, 4).map((room) => (
-                        <div key={room.id} className={`rounded-2xl border overflow-hidden hover:shadow-xl transition-all duration-500 group ${isDarkMode ? 'bg-gray-700/50 border-gray-600' : 'bg-white border-gray-100'}`}>
-                          <div className="h-32 relative overflow-hidden">
+                        <div key={room.id} className={`rounded-2xl border overflow-hidden hover:shadow-xl transition-all duration-500 group flex flex-row h-28 ${isDarkMode ? 'bg-gray-700/50 border-gray-600' : 'bg-white border-gray-100'}`}>
+                          <div className="w-32 h-full relative overflow-hidden shrink-0">
                             {room.image ? (
                               <img src={room.image} alt={room.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                             ) : (
                               <div className="w-full h-full bg-emerald-500/10 flex items-center justify-center">
-                                <span className="text-emerald-500/40 text-[10px] font-black uppercase tracking-widest">No Image</span>
+                                <span className="text-emerald-500/40 text-[8px] font-black uppercase tracking-widest">No Image</span>
                               </div>
                             )}
-                            <div className={`absolute top-3 right-3 px-2 py-1 rounded-lg text-[10px] font-black shadow-lg ${isDarkMode ? 'bg-gray-900/90 text-yellow-400' : 'bg-white/90 text-yellow-600'}`}>
+                            <div className={`absolute top-2 right-2 px-1.5 py-0.5 rounded-lg text-[8px] font-black shadow-lg ${isDarkMode ? 'bg-gray-900/90 text-yellow-400' : 'bg-white/90 text-yellow-600'}`}>
                               ★ {room.rating || '4.5'}
                             </div>
                           </div>
-                          <div className="p-4">
+                          <div className="flex-1 p-3 flex flex-col justify-center min-w-0">
                             <h4 className={`font-bold text-sm truncate mb-1 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>{room.title}</h4>
-                            <div className="flex items-center justify-between">
-                              <p className={`text-xs font-medium ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{room.location}</p>
-                              <p className="text-emerald-500 font-black text-sm">{room.price}</p>
+                            <div className="flex items-center justify-between gap-2">
+                              <p className={`text-[10px] font-medium truncate ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>{room.location}</p>
+                              <p className="text-emerald-500 font-black text-xs whitespace-nowrap">{room.price}</p>
                             </div>
                           </div>
                         </div>
@@ -744,6 +787,17 @@ const Dashboard = () => {
             )}
           </div>
         </div>
+
+        {activeBooking && (
+          <MessagePortal
+            isOpen={isMessagePortalOpen}
+            onClose={() => setIsMessagePortalOpen(false)}
+            landlordName={activeBooking.landlord?.name || 'Landlord'}
+            propertyName={activeBooking.title}
+            propertyType="Stay"
+            onSendMessage={handleMessageSent}
+          />
+        )}
 
         <RequestModal
           isOpen={isRequestModalOpen}
