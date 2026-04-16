@@ -1,5 +1,7 @@
 import Booking from "../Models/Booking.js";
 import Property from "../Models/Property.js";
+import Admin from "../Models/Admin.js";
+import { createInternalNotification } from "./NotificationController.js";
 
 // @desc    Get all bookings for a landlord's properties
 // @route   GET /api/bookings/landlord
@@ -221,6 +223,22 @@ export const createBooking = async (req, res) => {
       bookingDate: new Date().toISOString()
     });
 
+    // Notify Admin of new booking
+    try {
+      const admin = await Admin.findOne();
+      if (admin) {
+        await createInternalNotification({
+          recipient: admin._id,
+          title: "New Booking Request",
+          message: `A new booking request has been created for ${property.title}.`,
+          type: "info",
+          bookingId: newBooking._id
+        });
+      }
+    } catch (notiError) {
+      console.error("Failed to notify admin of new booking:", notiError);
+    }
+
     res.status(201).json({
       success: true,
       message: "Booking request created successfully",
@@ -297,6 +315,22 @@ export const completeBookingPayment = async (req, res) => {
     if (paymentMethod) booking.paymentMethod = paymentMethod;
 
     await booking.save();
+
+    // Notify Admin of payment completion
+    try {
+      const admin = await Admin.findOne();
+      if (admin) {
+        await createInternalNotification({
+          recipient: admin._id,
+          title: "Payment Received",
+          message: `A payment of NPR ${amount || booking.totalAmount} has been received for booking ${booking._id}.`,
+          type: "success",
+          bookingId: booking._id
+        });
+      }
+    } catch (notiError) {
+      console.error("Failed to notify admin of payment:", notiError);
+    }
 
     res.status(200).json({
       success: true,

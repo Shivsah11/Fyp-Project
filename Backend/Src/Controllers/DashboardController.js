@@ -177,6 +177,7 @@ export const getDashboardData = async (req, res) => {
         checkOut: activeBookingRaw.checkOutDate,
         status: activeBookingRaw.status,
         landlord: prop.landlordId ? {
+          id: prop.landlordId._id,
           name: `${prop.landlordId.firstName} ${prop.landlordId.lastName}`,
           email: prop.landlordId.email,
           phone: prop.landlordId.phone,

@@ -4,6 +4,7 @@ import Admin from "../Models/Admin.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import { createInternalNotification } from "./NotificationController.js";
 
 export const signup = async (req, res) => {
   try {
@@ -90,6 +91,21 @@ export const signup = async (req, res) => {
 
     const user = await UserModel.create(userData);
     console.log("User created successfully:", user);
+
+    // Notify Admin of new registration
+    try {
+      const admin = await Admin.findOne();
+      if (admin) {
+        await createInternalNotification({
+          recipient: admin._id,
+          title: "New User Registration",
+          message: `${firstName} ${lastName} has registered as a ${role}.`,
+          type: "info"
+        });
+      }
+    } catch (notiError) {
+      console.error("Failed to notify admin of new signup:", notiError);
+    }
 
     // Create JWT token
     const token = jwt.sign(
