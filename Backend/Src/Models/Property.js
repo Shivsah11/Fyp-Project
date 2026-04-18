@@ -23,4 +23,8 @@ const propertySchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now }
 });
 
+// Indices for performance
+propertySchema.index({ landlordId: 1 });
+propertySchema.index({ status: 1 });
+
 export default mongoose.model("Property", propertySchema);

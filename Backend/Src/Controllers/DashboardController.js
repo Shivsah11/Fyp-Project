@@ -12,11 +12,19 @@ export const getDashboardData = async (req, res) => {
     const userId = req.user.userId;
     const userRole = req.user.role;
 
-    // 1. Find the user in collections
-    let user = await Tenant.findById(userId).select('-password');
-    if (!user) user = await Landlord.findById(userId).select('-password');
-    if (!user) user = await Admin.findById(userId).select('-password');
-    if (!user) user = await User.findById(userId).select('-password');
+    // 1. Find the user in collections - Optimized lookup using role
+    let user = null;
+    if (userRole === 'Tenant') user = await Tenant.findById(userId).select('-password');
+    else if (userRole === 'Landlord') user = await Landlord.findById(userId).select('-password');
+    else if (userRole === 'Admin') user = await Admin.findById(userId).select('-password');
+
+    // Fallback if role-based lookup fails or role is something else
+    if (!user) {
+      user = await Tenant.findById(userId).select('-password') ||
+        await Landlord.findById(userId).select('-password') ||
+        await Admin.findById(userId).select('-password') ||
+        await User.findById(userId).select('-password');
+    }
 
     if (!user) {
       return res.status(404).json({ success: false, message: "User not found" });
@@ -61,54 +69,124 @@ export const getDashboardData = async (req, res) => {
       });
     }
 
-    // --- LANDLORD DASHBOARD ---
+    // --- LANDLORD DASHBOARD (Optimized) ---
     if (userRole === 'Landlord') {
-      const landlordProperties = await Property.find({ landlordId: userId });
+      const landlordProperties = await Property.find({ landlordId: userId }).lean();
       const propertyIds = landlordProperties.map(p => p._id);
 
-      const allBookings = await Booking.find({ propertyId: { $in: propertyIds } })
-        .populate('tenantId', 'firstName lastName email')
-        .populate('propertyId', 'title')
-        .sort({ createdAt: -1 });
+      // Fetch analytics using a single aggregation pipeline for maximum efficiency
+      const stats = await Booking.aggregate([
+        { $match: { propertyId: { $in: propertyIds } } },
+        {
+          $facet: {
+            counts: [
+              {
+                $group: {
+                  _id: { $toLower: "$status" },
+                  count: { $sum: 1 },
+                  totalValue: {
+                    $sum: {
+                      $cond: [
+                        { $in: [{ $toLower: "$status" }, ["confirmed", "paid", "completed"]] },
+                        {
+                          $convert: {
+                            input: {
+                              $replaceAll: {
+                                input: { $ifNull: ["$price", "0"] },
+                                find: "NPR ",
+                                replacement: ""
+                              }
+                            },
+                            to: "double",
+                            onError: 0,
+                            onNull: 0
+                          }
+                        },
+                        0
+                      ]
+                    }
+                  }
+                }
+              }
+            ],
+            monthlyRevenue: [
+              {
+                $match: {
+                  status: { $in: ["Confirmed", "confirmed", "paid", "Completed", "completed"] },
+                  createdAt: { $gte: new Date(new Date().getFullYear(), new Date().getMonth() - 11, 1) }
+                }
+              },
+              {
+                $group: {
+                  _id: {
+                    year: { $year: "$createdAt" },
+                    month: { $month: "$createdAt" }
+                  },
+                  revenue: {
+                    $sum: {
+                      $convert: {
+                        input: {
+                          $replaceAll: {
+                            input: { $ifNull: ["$price", "0"] },
+                            find: "NPR ",
+                            replacement: ""
+                          }
+                        },
+                        to: "double",
+                        onError: 0,
+                        onNull: 0
+                      }
+                    }
+                  }
+                }
+              },
+              { $sort: { "_id.year": 1, "_id.month": 1 } }
+            ]
+          }
+        }
+      ]);
 
-      const confirmedBookings = allBookings.filter(b => b.status === 'Confirmed' || b.status === 'confirmed');
-      const pendingBookings = allBookings.filter(b => b.status === 'Pending' || b.status === 'pending');
+      const counts = stats[0].counts;
+      const confirmedCount = counts.filter(c => ["confirmed", "paid", "completed"].includes(c._id)).reduce((sum, c) => sum + c.count, 0);
+      const pendingCount = counts.filter(c => ["pending"].includes(c._id)).reduce((sum, c) => sum + c.count, 0);
+      const totalIncome = counts.reduce((sum, c) => sum + c.totalValue, 0);
 
-      const totalIncome = confirmedBookings.reduce((sum, b) => {
-        const priceNum = typeof b.price === 'string' ? parseInt(b.price.replace(/[^0-9]/g, "")) || 0 : b.price;
-        return sum + priceNum;
-      }, 0);
-
-      // Calculate dynamic monthly revenue for the last 12 months
-      const monthlyRevenue = [];
+      // Reconstruct monthly revenue array (last 12 months)
+      const monthlyRevenue = new Array(12).fill(0);
       const now = new Date();
-
-      for (let i = 11; i >= 0; i--) {
-        const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const startOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
-        const endOfMonth = new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0, 23, 59, 59);
-
-        const monthIncome = allBookings.filter(b => {
-          const bookingDate = new Date(b.createdAt);
-          return (b.status === 'Confirmed' || b.status === 'confirmed' || b.status === 'Completed' || b.status === 'completed') &&
-            bookingDate >= startOfMonth && bookingDate <= endOfMonth;
-        }).reduce((sum, b) => {
-          const priceNum = typeof b.price === 'string' ? parseInt(b.price.replace(/[^0-9]/g, "")) || 0 : b.price;
-          return sum + priceNum;
-        }, 0);
-
-        monthlyRevenue.push(monthIncome);
-      }
+      stats[0].monthlyRevenue.forEach(item => {
+        const itemDate = new Date(item._id.year, item._id.month - 1);
+        const monthDiff = (now.getFullYear() - itemDate.getFullYear()) * 12 + (now.getMonth() - itemDate.getMonth());
+        if (monthDiff >= 0 && monthDiff < 12) {
+          monthlyRevenue[11 - monthDiff] = item.revenue;
+        }
+      });
 
       const analytics = {
         totalIncome,
-        activeTenants: confirmedBookings.length,
-        pendingRequests: pendingBookings.length,
+        activeTenants: confirmedCount,
+        pendingRequests: pendingCount,
         totalProperties: landlordProperties.length,
-        occupancyRate: landlordProperties.length > 0 ? Math.round((confirmedBookings.length / landlordProperties.length) * 100) : 0,
-        averageRent: confirmedBookings.length > 0 ? Math.round(totalIncome / confirmedBookings.length) : 0,
+        occupancyRate: landlordProperties.length > 0 ? Math.round((confirmedCount / landlordProperties.length) * 100) : 0,
+        averageRent: confirmedCount > 0 ? Math.round(totalIncome / confirmedCount) : 0,
         monthlyRevenue
       };
+
+      // Fetch only the most recent 5 bookings separately to avoid large data transfer
+      const recentBookings = await Booking.find({ propertyId: { $in: propertyIds } })
+        .populate('tenantId', 'firstName lastName email')
+        .populate('propertyId', 'title')
+        .sort({ createdAt: -1 })
+        .limit(5)
+        .lean()
+        .then(docs => docs.map(b => ({
+          id: b._id,
+          property: b.propertyId ? b.propertyId.title : 'Property Deleted',
+          tenant: b.tenantId ? `${b.tenantId.firstName} ${b.tenantId.lastName}` : 'System',
+          checkIn: b.checkInDate,
+          price: b.price,
+          status: b.status
+        })));
 
       return res.status(200).json({
         success: true,
@@ -116,8 +194,16 @@ export const getDashboardData = async (req, res) => {
         data: {
           user,
           analytics,
-          recentBookings: allBookings.slice(0, 5),
-          properties: landlordProperties
+          recentBookings,
+          properties: landlordProperties.map(p => ({
+            id: p._id,
+            name: p.title,
+            location: p.location,
+            price: p.price,
+            status: p.status,
+            lat: p.lat,
+            lng: p.lng
+          }))
         }
       });
     }
@@ -150,9 +236,9 @@ export const getDashboardData = async (req, res) => {
 
     // Find the most recent active (confirmed/paid) booking specifically
     // Use explicit ObjectId casting for reliability
-    const activeBookingRaw = await Booking.findOne({ 
-      tenantId: new mongoose.Types.ObjectId(userId), 
-      status: { $regex: /^(confirmed|paid)$/i } 
+    const activeBookingRaw = await Booking.findOne({
+      tenantId: new mongoose.Types.ObjectId(userId),
+      status: { $regex: /^(confirmed|paid)$/i }
     }).populate({
       path: 'propertyId',
       populate: { path: 'landlordId', select: 'firstName lastName email phone profileImage' }

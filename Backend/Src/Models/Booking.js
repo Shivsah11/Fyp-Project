@@ -26,4 +26,9 @@ const bookingSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// Indices for performance
+bookingSchema.index({ propertyId: 1 });
+bookingSchema.index({ status: 1 });
+bookingSchema.index({ createdAt: -1 });
+
 export default mongoose.model("Booking", bookingSchema);

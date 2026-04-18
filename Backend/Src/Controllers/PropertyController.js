@@ -166,9 +166,9 @@ export const updateProperty = async (req, res) => {
     // Sync image with images[0] if images is updated
     const updateData = { ...req.body };
     if (updateData.images && updateData.images.length > 0) {
-        updateData.image = updateData.images[0];
+      updateData.image = updateData.images[0];
     } else if (updateData.image && (!updateData.images || updateData.images.length === 0)) {
-        updateData.images = [updateData.image];
+      updateData.images = [updateData.image];
     }
 
     if (updateData.price) updateData.price = updateData.price.toString();

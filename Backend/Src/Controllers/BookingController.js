@@ -1,6 +1,8 @@
 import Booking from "../Models/Booking.js";
 import Property from "../Models/Property.js";
 import Admin from "../Models/Admin.js";
+import Tenant from "../Models/Tenant.js";
+import Landlord from "../Models/Landlord.js";
 import { createInternalNotification } from "./NotificationController.js";
 
 // @desc    Get all bookings for a landlord's properties
@@ -9,15 +11,21 @@ import { createInternalNotification } from "./NotificationController.js";
 export const getLandlordBookings = async (req, res) => {
   try {
     const landlordId = req.user.userId;
+    console.log(`[BOOKING_REQUEST] Fetching bookings for landlord: ${landlordId}`);
 
     // 1. Find all properties owned by this landlord
     const properties = await Property.find({ landlordId });
     const propertyIds = properties.map((p) => p._id);
 
-    // 2. Find all bookings for these properties, populate tenant and property info
-    const bookings = await Booking.find({ propertyId: { $in: propertyIds } })
+    // 2. Find all bookings for these properties or directly assigned to landlord, populate tenant and property info
+    const bookings = await Booking.find({ 
+      $or: [
+        { propertyId: { $in: propertyIds } },
+        { landlordId }
+      ]
+    })
       .populate('tenantId', 'firstName lastName email phone')
-      .populate('propertyId', 'title type location amenities image')
+      .populate('propertyId', 'title type location amenities image images price')
       .sort({ createdAt: -1 });
 
     // 3. Format bookings for the frontend
@@ -34,6 +42,7 @@ export const getLandlordBookings = async (req, res) => {
       checkOut: booking.checkOutDate || 'Not specified',
       price: (typeof booking.price === 'string' ? parseInt(booking.price.replace(/[^0-9]/g, "")) : (booking.price || 0)),
       totalAmount: (booking.totalAmount || (typeof booking.price === 'string' ? parseInt(booking.price.replace(/[^0-9]/g, "")) : (booking.price || 0))),
+      status: booking.status || 'pending',
       paymentStatus: booking.paymentStatus ? booking.paymentStatus.toLowerCase() : 'pending',
       image: booking.propertyId?.image || (booking.propertyId?.images?.length > 0 ? booking.propertyId.images[0] : '/api/placeholder/300/200'),
       amenities: booking.propertyId?.amenities || [],
@@ -42,6 +51,7 @@ export const getLandlordBookings = async (req, res) => {
     }));
 
     res.status(200).json({
+      success: true,
       message: "Bookings fetched successfully",
       data: formattedBookings,
     });
@@ -84,13 +94,13 @@ export const updateBookingStatus = async (req, res) => {
 
     // Restriction: Tenants can ONLY set status to 'cancelled'
     if (isTenant && !isLandlord && !isAdmin && status !== 'cancelled') {
-        return res.status(403).json({ message: "Tenants can only cancel their own bookings" });
+      return res.status(403).json({ message: "Tenants can only cancel their own bookings" });
     }
 
     if (status) {
-        booking.status = status;
+      booking.status = status;
     }
-    
+
     // Update payment fields if provided
     if (paymentStatus) booking.paymentStatus = paymentStatus;
     if (paymentMethod) booking.paymentMethod = paymentMethod;
@@ -115,6 +125,7 @@ export const updateBookingStatus = async (req, res) => {
 export const getTenantBookings = async (req, res) => {
   try {
     const tenantId = req.user.userId;
+    console.log(`[BOOKING_REQUEST] Fetching bookings for tenant: ${tenantId}`);
 
     // Fetch bookings for this tenant, deep populate property AND its landlord
     const bookings = await Booking.find({ tenantId })
@@ -144,8 +155,8 @@ export const getTenantBookings = async (req, res) => {
       landlord: booking.propertyId?.landlordId && booking.propertyId.landlordId.firstName
         ? `${booking.propertyId.landlordId.firstName} ${booking.propertyId.landlordId.lastName}`
         : 'Unknown Landlord',
-      landlordId: booking.landlordId || (booking.propertyId?.landlordId 
-        ? (booking.propertyId.landlordId._id || booking.propertyId.landlordId) 
+      landlordId: booking.landlordId || (booking.propertyId?.landlordId
+        ? (booking.propertyId.landlordId._id || booking.propertyId.landlordId)
         : null),
       landlordContact: booking.propertyId?.landlordId && booking.propertyId.landlordId.email
         ? `${booking.propertyId.landlordId.email} (${booking.propertyId.landlordId.phone || 'no phone'})`
@@ -158,10 +169,11 @@ export const getTenantBookings = async (req, res) => {
       data: formattedBookings,
     });
   } catch (error) {
-    console.error("Error fetching tenant bookings:", error);
+    console.error("[BOOKING_ERROR] Server error in getTenantBookings:", error);
     res.status(500).json({
       success: false,
-      message: "Server error fetching your bookings"
+      message: "Server error fetching your bookings",
+      details: error.message
     });
   }
 };
@@ -187,13 +199,13 @@ export const createBooking = async (req, res) => {
     // Calculate total amount based on duration
     let totalAmount = 0;
     const basePrice = Number(typeof property.price === 'string' ? property.price.replace(/[^0-9]/g, '') : property.price);
-    
+
     if (checkInDate && checkOutDate) {
       const start = new Date(checkInDate);
       const end = new Date(checkOutDate);
       const timeDiff = end.getTime() - start.getTime();
       const days = Math.ceil(timeDiff / (1000 * 3600 * 24));
-      
+
       if (days <= 0) {
         totalAmount = basePrice;
       } else if (days <= 30) {
@@ -308,7 +320,7 @@ export const completeBookingPayment = async (req, res) => {
     // Update status to confirmed (booked) and paymentStatus to paid
     booking.status = 'confirmed';
     booking.paymentStatus = 'paid';
-    
+
     // Optional: store payment details
     if (transactionId) booking.paymentReference = transactionId;
     if (amount) booking.paymentAmount = amount;
