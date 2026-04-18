@@ -316,7 +316,7 @@ const LandlordDashboard = () => {
 
   return (
     <NotificationProvider userType="landlord">
-      <div className={`h-screen w-screen flex flex-col relative overflow-hidden ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      <div className={`h-screen w-screen flex flex-col relative overflow-hidden ${isDarkMode ? 'bg-[#0f172a]' : 'bg-gray-50'}`}>
 
         {/* Animated background elements - fixed to viewport */}
         <div className="fixed inset-0 pointer-events-none z-0">
@@ -441,7 +441,7 @@ const LandlordDashboard = () => {
 
                 {/* Square Info Cards - Forced into a single row using Flexbox */}
                 <div className="flex flex-row gap-4 mb-8 w-full">
-                  <div className={`flex-1 rounded-xl border p-5 h-36 transition-all duration-300 hover:shadow-md ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow-sm`}>
+                  <div className={`flex-1 rounded-[2rem] border p-6 h-40 transition-all duration-500 hover:shadow-lg ${isDarkMode ? 'bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/60' : 'bg-white border-gray-100 hover:bg-gray-50/50'} shadow-sm`}>
                     <div className="flex flex-col justify-between h-full">
                       <div>
                         <p className={`text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Total Income</p>
@@ -453,7 +453,7 @@ const LandlordDashboard = () => {
                     </div>
                   </div>
 
-                  <div className={`flex-1 rounded-xl border p-5 h-36 transition-all duration-300 hover:shadow-md ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow-sm`}>
+                  <div className={`flex-1 rounded-[2rem] border p-6 h-40 transition-all duration-500 hover:shadow-lg ${isDarkMode ? 'bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/60' : 'bg-white border-gray-100 hover:bg-gray-50/50'} shadow-sm`}>
                     <div className="flex flex-col justify-between h-full">
                       <div>
                         <p className={`text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Active Tenants</p>
@@ -465,7 +465,7 @@ const LandlordDashboard = () => {
                     </div>
                   </div>
 
-                  <div className={`flex-1 rounded-xl border p-5 h-36 transition-all duration-300 hover:shadow-md ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow-sm`}>
+                  <div className={`flex-1 rounded-[2rem] border p-6 h-40 transition-all duration-500 hover:shadow-lg ${isDarkMode ? 'bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/60' : 'bg-white border-gray-100 hover:bg-gray-50/50'} shadow-sm`}>
                     <div className="flex flex-col justify-between h-full">
                       <div>
                         <p className={`text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Pending Requests</p>
@@ -477,7 +477,7 @@ const LandlordDashboard = () => {
                     </div>
                   </div>
 
-                  <div className={`flex-1 rounded-xl border p-5 h-36 transition-all duration-300 hover:shadow-md ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow-sm`}>
+                  <div className={`flex-1 rounded-[2rem] border p-6 h-40 transition-all duration-500 hover:shadow-lg ${isDarkMode ? 'bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/60' : 'bg-white border-gray-100 hover:bg-gray-50/50'} shadow-sm`}>
                     <div className="flex flex-col justify-between h-full">
                       <div>
                         <p className={`text-xs font-semibold uppercase tracking-wider ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>Total Properties</p>
@@ -492,7 +492,7 @@ const LandlordDashboard = () => {
 
                 {/* Recent Booking Requests */}
                 <div className="grid grid-cols-1 gap-6">
-                  <div className={`rounded-xl border p-6 ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+                  <div className={`rounded-[2.5rem] border p-8 transition-all duration-500 hover:shadow-2xl ${isDarkMode ? 'bg-gray-800/40 border-gray-700/50' : 'bg-white border-gray-100 shadow-sm'}`}>
                     <h3 className={`text-lg font-bold mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>Recent Booking Requests</h3>
                     <div className="space-y-3">
                       {recentBookings.slice((bookingPage - 1) * bookingsPerPage, bookingPage * bookingsPerPage).map((booking) => (
@@ -602,7 +602,7 @@ const LandlordDashboard = () => {
 
                   {/* Key Metrics - Forced into a single row using Flexbox */}
                   <div className="flex flex-row gap-4 mb-6 w-full">
-                    <div className={`flex-1 rounded-xl border p-6 transition-all duration-300 hover:shadow-md ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow-sm`}>
+                    <div className={`flex-1 rounded-[2rem] border p-6 transition-all duration-500 hover:shadow-lg ${isDarkMode ? 'bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/60' : 'bg-white border-gray-200 hover:bg-gray-50/50'} shadow-sm`}>
                       <div className="flex items-center justify-between mb-4">
                         <div>
                           <p className={`text-sm font-semibold ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Total Income</p>
@@ -614,7 +614,7 @@ const LandlordDashboard = () => {
                       <div className={`text-sm font-medium ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>+12% from last month</div>
                     </div>
 
-                    <div className={`flex-1 rounded-xl border p-6 transition-all duration-300 hover:shadow-md ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow-sm`}>
+                    <div className={`flex-1 rounded-[2rem] border p-6 transition-all duration-500 hover:shadow-lg ${isDarkMode ? 'bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/60' : 'bg-white border-gray-200 hover:bg-gray-50/50'} shadow-sm`}>
                       <div className="flex items-center justify-between mb-4">
                         <div>
                           <p className={`text-sm font-semibold ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Occupancy Rate</p>
@@ -626,7 +626,7 @@ const LandlordDashboard = () => {
                       <div className={`text-sm font-medium ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>2 of 5 properties occupied</div>
                     </div>
 
-                    <div className={`flex-1 rounded-xl border p-6 transition-all duration-300 hover:shadow-md ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow-sm`}>
+                    <div className={`flex-1 rounded-[2rem] border p-6 transition-all duration-500 hover:shadow-lg ${isDarkMode ? 'bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/60' : 'bg-white border-gray-200 hover:bg-gray-50/50'} shadow-sm`}>
                       <div className="flex items-center justify-between mb-4">
                         <div>
                           <p className={`text-sm font-semibold ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Average Rent</p>
@@ -638,7 +638,7 @@ const LandlordDashboard = () => {
                       <div className={`text-sm font-medium ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>Per property per month</div>
                     </div>
 
-                    <div className={`flex-1 rounded-xl border p-6 transition-all duration-300 hover:shadow-md ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'} shadow-sm`}>
+                    <div className={`flex-1 rounded-[2rem] border p-6 transition-all duration-500 hover:shadow-lg ${isDarkMode ? 'bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/60' : 'bg-white border-gray-200 hover:bg-gray-50/50'} shadow-sm`}>
                       <div className="flex items-center justify-between mb-4">
                         <div>
                           <p className={`text-sm font-semibold ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Active Tenants</p>
@@ -654,7 +654,7 @@ const LandlordDashboard = () => {
                   {/* Charts and Performance Row */}
                   <div className="grid grid-cols-2 gap-8 mb-8">
                     {/* Revenue Chart - Equal width card */}
-                    <div className="rounded-xl border p-6 transition-all duration-300 hover:shadow-md h-full flex flex-col overflow-hidden bg-white/90 dark:bg-gray-800/80 border-gray-200 dark:border-gray-700">
+                    <div className={`rounded-[2.5rem] border p-8 transition-all duration-500 hover:shadow-2xl h-full flex flex-col overflow-hidden ${isDarkMode ? 'bg-gray-800/40 border-gray-700/50' : 'bg-white/90 border-gray-200'}`}>
                       <h4 className={`font-bold text-lg mb-8 ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>Monthly Revenue Trend</h4>
                       <div className="grid grid-cols-6 gap-x-3 gap-y-6">
                         {analytics.monthlyRevenue.map((revenue, index) => {
@@ -669,7 +669,7 @@ const LandlordDashboard = () => {
                                 <span className={`text-xs font-black uppercase tracking-wider ${isDarkMode ? 'text-gray-400 group-hover:text-blue-400' : 'text-gray-500 group-hover:text-blue-600'} transition-colors`}>{monthLabel}</span>
                                 <span className={`text-[10px] font-bold ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>NPR {revenue >= 1000 ? `${(revenue / 1000).toFixed(1)}k` : revenue}</span>
                               </div>
-                              <div className={`w-full rounded-2xl h-14 overflow-hidden border ${isDarkMode ? 'bg-gray-800/50 border-gray-700' : 'bg-gray-100/50 border-gray-200'} relative`}>
+                              <div className={`w-full rounded-2xl h-14 overflow-hidden border transition-colors duration-500 ${isDarkMode ? 'bg-gray-500/10 border-gray-700/50' : 'bg-gray-100/50 border-gray-200'} relative`}>
                                 <div
                                   className="bg-gradient-to-t from-blue-600 to-indigo-500 w-full rounded-2xl absolute bottom-0 transition-all duration-1000 ease-out shadow-lg"
                                   style={{ height: `${Math.max((revenue / (Math.max(...analytics.monthlyRevenue) || 1)) * 100, 4)}%` }}
@@ -680,7 +680,7 @@ const LandlordDashboard = () => {
                                     </div>
                                   )}
                                 </div>
-                                {revenue === 0 && <span className={`absolute inset-0 flex items-center justify-center text-[8px] font-black uppercase tracking-tighter ${isDarkMode ? 'text-gray-600' : 'text-gray-400'} rotate-[-45deg]`}>Zero</span>}
+                                {revenue === 0 && <span className={`absolute inset-0 flex items-center justify-center text-[8px] font-black uppercase tracking-tighter ${isDarkMode ? 'text-gray-500/40' : 'text-gray-400'} rotate-[-45deg]`}>Zero</span>}
                               </div>
                             </div>
                           );
@@ -689,7 +689,7 @@ const LandlordDashboard = () => {
                     </div>
 
                     {/* Property Performance */}
-                    <div className={`rounded-xl border p-6 transition-all duration-300 hover:shadow-md ${isDarkMode ? 'bg-gray-800/80 border-gray-700' : 'bg-white/90 border-gray-200'}`}>
+                    <div className={`rounded-[2.5rem] border p-8 transition-all duration-500 hover:shadow-2xl ${isDarkMode ? 'bg-gray-800/40 border-gray-700/50' : 'bg-white/90 border-gray-200 shadow-sm'}`}>
                       <h4 className={`font-bold text-lg mb-4 ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>Property Performance</h4>
                       <div className="space-y-3">
                         {properties.slice((propertyPage - 1) * propertiesPerPage, propertyPage * propertiesPerPage).map((property) => (

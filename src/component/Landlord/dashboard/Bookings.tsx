@@ -37,164 +37,67 @@ const Bookings: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
 
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     fetchBookings();
   }, []);
 
   const fetchBookings = async () => {
-    let bookingsData = [];
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setLoading(false);
+      return;
+    }
 
+    const userId = JSON.parse(atob(token.split('.')[1])).userId;
+    const landlordBookingsKey = `landlordBookings_${userId}`;
+
+    // 1. Initial Load from Cache
+    const cached = localStorage.getItem(landlordBookingsKey);
+    if (cached) {
+      try {
+        setBookings(JSON.parse(cached));
+        setLoading(false);
+      } catch (e) {
+        console.error('Cache parse error:', e);
+      }
+    }
+
+    // 2. Background Sync
+    setSyncing(true);
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:5000/api/bookings/landlord', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
       const result = await response.json();
-      if (response.ok) {
-        bookingsData = result.data;
-        // Save to persistent storage
-        localStorage.setItem('landlordBookings', JSON.stringify(bookingsData));
+      if (result.success) {
+        setBookings(result.data);
+        localStorage.setItem(landlordBookingsKey, JSON.stringify(result.data));
       }
     } catch (error) {
       console.error('Error fetching landlord bookings:', error);
+    } finally {
+      setSyncing(false);
+      setLoading(false);
     }
-
-    // If API failed or no data, try localStorage
-    if (bookingsData.length === 0) {
-      const landlordBookings = localStorage.getItem('landlordBookings');
-      if (landlordBookings) {
-        try {
-          bookingsData = JSON.parse(landlordBookings);
-          console.log('Loaded landlord bookings from localStorage:', bookingsData);
-        } catch (parseError) {
-          console.error('Error parsing landlord bookings:', parseError);
-        }
-      }
-    }
-
-    // If still no data, check for tenant bookings that landlord should see
-    if (bookingsData.length === 0) {
-      const tenantBookings = localStorage.getItem('userBookings');
-      if (tenantBookings) {
-        try {
-          const allTenantBookings = JSON.parse(tenantBookings);
-          console.log('Found tenant bookings, showing to landlord:', allTenantBookings);
-          // Transform tenant bookings to landlord format with proper tenant info
-          bookingsData = allTenantBookings.map((booking: any) => ({
-            ...booking,
-            _id: booking._id || booking.id,
-            id: booking.id || booking._id,
-            tenantName: booking.userName || 'Tenant Name',
-            tenantEmail: booking.userEmail || 'tenant@example.com',
-            tenantPhone: booking.userPhone || '+977-9840000000',
-            propertyName: booking.propertyName || 'Property Name',
-            propertyType: booking.propertyType || 'Apartment',
-            location: booking.location || 'Location',
-            checkIn: booking.checkIn || new Date().toISOString(),
-            checkOut: booking.checkOut || new Date().toISOString(),
-            status: booking.status || 'pending',
-            price: booking.price || 25000,
-            totalAmount: booking.totalAmount || booking.price || 25000,
-            paymentStatus: booking.paymentStatus || 'pending',
-            image: booking.image || '/api/placeholder/300/200',
-            amenities: booking.amenities || ['WiFi', 'Parking'],
-            requestDate: booking.requestDate || new Date().toISOString(),
-            specialRequests: booking.specialRequests || ''
-          }));
-        } catch (parseError) {
-          console.error('Error parsing tenant bookings:', parseError);
-        }
-      }
-    }
-
-    // If still no data, use sample landlord bookings with complete tenant info
-    if (bookingsData.length === 0) {
-      console.log('Using sample data with complete tenant information');
-      bookingsData = [
-        {
-          _id: 'LB001',
-          id: 'LB001',
-          tenantName: 'John Doe',
-          tenantEmail: 'john.doe@example.com',
-          tenantPhone: '+977-9841234567',
-          propertyName: 'Sunset Apartment',
-          propertyType: '2 BHK',
-          location: 'Thamel, Kathmandu',
-          checkIn: '2024-01-15',
-          checkOut: '2024-06-15',
-          status: 'confirmed',
-          price: 25000,
-          totalAmount: 125000, // 25000 * 5 months
-          paymentStatus: 'paid',
-          image: '/api/placeholder/300/200',
-          amenities: ['WiFi', 'Parking', 'Gym', 'Security'],
-          requestDate: '2024-01-10',
-          specialRequests: 'Need early check-in if possible'
-        },
-        {
-          _id: 'LB002',
-          id: 'LB002',
-          tenantName: 'Sarah Miller',
-          tenantEmail: 'sarah.miller@example.com',
-          tenantPhone: '+977-9849876543',
-          propertyName: 'Mountain View Studio',
-          propertyType: 'Studio',
-          location: 'Patan, Kathmandu',
-          checkIn: '2024-02-01',
-          checkOut: '2024-08-01',
-          status: 'confirmed',
-          price: 15000,
-          totalAmount: 90000, // 15000 * 6 months
-          paymentStatus: 'paid',
-          image: '/api/placeholder/300/200',
-          amenities: ['WiFi', 'Balcony', 'Security'],
-          requestDate: '2024-01-15'
-        },
-        {
-          _id: 'LB003',
-          id: 'LB003',
-          tenantName: 'Mike Johnson',
-          tenantEmail: 'mike.johnson@example.com',
-          tenantPhone: '+977-9845678901',
-          propertyName: 'Green Valley House',
-          propertyType: '3 BHK',
-          location: 'Lalitpur, Kathmandu',
-          checkIn: '2024-03-01',
-          checkOut: '2024-09-01',
-          status: 'pending',
-          price: 35000,
-          totalAmount: 210000, // 35000 * 6 months
-          paymentStatus: 'pending',
-          image: '/api/placeholder/300/200',
-          amenities: ['WiFi', 'Parking', 'Garden', 'Security'],
-          requestDate: '2024-02-20',
-          specialRequests: 'Pet-friendly required'
-        }
-      ];
-      // Save sample data to localStorage
-      localStorage.setItem('landlordBookings', JSON.stringify(bookingsData));
-    }
-
-    setBookings(bookingsData);
-    setLoading(false);
-    console.log('Final landlord bookings loaded:', bookingsData);
   };
 
   const filteredBookings = bookings.filter(booking => {
+    const status = booking.status ? booking.status.toLowerCase() : 'pending';
     switch (activeTab) {
       case 'pending':
-        return booking.status === 'pending';
+        return status === 'pending';
       case 'confirmed':
-        return booking.status === 'confirmed';
+        return status === 'confirmed';
       case 'active':
-        return booking.status === 'confirmed' && new Date(booking.checkIn) <= new Date() && new Date(booking.checkOut) >= new Date();
+        return status === 'confirmed' && new Date(booking.checkIn) <= new Date() && new Date(booking.checkOut) >= new Date();
       case 'completed':
-        return booking.status === 'completed';
+        return status === 'completed';
       case 'cancelled':
-        return booking.status === 'cancelled';
+        return status === 'cancelled';
       default:
         return true;
     }
@@ -420,7 +323,7 @@ const Bookings: React.FC = () => {
 
   const sendDirectMessage = async () => {
     if (!messageText.trim() || !selectedBooking) return;
-    
+
     if (!selectedBooking.tenantId) {
       alert("Cannot send message: Tenant ID is missing from this booking data.");
       return;
@@ -437,13 +340,13 @@ const Bookings: React.FC = () => {
 
       const response = await fetch('http://localhost:5000/api/messages', {
         method: 'POST',
-        headers: { 
+        headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify(payload)
       });
-      
+
       const result = await response.json();
       if (result.success) {
         alert("Message sent successfully!");
@@ -473,10 +376,43 @@ const Bookings: React.FC = () => {
   return (
     <div className={`min-h-screen p-4 ${isDarkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       {/* Header */}
-      <div className="mb-8">
-        <h2 className={`text-xl font-bold mb-2 ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-          Booking Management
-        </h2>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
+        <div>
+          <h2 className={`text-4xl font-black italic tracking-tight mb-1 ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+            Booking Protocol
+          </h2>
+          <p className={`text-xs font-black uppercase tracking-[0.2em] ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>
+            Manage and oversee property occupancy requests
+          </p>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            {syncing && (
+              <div className={`flex items-center gap-2 px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border animate-pulse ${isDarkMode ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-emerald-50 border-emerald-100 text-emerald-600'}`}>
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></div>
+                Syncing Live Database...
+              </div>
+            )}
+            <button
+              onClick={() => fetchBookings()}
+              className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all duration-300 ${isDarkMode 
+                ? 'bg-gray-800 border-gray-700 text-gray-400 hover:text-emerald-400 hover:border-emerald-500/30' 
+                : 'bg-white border-gray-100 text-gray-500 hover:text-emerald-600 hover:border-emerald-200 shadow-sm'}`}
+            >
+              🔄 Sync Now
+            </button>
+          </div>
+
+          <div className={`hidden md:flex flex-col items-end text-right px-6 py-3 rounded-2xl border ${isDarkMode ? 'bg-gray-800/40 border-gray-700' : 'bg-gray-50 border-gray-100'}`}>
+            <div className={`text-xl font-black ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+              {filteredBookings.length}
+            </div>
+            <div className={`text-[8px] font-black uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+              Total {activeTab}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Revenue Overview */}
@@ -590,8 +526,8 @@ const Bookings: React.FC = () => {
                       NPR {(booking.totalAmount || booking.price).toLocaleString()}
                     </p>
                     <p className={`text-[10px] font-black uppercase tracking-widest ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
-                      {booking.totalAmount && booking.totalAmount !== booking.price 
-                        ? `Total Stay · NPR ${booking.price.toLocaleString()}/mo` 
+                      {booking.totalAmount && booking.totalAmount !== booking.price
+                        ? `Total Stay · NPR ${booking.price.toLocaleString()}/mo`
                         : 'Monthly Stays'}
                     </p>
                   </div>
@@ -697,14 +633,14 @@ const Bookings: React.FC = () => {
           >
             <svg className="w-6 h-6 transform group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path></svg>
           </button>
-          
+
           <div className="flex items-center gap-2 mx-4">
             {[...Array(totalPages)].map((_, i) => (
               <button
                 key={i}
                 onClick={() => paginate(i + 1)}
-                className={`w-12 h-12 rounded-2xl font-bold transition-all duration-300 transform ${currentPage === i + 1 
-                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xl shadow-blue-500/30 ring-4 ring-blue-500/10 scale-110' 
+                className={`w-12 h-12 rounded-2xl font-bold transition-all duration-300 transform ${currentPage === i + 1
+                  ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xl shadow-blue-500/30 ring-4 ring-blue-500/10 scale-110'
                   : isDarkMode ? 'bg-gray-800 text-gray-400 hover:bg-gray-700' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200 shadow-sm hover:scale-105'}`}
               >
                 {i + 1}
@@ -802,7 +738,7 @@ const Bookings: React.FC = () => {
                 <div className={`rounded-xl p-3 ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
                   <p className={`text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Price</p>
                   <p className={`font-semibold ${isDarkMode ? 'text-gray-100' : 'text-gray-900'}`}>
-                    NPR {(selectedBooking.totalAmount || selectedBooking.price).toLocaleString()} 
+                    NPR {(selectedBooking.totalAmount || selectedBooking.price).toLocaleString()}
                     {selectedBooking.totalAmount && selectedBooking.totalAmount !== selectedBooking.price && ` (NPR ${selectedBooking.price.toLocaleString()}/mo)`}
                   </p>
                 </div>
@@ -820,8 +756,8 @@ const Bookings: React.FC = () => {
                   onChange={(e) => setMessageText(e.target.value)}
                   placeholder="Type your message to the tenant..."
                   className={`w-full px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 resize-none ${isDarkMode
-                      ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400'
-                      : 'bg-white border-gray-300 text-gray-800 placeholder-gray-400'
+                    ? 'bg-gray-700 border-gray-600 text-gray-100 placeholder-gray-400'
+                    : 'bg-white border-gray-300 text-gray-800 placeholder-gray-400'
                     }`}
                   rows={4}
                 />
@@ -829,8 +765,8 @@ const Bookings: React.FC = () => {
                   <button
                     onClick={() => setShowMessageModal(false)}
                     className={`flex-1 px-4 py-3 rounded-xl font-medium transition-colors ${isDarkMode
-                        ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
-                        : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                      ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                      : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
                       }`}
                   >
                     Cancel
@@ -919,8 +855,8 @@ const Bookings: React.FC = () => {
                 type="text"
                 placeholder="Type your message..."
                 className={`flex-1 px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all duration-300 ${isDarkMode
-                    ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
-                    : 'bg-white/10 border border-white/20 text-white placeholder-white/60'
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400'
+                  : 'bg-white/10 border border-white/20 text-white placeholder-white/60'
                   }`}
               />
               <button className="px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white rounded-xl font-medium transition-all duration-300 transform hover:scale-[1.02] shadow-lg">

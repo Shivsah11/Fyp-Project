@@ -34,10 +34,12 @@ const BookingsManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isMessagePortalOpen, setIsMessagePortalOpen] = useState(false);
   const [selectedBookingForMessage, setSelectedBookingForMessage] = useState<Booking | null>(null);
-  
+
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(5);
 
+
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     const fetchBookings = async () => {
@@ -53,166 +55,123 @@ const BookingsManagement: React.FC = () => {
       const userBookingsKey = `userBookings_${userId}`;
       const newBookingKey = `newBooking_${userId}`;
 
-      const newBookingData = localStorage.getItem(newBookingKey);
-      let bookingsData = [];
-
-      // Try to get persistent bookings from localStorage first
+      // 1. IMMEDIATE LOAD FROM CACHE
       const persistentBookings = localStorage.getItem(userBookingsKey);
       if (persistentBookings) {
         try {
-          bookingsData = JSON.parse(persistentBookings);
-        } catch (error) {
-          console.error('Error parsing persistent bookings:', error);
+          const cachedData = JSON.parse(persistentBookings);
+          setBookings(cachedData);
+          setLoading(false); // We can show data immediately
+        } catch (e) {
+          console.error('Cache parse error:', e);
         }
       }
 
-      // Fresh API fetch from backend
+      // 2. BACKGROUND SYNC
+      setSyncing(true);
       try {
         const response = await fetch('http://localhost:5000/api/bookings/tenant', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          headers: { 'Authorization': `Bearer ${token}` }
         });
 
         const result = await response.json();
 
         if (result.success) {
-          bookingsData = result.data;
-          localStorage.setItem(userBookingsKey, JSON.stringify(bookingsData));
+          setBookings(result.data);
+          localStorage.setItem(userBookingsKey, JSON.stringify(result.data));
+          setError(null);
         } else {
-          setError(result.message || 'Failed to fetch bookings');
+          // Only show error if we have no data at all
+          if (bookings.length === 0) setError(result.message || 'Failed to fetch bookings');
         }
       } catch (err) {
-        console.error('❌ Network error fetching bookings:', err);
-        setError('Error connecting to server. Displaying cached data.');
+        console.error('❌ Sync error:', err);
+        // Do NOT show giant error if we have cached data
+        if (bookings.length === 0 && !persistentBookings) {
+          setError('Server unreachable. Please check your connection.');
+        }
+      } finally {
+        setSyncing(false);
+        setLoading(false);
       }
 
-      // Check for new booking in local storage
+      // 3. CHECK FOR PENDING INSTANT BOOKING
+      const newBookingData = localStorage.getItem(newBookingKey);
       if (newBookingData) {
         try {
           const newBooking = JSON.parse(newBookingData);
-          const newId = newBooking.id || newBooking._id;
-          const exists = bookingsData.some((b: any) => (b.id === newId || b._id === newId));
-          if (!exists) {
-            bookingsData = [newBooking, ...bookingsData];
-            localStorage.setItem(userBookingsKey, JSON.stringify(bookingsData));
-          }
+          setBookings(prev => {
+            const exists = prev.some(b => (b.id === newBooking.id || b._id === newBooking.id));
+            if (!exists) {
+              const updated = [newBooking, ...prev];
+              localStorage.setItem(userBookingsKey, JSON.stringify(updated));
+              return updated;
+            }
+            return prev;
+          });
           localStorage.removeItem(newBookingKey);
         } catch (e) {
           localStorage.removeItem(newBookingKey);
         }
       }
-
-      setBookings(bookingsData);
-      setLoading(false);
     };
 
     fetchBookings();
-  }, [location.pathname]); // Trigger only on navigation, not on state updates
+  }, [location.pathname]);
 
-  // Listen for room navigation from ExploreRooms
+  // Unified storage synchronization listener
   useEffect(() => {
-    const handleRoomNavigation = (e: StorageEvent) => {
+    const handleSyncEvent = (e: StorageEvent) => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
       const userId = JSON.parse(atob(token.split('.')[1])).userId;
       const userBookingsKey = `userBookings_${userId}`;
+      const newBookingKey = `newBooking_${userId}`;
 
-      // Check if this is a room navigation event
-      if (e.key === userBookingsKey) {
+      // 1. Handle NEW booking from another tab (Instant Book)
+      if (e.key === newBookingKey && e.newValue) {
         try {
-          const newBookingData = e.newValue;
-          if (newBookingData) {
-            const parsedBooking = JSON.parse(newBookingData);
-            console.log('Room navigation detected:', parsedBooking);
-            
-            // Add the new booking to the current bookings list
-            setBookings((prevBookings) => {
-              const existingIndex = prevBookings.findIndex((b) => 
-                (b.id === parsedBooking.id || b._id === parsedBooking._id)
-              );
-              
-              if (existingIndex >= 0) {
-                // Update existing booking
-                return prevBookings.map((b, index) => 
-                  index === existingIndex ? parsedBooking : b
-                );
-              } else {
-                // Add new booking to the list
-                return [parsedBooking, ...prevBookings];
-              }
-            });
-            
-            // Update localStorage
-            localStorage.setItem(userBookingsKey, JSON.stringify(
-              existingIndex >= 0 
-                ? setBookings((prevBookings) => {
-                    const existingIndex = prevBookings.findIndex((b) => 
-                      (b.id === parsedBooking.id || b._id === parsedBooking.id)
-                    );
-                    
-                    if (existingIndex >= 0) {
-                      // Update existing booking
-                      return prevBookings.map((b, index) => 
-                        index === existingIndex ? parsedBooking : b
-                      );
-                    } else {
-                      // Add new booking to the list
-                      return [parsedBooking, ...prevBookings];
-                    }
-                  })
-                : [parsedBooking, ...prevBookings]
-            ));
-          }
-        } catch (error) {
-          console.error('Error handling room navigation:', error);
+          const parsedBooking = JSON.parse(e.newValue);
+          setBookings(prev => {
+            const exists = prev.some(b => (b.id === parsedBooking.id || b._id === parsedBooking.id));
+            if (exists) return prev;
+            const updated = [parsedBooking, ...prev];
+            // Persist to local storage to keep state across refreshes
+            setTimeout(() => localStorage.setItem(userBookingsKey, JSON.stringify(updated)), 0);
+            return updated;
+          });
+          localStorage.removeItem(newBookingKey);
+        } catch (err) {
+          console.error('New booking parse error:', err);
+        }
+      }
+
+      // 2. Handle GLOBAL state updates (e.g. from Dashboard or Landlord)
+      if (e.key === userBookingsKey && e.newValue) {
+        try {
+          const updatedBookings = JSON.parse(e.newValue);
+          
+          // Background compare for notifications
+          updatedBookings.forEach((booking: any) => {
+            const updatedId = booking.id || booking._id;
+            const existing = bookings.find(b => (b.id === updatedId || b._id === updatedId));
+            if (existing && existing.status !== booking.status) {
+              if (booking.status === 'confirmed') alert(`🎉 Approval! Your stay at ${booking.propertyName} was APPROVED.`);
+              else if (booking.status === 'cancelled') alert(`❌ Your booking for ${booking.propertyName} was rejected/cancelled.`);
+            }
+          });
+
+          setBookings(updatedBookings);
+        } catch (err) {
+          console.error('Global sync parse error:', err);
         }
       }
     };
 
-    window.addEventListener('storage', handleRoomNavigation);
-    return () => {
-      window.removeEventListener('storage', handleRoomNavigation);
-    };
-  }, [bookings]); // Add bookings dependency to ensure room navigation updates are handled
-
-  // Add effect to listen for landlord approval/rejection/cancellation updates
-  useEffect(() => {
-    const handleStorageChange = (e: StorageEvent) => {
-      const token = localStorage.getItem('token');
-      if (!token) return;
-
-      const userId = JSON.parse(atob(token.split('.')[1])).userId;
-      const userBookingsKey = `userBookings_${userId}`;
-
-      console.log('Storage event detected:', e.key, e.newValue);
-      if (e.key === userBookingsKey && e.newValue) {
-        console.log('Landlord updated bookings, refreshing tenant view...');
-        const updatedBookings = JSON.parse(e.newValue);
-        console.log('Updated bookings from storage:', updatedBookings);
-        setBookings(updatedBookings);
-
-        // Show notification for status changes
-        updatedBookings.forEach((booking: any) => {
-          const updatedId = booking.id || booking._id;
-          const existingBooking = bookings.find(b => (b.id === updatedId || b._id === updatedId));
-          if (existingBooking && existingBooking.status !== booking.status) {
-            if (booking.status === 'confirmed') {
-              alert(`🎉 Good news! Your booking for ${booking.propertyName} has been APPROVED! Please proceed with payment.`);
-            } else if (booking.status === 'cancelled') {
-              alert(`❌ Your booking for ${booking.propertyName} has been REJECTED. Please contact the landlord for more information.`);
-            } else if (booking.status === 'completed') {
-              alert(`✅ Your booking for ${booking.propertyName} has been COMPLETED. Thank you for choosing us!`);
-            }
-          }
-        });
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, [bookings]);
+    window.addEventListener('storage', handleSyncEvent);
+    return () => window.removeEventListener('storage', handleSyncEvent);
+  }, [bookings]); // Rely on bookings for change detection in notifications
 
   // Force refresh function
   const forceRefreshBookings = async () => {
@@ -378,7 +337,7 @@ const BookingsManagement: React.FC = () => {
         const monthsDifference = Math.max(1, Math.ceil(daysDifference / 30));
         return booking.price * monthsDifference;
       })();
-      
+
       navigate('/esewa-checkout', { state: { bookingId: booking.id, amount: paymentAmount } });
     } catch (error) {
       console.error('Payment redirect error:', error);
@@ -461,6 +420,24 @@ const BookingsManagement: React.FC = () => {
         <div>
           <p className={`text-xs font-bold ${isDarkMode ? 'text-emerald-400' : 'text-emerald-600'}`}>Manage your property stays and applications</p>
         </div>
+        
+        {/* Sync Status Badge */}
+        <div className="flex items-center gap-4">
+          {syncing && (
+            <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border animate-pulse ${isDarkMode ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-emerald-50 border-emerald-100 text-emerald-600'}`}>
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></div>
+              Syncing Live Data...
+            </div>
+          )}
+          {error && bookings.length > 0 && (
+            <button 
+              onClick={() => window.location.reload()}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${isDarkMode ? 'bg-red-500/10 border-red-500/20 text-red-400 hover:bg-red-500/20' : 'bg-red-50 border-red-100 text-red-600 hover:bg-red-100'}`}
+            >
+              ⚠️ Sync Issue - Click to Retry
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Tabs */}
@@ -501,12 +478,18 @@ const BookingsManagement: React.FC = () => {
           <div className="w-20 h-20 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
           <p className={`font-black text-xl animate-pulse uppercase tracking-widest ${isDarkMode ? 'text-emerald-500' : 'text-emerald-600'}`}>Loading Stays...</p>
         </div>
-      ) : error ? (
+      ) : error && bookings.length === 0 ? (
         <div className={`p-10 rounded-3xl border text-center ${isDarkMode ? 'bg-red-900/10 border-red-800/30' : 'bg-red-50 border-red-100'
           }`}>
           <div className="text-4xl mb-4">⚠️</div>
           <h3 className={`text-2xl font-black mb-2 ${isDarkMode ? 'text-red-400' : 'text-red-700'}`}>Connection Issue</h3>
           <p className={`font-bold italic ${isDarkMode ? 'text-red-400/80' : 'text-red-600/80'}`}>{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-6 px-8 py-3 bg-red-500 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-red-600 transition-all"
+          >
+            Retry Connection
+          </button>
         </div>
       ) : (
         <div className="space-y-2">
