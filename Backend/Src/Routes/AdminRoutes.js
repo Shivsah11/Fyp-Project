@@ -11,12 +11,11 @@ const router = express.Router();
 
 // ─── User Management ─────────────────────────────────────────────────────────
 
-router.get("/users", async (req, res) => {
+router.get("/users", authenticateAdmin, async (req, res) => {
   try {
     console.log('🔍 Admin users endpoint called');
 
-    // Temporarily bypass authentication for testing
-    // authenticateAdmin, requirePermission("manageUsers")
+    // requirePermission("manageUsers"),
 
     const tenants = await Tenant.find({}).select('-password').lean();
     const landlords = await Landlord.find({}).select('-password').lean();
@@ -75,12 +74,11 @@ router.patch("/users/:id/toggle-status", authenticateAdmin, requirePermission("m
   }
 });
 
-router.get("/stats", async (req, res) => {
+router.get("/stats", authenticateAdmin, async (req, res) => {
   try {
     console.log('🔍 Admin stats endpoint called');
 
-    // Temporarily bypass authentication for testing
-    // authenticateAdmin, requirePermission("manageUsers")
+    // requirePermission("manageUsers"),
 
     const tenantCount = await Tenant.countDocuments();
     const landlordCount = await Landlord.countDocuments();
@@ -154,12 +152,9 @@ router.delete("/users/:id", authenticateAdmin, requirePermission("manageUsers"),
 
 // ─── Property Management ─────────────────────────────────────────────────────
 
-router.get("/properties", async (req, res) => {
+router.get("/properties", authenticateAdmin, async (req, res) => {
   try {
     console.log('🔍 Admin properties endpoint called');
-
-    // Temporarily bypass authentication for testing
-    // authenticateAdmin, requirePermission("manageUsers")
 
     const properties = await Property.find({})
       .populate('landlordId', 'firstName lastName email')
@@ -357,8 +352,7 @@ router.get("/analytics", async (req, res) => {
 
 // ─── Booking Management ──────────────────────────────────────────────────────
 
-router.get("/bookings", async (req, res) => {
-  // authenticateAdmin, requirePermission("manageUsers"), 
+router.get("/bookings", authenticateAdmin, async (req, res) => {
   try {
     console.log(`📊 Admin fetching all bookings...`);
     const bookings = await Booking.find({})

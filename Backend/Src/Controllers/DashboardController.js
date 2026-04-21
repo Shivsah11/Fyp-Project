@@ -10,7 +10,8 @@ import Payment from "../Models/Payment.js";
 export const getDashboardData = async (req, res) => {
   try {
     const userId = req.user.userId;
-    const userRole = req.user.role;
+    // Normalize role to PascalCase (e.g., "landlord" -> "Landlord")
+    const userRole = req.user.role ? req.user.role.charAt(0).toUpperCase() + req.user.role.slice(1).toLowerCase() : '';
 
     // 1. Find the user in collections - Optimized lookup using role
     let user = null;
@@ -199,10 +200,14 @@ export const getDashboardData = async (req, res) => {
             id: p._id,
             name: p.title,
             location: p.location,
-            price: p.price,
+            price: typeof p.price === 'string' ? parseInt(p.price.replace(/[^0-9]/g, "")) || 0 : (p.price || 0),
             status: p.status,
-            lat: p.lat,
-            lng: p.lng
+            lat: p.lat || (27.7172 + (Math.random() - 0.5) * 0.05),
+            lng: p.lng || (85.3240 + (Math.random() - 0.5) * 0.05),
+            images: p.images || [],
+            image: p.image || '',
+            type: p.type || 'apartment',
+            area: p.area || 0
           }))
         }
       });

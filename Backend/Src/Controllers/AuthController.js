@@ -33,6 +33,17 @@ export const signup = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
+    // Security: Prevent NoSQL Injection by ensuring inputs are strings
+    if (
+      typeof firstName !== 'string' || 
+      typeof lastName !== 'string' || 
+      typeof email !== 'string' || 
+      typeof password !== 'string' || 
+      typeof role !== 'string'
+    ) {
+      return res.status(400).json({ message: "Invalid input format" });
+    }
+
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -98,6 +109,7 @@ export const signup = async (req, res) => {
       if (admin) {
         await createInternalNotification({
           recipient: admin._id,
+          recipientModel: 'Admin',
           title: "New User Registration",
           message: `${firstName} ${lastName} has registered as a ${role}.`,
           type: "info"
@@ -142,6 +154,11 @@ export const login = async (req, res) => {
     // Validate input
     if (!email || !password) {
       return res.status(400).json({ message: "Email and password are required" });
+    }
+
+    // Security: Prevent NoSQL Injection by ensuring inputs are strings
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
     // Find user in all collections

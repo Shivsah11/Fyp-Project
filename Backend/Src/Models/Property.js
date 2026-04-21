@@ -19,6 +19,8 @@ const propertySchema = new mongoose.Schema({
   images: { type: [String], default: [] },
   image: { type: String }, // Keep for backward compatibility
   amenities: { type: [String], default: [] },
+  lat: { type: Number, default: 27.7172 },
+  lng: { type: Number, default: 85.3240 },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });

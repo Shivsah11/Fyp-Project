@@ -84,9 +84,10 @@ export const updateBookingStatus = async (req, res) => {
     // 1. Admin can do anything
     // 2. Landlord can update if they own the property
     // 3. Tenant can ONLY cancel their own booking
-    const isAdmin = req.user.role === 'Admin';
-    const isLandlord = req.user.role === 'Landlord' && booking.propertyId.landlordId.toString() === landlordId.toString();
-    const isTenant = req.user.role === 'Tenant' && booking.tenantId.toString() === req.user.userId.toString();
+    const userRoleNormalized = req.user.role ? req.user.role.charAt(0).toUpperCase() + req.user.role.slice(1).toLowerCase() : '';
+    const isAdmin = userRoleNormalized === 'Admin';
+    const isLandlord = userRoleNormalized === 'Landlord' && booking.propertyId.landlordId.toString() === landlordId.toString();
+    const isTenant = userRoleNormalized === 'Tenant' && booking.tenantId.toString() === req.user.userId.toString();
 
     if (!isAdmin && !isLandlord && !isTenant) {
       return res.status(403).json({ message: "Not authorized to update this booking" });
@@ -241,6 +242,7 @@ export const createBooking = async (req, res) => {
       if (admin) {
         await createInternalNotification({
           recipient: admin._id,
+          recipientModel: 'Admin',
           title: "New Booking Request",
           message: `A new booking request has been created for ${property.title}.`,
           type: "info",
@@ -249,6 +251,20 @@ export const createBooking = async (req, res) => {
       }
     } catch (notiError) {
       console.error("Failed to notify admin of new booking:", notiError);
+    }
+
+    // Notify Landlord of new booking
+    try {
+      await createInternalNotification({
+        recipient: property.landlordId,
+        recipientModel: 'Landlord',
+        title: "New Booking Request",
+        message: `You have a new booking request for your property: ${property.title}.`,
+        type: "info",
+        bookingId: newBooking._id
+      });
+    } catch (notiError) {
+      console.error("Failed to notify landlord of new booking:", notiError);
     }
 
     res.status(201).json({
@@ -334,6 +350,7 @@ export const completeBookingPayment = async (req, res) => {
       if (admin) {
         await createInternalNotification({
           recipient: admin._id,
+          recipientModel: 'Admin',
           title: "Payment Received",
           message: `A payment of NPR ${amount || booking.totalAmount} has been received for booking ${booking._id}.`,
           type: "success",
@@ -342,6 +359,20 @@ export const completeBookingPayment = async (req, res) => {
       }
     } catch (notiError) {
       console.error("Failed to notify admin of payment:", notiError);
+    }
+
+    // Notify Landlord of payment completion
+    try {
+      await createInternalNotification({
+        recipient: booking.landlordId,
+        recipientModel: 'Landlord',
+        title: "Booking Payment Confirmed",
+        message: `Payment has been confirmed for your property booking at ${booking.propertyId.title || 'your property'}.`,
+        type: "success",
+        bookingId: booking._id
+      });
+    } catch (notiError) {
+      console.error("Failed to notify landlord of payment:", notiError);
     }
 
     res.status(200).json({
