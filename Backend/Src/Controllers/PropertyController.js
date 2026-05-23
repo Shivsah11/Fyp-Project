@@ -1,14 +1,20 @@
+/**
+ * @file PropertyController.js
+ * @description Controller managing rental property listings, registration, updates, status changes, and deletion.
+ */
+
 import Property from "../Models/Property.js";
 
 /**
- * @desc    Get all available properties for tenants to explore
- * @route   GET /api/properties
- * @access  Private (Tenant/Admin)
+ * Retrieves all properties that are currently set to 'Available' or 'active' for general browsing.
+ * Populates owner landlord profile details (names and email).
+ *
+ * @route GET /api/properties
+ * @access Private (Tenant/Admin)
  */
 export const getAllProperties = async (req, res) => {
   try {
-    // We only want to show properties that are Available or active
-    // The model uses status: ['active', 'inactive', 'pending', 'suspended', 'Available', 'Rented', 'Maintenance']
+    // Restrict search results to active/Available statuses only to prevent displaying Rented/Maintenance rooms
     const properties = await Property.find({
       status: { $in: ['Available', 'active'] }
     }).populate('landlordId', 'firstName lastName email');
@@ -28,9 +34,10 @@ export const getAllProperties = async (req, res) => {
 };
 
 /**
- * @desc    Get property by ID
- * @route   GET /api/properties/:id
- * @access  Private
+ * Retrieves full details for a single property based on its unique MongoDB object ID.
+ *
+ * @route GET /api/properties/:id
+ * @access Private
  */
 export const getPropertyById = async (req, res) => {
   try {
@@ -57,13 +64,15 @@ export const getPropertyById = async (req, res) => {
 };
 
 /**
- * @desc    Get only properties belonging to the logged-in landlord
- * @route   GET /api/properties/landlord
- * @access  Private (Landlord/Admin)
+ * Retrieves only properties registered by the logged-in Landlord.
+ *
+ * @route GET /api/properties/landlord
+ * @access Private (Landlord/Admin)
  */
 export const getLandlordProperties = async (req, res) => {
   try {
     const landlordId = req.user.userId;
+    // Find all properties matching the authenticated landlord's ID
     const properties = await Property.find({ landlordId });
 
     res.status(200).json({
@@ -78,9 +87,10 @@ export const getLandlordProperties = async (req, res) => {
 };
 
 /**
- * @desc    Get EVERY property in the system (Admin only)
- * @route   GET /api/properties/admin
- * @access  Private (Admin)
+ * Retrieves all properties recorded in the system, regardless of status.
+ *
+ * @route GET /api/properties/admin
+ * @access Private (Admin)
  */
 export const getAllPropertiesAdmin = async (req, res) => {
   try {
@@ -98,9 +108,11 @@ export const getAllPropertiesAdmin = async (req, res) => {
 };
 
 /**
- * @desc    Create a new property
- * @route   POST /api/properties
- * @access  Private (Landlord/Admin)
+ * Creates a new property listing.
+ * Automatically synchronizes backward-compatible 'image' fields with the first item in the 'images' array.
+ *
+ * @route POST /api/properties
+ * @access Private (Landlord/Admin)
  */
 export const createProperty = async (req, res) => {
   console.log("Create property request received:", req.body);
@@ -109,7 +121,7 @@ export const createProperty = async (req, res) => {
     const landlordId = req.user.userId;
     console.log("Creating property for landlord:", landlordId);
 
-    // Sync image with images[0] if it exists
+    // Sync image with images[0] to support both single-image legacy UI and multi-image sliders
     const propertyImages = images && images.length > 0 ? images : (image ? [image] : []);
     const mainImage = image || (images && images.length > 0 ? images[0] : '');
 
@@ -143,9 +155,11 @@ export const createProperty = async (req, res) => {
 };
 
 /**
- * @desc    Update an existing property
- * @route   PUT /api/properties/:id
- * @access  Private (Landlord/Admin)
+ * Updates details of an existing property listing.
+ * Verifies that the updater is the landlord owner of the property or an administrator.
+ *
+ * @route PUT /api/properties/:id
+ * @access Private (Landlord/Admin)
  */
 export const updateProperty = async (req, res) => {
   try {
@@ -158,12 +172,12 @@ export const updateProperty = async (req, res) => {
       return res.status(404).json({ success: false, message: "Property not found" });
     }
 
-    // Check if landlord owns this property or is Admin
+    // Authorization check: User must be either the owner Landlord or a system Admin
     if (property.landlordId.toString() !== landlordId && req.user.role !== 'Admin') {
       return res.status(403).json({ success: false, message: "Not authorized to update this property" });
     }
 
-    // Sync image with images[0] if images is updated
+    // Sync primary image field and multi-image list if either parameter gets updated
     const updateData = { ...req.body };
     if (updateData.images && updateData.images.length > 0) {
       updateData.image = updateData.images[0];
@@ -187,9 +201,11 @@ export const updateProperty = async (req, res) => {
 };
 
 /**
- * @desc    Delete a property
- * @route   DELETE /api/properties/:id
- * @access  Private (Landlord/Admin)
+ * Deletes a property listing.
+ * Verifies ownership credentials (only landlord owner or administrator).
+ *
+ * @route DELETE /api/properties/:id
+ * @access Private (Landlord/Admin)
  */
 export const deleteProperty = async (req, res) => {
   try {
@@ -202,7 +218,7 @@ export const deleteProperty = async (req, res) => {
       return res.status(404).json({ success: false, message: "Property not found" });
     }
 
-    // Check if landlord owns this property or is Admin
+    // Authorization check: User must be either the owner Landlord or a system Admin
     if (property.landlordId.toString() !== landlordId && req.user.role !== 'Admin') {
       return res.status(403).json({ success: false, message: "Not authorized to delete this property" });
     }
@@ -218,3 +234,4 @@ export const deleteProperty = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error deleting property" });
   }
 };
+

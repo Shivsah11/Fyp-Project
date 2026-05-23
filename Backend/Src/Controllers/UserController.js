@@ -1,9 +1,19 @@
+/**
+ * @file UserController.js
+ * @description Controller managing user profile details, configuration preferences, and authentication credentials.
+ */
+
 import Tenant from "../Models/Tenant.js";
 import Landlord from "../Models/Landlord.js";
 import Admin from "../Models/Admin.js";
 import bcrypt from "bcryptjs";
 
-// Helper to get the correct model based on role
+/**
+ * Helper function to retrieve the Mongoose model class depending on the user's role.
+ *
+ * @param {String} role - The role string (e.g. 'Landlord', 'Admin', 'Tenant').
+ * @returns {mongoose.Model} Associated Mongoose Model constructor.
+ */
 const getModelByRole = (role) => {
   switch (role) {
     case 'Landlord': return Landlord;
@@ -13,12 +23,19 @@ const getModelByRole = (role) => {
   }
 };
 
+/**
+ * Fetches the profile data of the logged-in user, excluding their hashed password.
+ *
+ * @route GET /api/users/profile
+ * @access Private
+ */
 export const getProfile = async (req, res) => {
   console.log(`[USER_CONTROLLER] GET /profile - User: ${req.user?.userId}, Role: ${req.user?.role}`);
   try {
     const { userId, role } = req.user;
     const UserModel = getModelByRole(role);
 
+    // Retrieve user by ID and omit password hash from response
     const user = await UserModel.findById(userId).select('-password');
     if (!user) {
       console.warn(`[USER_CONTROLLER] User not found: ${userId}`);
@@ -32,6 +49,12 @@ export const getProfile = async (req, res) => {
   }
 };
 
+/**
+ * Updates profile fields (names, phone, address, biography, and profile images) for the authenticated user.
+ *
+ * @route PUT /api/users/profile
+ * @access Private
+ */
 export const updateProfile = async (req, res) => {
   console.log(`[USER_CONTROLLER] PUT /profile - User: ${req.user?.userId}`);
   try {
@@ -47,11 +70,12 @@ export const updateProfile = async (req, res) => {
       bio
     };
 
-    // Only update profileImage if it's provided in the request
+    // Only update profileImage if it's provided in the request payload
     if (profileImage !== undefined) {
       updateData.profileImage = profileImage;
     }
 
+    // Find user and perform update with schema validation
     const updatedUser = await UserModel.findByIdAndUpdate(
       userId,
       updateData,
@@ -75,10 +99,16 @@ export const updateProfile = async (req, res) => {
   }
 };
 
+/**
+ * Updates application display and notification preferences by merging changes.
+ *
+ * @route PATCH /api/users/preferences
+ * @access Private
+ */
 export const updatePreferences = async (req, res) => {
   try {
     const { userId, role } = req.user;
-    const preferences = req.body; // Expecting the whole preferences object or partial
+    const preferences = req.body; // Partial preferences payload
     const UserModel = getModelByRole(role);
 
     const user = await UserModel.findById(userId);
@@ -86,7 +116,7 @@ export const updatePreferences = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Update preferences by merging
+    // Update preferences by merging the existing configuration with new updates
     user.preferences = { ...user.preferences, ...preferences };
     await user.save();
 
@@ -101,6 +131,12 @@ export const updatePreferences = async (req, res) => {
   }
 };
 
+/**
+ * Changes password credentials by validating old password and saving the new hashed password.
+ *
+ * @route POST /api/users/change-password
+ * @access Private
+ */
 export const changePassword = async (req, res) => {
   try {
     const { userId, role } = req.user;
@@ -112,13 +148,13 @@ export const changePassword = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // Verify current password
+    // Verify correct current password matches database hash
     const isMatch = await bcrypt.compare(currentPassword, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Incorrect current password" });
     }
 
-    // Hash and save new password
+    // Generate new salt, hash new password, and save credentials
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(newPassword, salt);
     await user.save();
@@ -130,6 +166,12 @@ export const changePassword = async (req, res) => {
   }
 };
 
+/**
+ * Deletes the authenticated user account from the database.
+ *
+ * @route DELETE /api/users/account
+ * @access Private
+ */
 export const deleteAccount = async (req, res) => {
   try {
     const { userId, role } = req.user;
@@ -146,3 +188,4 @@ export const deleteAccount = async (req, res) => {
     res.status(500).json({ message: "Server error deleting account" });
   }
 };
+

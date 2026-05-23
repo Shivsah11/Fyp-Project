@@ -1,10 +1,16 @@
+/**
+ * @file Notification.js
+ * @description Mongoose schema for system notifications pushed to users (Tenants, Landlords, Admins).
+ */
+
 import mongoose from "mongoose";
 
+// Schema defining recipient polymorphic references, message text, notification types, links, and booking references
 const notificationSchema = new mongoose.Schema({
   recipient: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
-    refPath: 'recipientModel'
+    refPath: 'recipientModel' // Polymorphic target reference mapping
   },
   recipientModel: {
     type: String,
@@ -30,7 +36,7 @@ const notificationSchema = new mongoose.Schema({
   },
   bookingId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Booking'
+    ref: 'Booking' // Optional reference to Booking model context
   },
   link: {
     type: String
@@ -41,7 +47,8 @@ const notificationSchema = new mongoose.Schema({
   }
 });
 
-// Index for faster lookups
+// Composite index to speed up fetching notifications ordered by date for a given recipient
 notificationSchema.index({ recipient: 1, timestamp: -1 });
 
 export default mongoose.model("Notification", notificationSchema);
+

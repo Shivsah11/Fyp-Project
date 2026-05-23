@@ -1,5 +1,11 @@
+/**
+ * @file Landlord.js
+ * @description Mongoose schema definition for Landlord accounts, storing profiles, settings, and referrals.
+ */
+
 import mongoose from "mongoose";
 
+// Schema defining landlord credentials, preferences, coins, and password reset tokens
 const landlordSchema = new mongoose.Schema({
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
@@ -9,6 +15,7 @@ const landlordSchema = new mongoose.Schema({
   phone: { type: String, default: '' },
   address: { type: String, default: '' },
   bio: { type: String, default: '' },
+  // Localized preferences
   preferences: {
     notifications: { type: Boolean, default: true },
     emailAlerts: { type: Boolean, default: true },
@@ -26,3 +33,4 @@ const landlordSchema = new mongoose.Schema({
 });
 
 export default mongoose.model("Landlord", landlordSchema);
+

@@ -1,3 +1,8 @@
+/**
+ * @file AuthController.js
+ * @description Controller managing user signup, login, and forgot/reset password flows with security protections.
+ */
+
 import Tenant from "../Models/Tenant.js";
 import Landlord from "../Models/Landlord.js";
 import Admin from "../Models/Admin.js";
@@ -6,18 +11,26 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { createInternalNotification } from "./NotificationController.js";
 
+/**
+ * Handles registering new Tenant, Landlord, or Admin accounts.
+ * Performs request validation, prevents injection, processes referral codes (giving coins rewards),
+ * hashes the password, creates the profile, alerts admins, and signs a JWT.
+ *
+ * @route POST /api/auth/signup
+ * @access Public
+ */
 export const signup = async (req, res) => {
   try {
     const { firstName, lastName, email, password, role } = req.body;
 
     console.log("Signup request received:", { firstName, lastName, email, role });
 
-    // Choose the appropriate model based on role
+    // Choose the appropriate collection model based on user role
     const UserModel = role === "Landlord" ? Landlord : role === "Admin" ? Admin : Tenant;
 
     console.log("Using model:", role === "Landlord" ? "Landlord" : role === "Admin" ? "Admin" : "Tenant");
 
-    // Check if user already exists in the appropriate collection
+    // Check if user already exists in the selected collection
     const existingUser = await UserModel.findOne({ email });
     console.log("Existing user check:", existingUser);
 
@@ -28,12 +41,12 @@ export const signup = async (req, res) => {
       return res.status(400).json(errorResponse);
     }
 
-    // Validate input
+    // Validate that all fields are supplied
     if (!firstName || !lastName || !email || !password || !role) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    // Security: Prevent NoSQL Injection by ensuring inputs are strings
+    // Security check: Prevent NoSQL injection by enforcing that inputs are strictly strings
     if (
       typeof firstName !== 'string' || 
       typeof lastName !== 'string' || 
@@ -44,17 +57,18 @@ export const signup = async (req, res) => {
       return res.status(400).json({ message: "Invalid input format" });
     }
 
-    // Email validation
+    // Email format validation regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return res.status(400).json({ message: "Invalid email format" });
     }
 
-    // Password validation (minimum 6 characters)
+    // Password strength check (min length 6)
     if (password.length < 6) {
       return res.status(400).json({ message: "Password must be at least 6 characters long" });
     }
 
+    // Hash the password securely with a salt factor of 10
     const hashedPassword = await bcrypt.hash(password, 10);
     console.log("Password hashed successfully");
 
@@ -62,11 +76,11 @@ export const signup = async (req, res) => {
     const { ref } = req.body;
     let initialCoins = 0;
 
-    // 1. Give bonus to new user if referred
+    // 1. Give bonus to new user if they used a referral link
     if (ref) {
-      initialCoins = 25;
+      initialCoins = 25; // Award 25 coins to the new referred user
 
-      // 2. Award 50 coins to referrer
+      // 2. Award 50 coins to the referrer
       try {
         let referrer = await Tenant.findOne({ referralCode: ref });
         if (!referrer) {
@@ -85,7 +99,7 @@ export const signup = async (req, res) => {
       }
     }
 
-    // 3. Generate a unique referral code for the new user
+    // 3. Generate a unique referral code for the new user profile
     const newRefCode = 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
 
     const userData = {
@@ -103,7 +117,7 @@ export const signup = async (req, res) => {
     const user = await UserModel.create(userData);
     console.log("User created successfully:", user);
 
-    // Notify Admin of new registration
+    // Notify the application Administrator of the new user sign up
     try {
       const admin = await Admin.findOne();
       if (admin) {
@@ -119,7 +133,7 @@ export const signup = async (req, res) => {
       console.error("Failed to notify admin of new signup:", notiError);
     }
 
-    // Create JWT token
+    // Create JWT token valid for 7 days
     const token = jwt.sign(
       { userId: user._id, email: user.email, role: user.role },
       process.env.JWT_SECRET || "your-secret-key",
@@ -147,21 +161,28 @@ export const signup = async (req, res) => {
   }
 };
 
+/**
+ * authenticates Tenant, Landlord, or Admin users using their email and password.
+ * Checks collections sequentially, compares password hashes, and returns a signed JWT.
+ *
+ * @route POST /api/auth/login
+ * @access Public
+ */
 export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validate input
+    // Validate inputs exist
     if (!email || !password) {
       return res.status(400).json({ message: "Email and password are required" });
     }
 
-    // Security: Prevent NoSQL Injection by ensuring inputs are strings
+    // Security check: Prevent NoSQL injection by ensuring input parameters are strings
     if (typeof email !== 'string' || typeof password !== 'string') {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Find user in all collections
+    // Find the user profile by sequentially checking Tenant, Landlord, and Admin collections
     let user = await Tenant.findOne({ email });
     if (!user) {
       user = await Landlord.findOne({ email });
@@ -174,13 +195,13 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Check password
+    // Compare supplied password with stored hash
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Create JWT token
+    // Generate JWT token valid for 7 days
     const token = jwt.sign(
       { userId: user._id, email: user.email, role: user.role },
       process.env.JWT_SECRET || "your-secret-key",
@@ -204,12 +225,20 @@ export const login = async (req, res) => {
   }
 };
 
+/**
+ * Initiates the password recovery flow.
+ * Generates a crypto token, hashes it, saves the hash and expiration date on the user document,
+ * and prints a simulated email link in the logs.
+ *
+ * @route POST /api/auth/forgot-password
+ * @access Public
+ */
 export const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: "Email is required" });
 
-    // Check all collections
+    // Check all collections for the email
     let user = await Tenant.findOne({ email });
     let role = 'Tenant';
     if (!user) { user = await Landlord.findOne({ email }); role = 'Landlord'; }
@@ -219,17 +248,17 @@ export const forgotPassword = async (req, res) => {
       return res.status(404).json({ message: "User not found with this email" });
     }
 
-    // Generate reset token
+    // Generate random crypto reset token
     const resetToken = crypto.randomBytes(32).toString('hex');
     const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
 
-    // Set expiration (1 hour)
+    // Store hashed token and set expiration to 1 hour from now
     user.resetPasswordToken = hashedToken;
     user.resetPasswordExpires = Date.now() + 3600000;
 
     await user.save();
 
-    // MOCK EMAIL LOG
+    // Log the generated link (mocking email transport)
     const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
     console.log("\n--- PASSWORD RESET REQUEST ---");
     console.log(`User: ${email} (${role})`);
@@ -246,6 +275,12 @@ export const forgotPassword = async (req, res) => {
   }
 };
 
+/**
+ * Completes the password recovery flow by verifying the recovery token and updating the password.
+ *
+ * @route POST /api/auth/reset-password/:token
+ * @access Public
+ */
 export const resetPassword = async (req, res) => {
   try {
     const { token } = req.params;
@@ -253,9 +288,10 @@ export const resetPassword = async (req, res) => {
 
     if (!password) return res.status(400).json({ message: "Password is required" });
 
+    // Hash the token to match the database stored version
     const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
-    // Check all collections for the token and expiration
+    // Query collections for a valid token that has not expired yet
     let user = await Tenant.findOne({
       resetPasswordToken: hashedToken,
       resetPasswordExpires: { $gt: Date.now() }
@@ -279,7 +315,7 @@ export const resetPassword = async (req, res) => {
       return res.status(400).json({ message: "Invalid or expired password reset token" });
     }
 
-    // Update password
+    // Hash new password and clear reset fields
     const hashedPassword = await bcrypt.hash(password, 10);
     user.password = hashedPassword;
     user.resetPasswordToken = undefined;
@@ -294,3 +330,4 @@ export const resetPassword = async (req, res) => {
     res.status(500).json({ message: "Server error during password reset" });
   }
 };
+

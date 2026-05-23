@@ -1,5 +1,11 @@
+/**
+ * @file Tenant.js
+ * @description Mongoose schema definition for Tenant user profiles, settings, and referrals.
+ */
+
 import mongoose from "mongoose";
 
+// Schema defining tenant credentials, profile pictures, notification preferences, coins balance, and password recovery fields
 const tenantSchema = new mongoose.Schema({
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
@@ -10,6 +16,7 @@ const tenantSchema = new mongoose.Schema({
   address: { type: String, default: '' },
   bio: { type: String, default: '' },
   profileImage: { type: String, default: '' },
+  // Localized preferences
   preferences: {
     notifications: { type: Boolean, default: true },
     emailAlerts: { type: Boolean, default: true },
@@ -27,3 +34,4 @@ const tenantSchema = new mongoose.Schema({
 });
 
 export default mongoose.model("Tenant", tenantSchema);
+

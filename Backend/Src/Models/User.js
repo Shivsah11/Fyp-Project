@@ -1,5 +1,11 @@
+/**
+ * @file User.js
+ * @description Mongoose schema definition for the base User model (shared or generic account properties).
+ */
+
 import mongoose from "mongoose";
 
+// Schema defining basic user details, coins balance, and optional referral fields
 const userSchema = new mongoose.Schema({
   firstName: String,
   lastName: String,
@@ -11,3 +17,4 @@ const userSchema = new mongoose.Schema({
 });
 
 export default mongoose.model("User", userSchema);
+

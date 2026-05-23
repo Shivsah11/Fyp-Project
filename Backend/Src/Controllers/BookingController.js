@@ -1,3 +1,8 @@
+/**
+ * @file BookingController.js
+ * @description Controller managing property bookings, status transitions, check-in durations, and payments.
+ */
+
 import Booking from "../Models/Booking.js";
 import Property from "../Models/Property.js";
 import Admin from "../Models/Admin.js";
@@ -5,9 +10,12 @@ import Tenant from "../Models/Tenant.js";
 import Landlord from "../Models/Landlord.js";
 import { createInternalNotification } from "./NotificationController.js";
 
-// @desc    Get all bookings for a landlord's properties
-// @route   GET /api/bookings/landlord
-// @access  Private (Landlord/Admin)
+/**
+ * Retrieves all bookings associated with properties owned by the authenticated Landlord.
+ *
+ * @route GET /api/bookings/landlord
+ * @access Private (Landlord/Admin)
+ */
 export const getLandlordBookings = async (req, res) => {
   try {
     const landlordId = req.user.userId;
@@ -28,7 +36,7 @@ export const getLandlordBookings = async (req, res) => {
       .populate('propertyId', 'title type location amenities image images price')
       .sort({ createdAt: -1 });
 
-    // 3. Format bookings for the frontend
+    // 3. Format bookings list data for frontend consumption
     const formattedBookings = bookings.map((booking) => ({
       id: booking._id,
       tenantName: booking.tenantId ? `${booking.tenantId.firstName} ${booking.tenantId.lastName}` : 'Unknown Tenant',
@@ -61,15 +69,20 @@ export const getLandlordBookings = async (req, res) => {
   }
 };
 
-// @desc    Update a booking's status
-// @route   PUT /api/bookings/:id/status
-// @access  Private (Landlord/Admin)
+/**
+ * Updates the status (e.g. pending, confirmed, cancelled) or payment parameters of a specific booking.
+ * Enforces role checks: Admins can update any; Landlords can update their properties; Tenants can only cancel.
+ *
+ * @route PUT /api/bookings/:id/status
+ * @access Private (Landlord/Admin/Tenant)
+ */
 export const updateBookingStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status, paymentStatus, paymentMethod, paymentAmount, paymentReference } = req.body;
     const landlordId = req.user.userId;
 
+    // Validate that the new status matches the allowed values
     if (status && !['pending', 'confirmed', 'cancelled', 'completed', 'refunded', 'Pending', 'Confirmed', 'Cancelled'].includes(status)) {
       return res.status(400).json({ message: "Invalid status" });
     }
@@ -80,10 +93,7 @@ export const updateBookingStatus = async (req, res) => {
       return res.status(404).json({ message: "Booking not found" });
     }
 
-    // Authorization check:
-    // 1. Admin can do anything
-    // 2. Landlord can update if they own the property
-    // 3. Tenant can ONLY cancel their own booking
+    // Role authentication logic:
     const userRoleNormalized = req.user.role ? req.user.role.charAt(0).toUpperCase() + req.user.role.slice(1).toLowerCase() : '';
     const isAdmin = userRoleNormalized === 'Admin';
     const isLandlord = userRoleNormalized === 'Landlord' && booking.propertyId.landlordId.toString() === landlordId.toString();
@@ -93,7 +103,7 @@ export const updateBookingStatus = async (req, res) => {
       return res.status(403).json({ message: "Not authorized to update this booking" });
     }
 
-    // Restriction: Tenants can ONLY set status to 'cancelled'
+    // Tenants are restricted to only cancelling their own bookings
     if (isTenant && !isLandlord && !isAdmin && status !== 'cancelled') {
       return res.status(403).json({ message: "Tenants can only cancel their own bookings" });
     }
@@ -102,7 +112,7 @@ export const updateBookingStatus = async (req, res) => {
       booking.status = status;
     }
 
-    // Update payment fields if provided
+    // Update optional payment parameters if provided
     if (paymentStatus) booking.paymentStatus = paymentStatus;
     if (paymentMethod) booking.paymentMethod = paymentMethod;
     if (paymentAmount) booking.paymentAmount = paymentAmount;
@@ -120,15 +130,18 @@ export const updateBookingStatus = async (req, res) => {
   }
 };
 
-// @desc    Get all bookings for the logged-in tenant
-// @route   GET /api/bookings/tenant
-// @access  Private (Tenant/Admin)
+/**
+ * Retrieves all bookings booked by the authenticated Tenant.
+ *
+ * @route GET /api/bookings/tenant
+ * @access Private (Tenant/Admin)
+ */
 export const getTenantBookings = async (req, res) => {
   try {
     const tenantId = req.user.userId;
     console.log(`[BOOKING_REQUEST] Fetching bookings for tenant: ${tenantId}`);
 
-    // Fetch bookings for this tenant, deep populate property AND its landlord
+    // Fetch tenant bookings and deep populate property details as well as its landlord profile
     const bookings = await Booking.find({ tenantId })
       .populate({
         path: 'propertyId',
@@ -139,7 +152,7 @@ export const getTenantBookings = async (req, res) => {
       })
       .sort({ createdAt: -1 });
 
-    // Format for frontend interface
+    // Format results for the frontend view
     const formattedBookings = bookings.map((booking) => ({
       id: booking._id,
       propertyName: booking.propertyId ? booking.propertyId.title : 'Unknown Property',
@@ -147,7 +160,7 @@ export const getTenantBookings = async (req, res) => {
       location: booking.propertyId ? booking.propertyId.location : 'Unknown Location',
       checkIn: booking.checkInDate,
       checkOut: booking.checkOutDate || 'Not specified',
-      status: booking.status.toLowerCase(), // Frontend expects lowercase
+      status: booking.status.toLowerCase(),
       price: (typeof booking.price === 'string' ? parseInt(booking.price.replace(/[^0-9]/g, "")) : (booking.price || 0)),
       totalAmount: (booking.totalAmount || (typeof booking.price === 'string' ? parseInt(booking.price.replace(/[^0-9]/g, "")) : (booking.price || 0))),
       paymentStatus: booking.paymentStatus ? booking.paymentStatus.toLowerCase() : 'pending',
@@ -179,9 +192,14 @@ export const getTenantBookings = async (req, res) => {
   }
 };
 
-// @desc    Create a new booking
-// @route   POST /api/bookings
-// @access  Private (Tenant)
+/**
+ * Creates a new booking request for a property.
+ * Calculates total pricing dynamically based on duration of stay,
+ * then triggers in-app notifications for both Landlords and Admins.
+ *
+ * @route POST /api/bookings
+ * @access Private (Tenant)
+ */
 export const createBooking = async (req, res) => {
   try {
     const { propertyId, checkInDate, checkOutDate, numberOfGuests, specialRequests } = req.body;
@@ -191,13 +209,13 @@ export const createBooking = async (req, res) => {
       return res.status(400).json({ success: false, message: "Property ID and Check-in Date are required" });
     }
 
-    // Fetch the property to get landlordId and price
+    // Retrieve property to reference owner landlord and price per month/unit
     const property = await Property.findById(propertyId);
     if (!property) {
       return res.status(404).json({ success: false, message: "Property not found" });
     }
 
-    // Calculate total amount based on duration
+    // Calculate total price based on date ranges
     let totalAmount = 0;
     const basePrice = Number(typeof property.price === 'string' ? property.price.replace(/[^0-9]/g, '') : property.price);
 
@@ -236,7 +254,7 @@ export const createBooking = async (req, res) => {
       bookingDate: new Date().toISOString()
     });
 
-    // Notify Admin of new booking
+    // Notify Administrator of new booking request
     try {
       const admin = await Admin.findOne();
       if (admin) {
@@ -253,7 +271,7 @@ export const createBooking = async (req, res) => {
       console.error("Failed to notify admin of new booking:", notiError);
     }
 
-    // Notify Landlord of new booking
+    // Notify Landlord owner of the property
     try {
       await createInternalNotification({
         recipient: property.landlordId,
@@ -278,9 +296,13 @@ export const createBooking = async (req, res) => {
   }
 };
 
-// @desc    Get a single booking by ID
-// @route   GET /api/bookings/:id
-// @access  Private (Tenant/Landlord/Admin)
+/**
+ * Fetches booking details for a single booking ID.
+ * Enforces ownership restrictions (only Admin, property Landlord, or booking Tenant can view).
+ *
+ * @route GET /api/bookings/:id
+ * @access Private
+ */
 export const getBookingById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -290,7 +312,7 @@ export const getBookingById = async (req, res) => {
       return res.status(404).json({ success: false, message: "Booking not found" });
     }
 
-    // Authorization check
+    // Verify user authorization
     const isAdmin = req.user.role === 'Admin';
     const isLandlord = req.user.role === 'Landlord' && booking.propertyId.landlordId.toString() === req.user.userId;
     const isTenant = req.user.role === 'Tenant' && booking.tenantId.toString() === req.user.userId;
@@ -304,7 +326,6 @@ export const getBookingById = async (req, res) => {
       data: {
         ...booking._doc,
         id: booking._id,
-        // Ensure totalAmount is calculated if not present
         totalAmount: booking.totalAmount || (typeof booking.price === 'string' ? parseInt(booking.price.replace(/[^0-9]/g, "")) : (booking.price || 0))
       }
     });
@@ -314,9 +335,13 @@ export const getBookingById = async (req, res) => {
   }
 };
 
-// @desc    Complete payment for a booking
-// @route   PUT /api/bookings/:id/pay
-// @access  Private (Tenant/Admin)
+/**
+ * Confirms payment for a pending booking, updating booking status to 'confirmed' and payment status to 'paid'.
+ * Alerts Admin and Landlord with success notifications.
+ *
+ * @route PUT /api/bookings/:id/pay
+ * @access Private (Tenant/Admin)
+ */
 export const completeBookingPayment = async (req, res) => {
   try {
     const { id } = req.params;
@@ -328,23 +353,22 @@ export const completeBookingPayment = async (req, res) => {
       return res.status(404).json({ success: false, message: "Booking not found" });
     }
 
-    // Authorization: Only the tenant who made the booking or an admin
+    // Verify that the caller is authorized (Tenant who booked it or Admin)
     if (req.user.role !== 'Admin' && booking.tenantId.toString() !== req.user.userId) {
       return res.status(403).json({ success: false, message: "Not authorized to pay for this booking" });
     }
 
-    // Update status to confirmed (booked) and paymentStatus to paid
+    // Confirm booking and payment parameters
     booking.status = 'confirmed';
     booking.paymentStatus = 'paid';
 
-    // Optional: store payment details
     if (transactionId) booking.paymentReference = transactionId;
     if (amount) booking.paymentAmount = amount;
     if (paymentMethod) booking.paymentMethod = paymentMethod;
 
     await booking.save();
 
-    // Notify Admin of payment completion
+    // Send notification to Administrator
     try {
       const admin = await Admin.findOne();
       if (admin) {
@@ -361,7 +385,7 @@ export const completeBookingPayment = async (req, res) => {
       console.error("Failed to notify admin of payment:", notiError);
     }
 
-    // Notify Landlord of payment completion
+    // Send notification to Landlord
     try {
       await createInternalNotification({
         recipient: booking.landlordId,
@@ -385,3 +409,4 @@ export const completeBookingPayment = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error completing payment" });
   }
 };
+

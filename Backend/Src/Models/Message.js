@@ -1,10 +1,16 @@
+/**
+ * @file Message.js
+ * @description Mongoose schema for the Message model, representing chat and system communication between Tenants, Landlords, and Admins.
+ */
+
 import mongoose from "mongoose";
 
+// Schema defining sender and recipient fields using dynamic refPath to allow polymorph relationship with Tenant, Landlord, or Admin
 const messageSchema = new mongoose.Schema({
   senderId: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
-    refPath: 'senderModel'
+    refPath: 'senderModel' // Dynamically reference the schema specified in senderModel field
   },
   senderModel: {
     type: String,
@@ -14,7 +20,7 @@ const messageSchema = new mongoose.Schema({
   recipientId: {
     type: mongoose.Schema.Types.ObjectId,
     required: true,
-    refPath: 'recipientModel'
+    refPath: 'recipientModel' // Dynamically reference the schema specified in recipientModel field
   },
   recipientModel: {
     type: String,
@@ -50,3 +56,4 @@ const messageSchema = new mongoose.Schema({
 });
 
 export default mongoose.model("Message", messageSchema);
+
