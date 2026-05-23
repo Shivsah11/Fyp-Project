@@ -6,7 +6,6 @@ const propertySchema = new mongoose.Schema({
   price: { type: String, required: true },
   location: { type: String, required: true },
   type: { type: String, enum: ['apartment', 'house', 'studio', 'room'], default: 'apartment' },
-  rating: { type: Number, default: 0 },
   beds: { type: Number, default: 0 },
   baths: { type: Number, default: 1 },
   area: { type: Number, default: 0 },

@@ -65,7 +65,7 @@ export const getDashboardData = async (req, res) => {
             totalRevenue
           },
           recentUsers,
-          recommendedRooms: await Property.find().sort({ rating: -1 }).limit(4) // Admins see highest rated
+          recommendedRooms: await Property.find().sort({ createdAt: -1 }).limit(4) // Admins see most recent
         }
       });
     }
@@ -227,7 +227,7 @@ export const getDashboardData = async (req, res) => {
     });
 
     const recommendedRoomsRaw = await Property.find({ status: { $in: ['Available', 'available', 'active'] } })
-      .sort({ rating: -1 })
+      .sort({ createdAt: -1 })
       .limit(4);
 
     const recentBookingsRaw = await Booking.find({ tenantId: userId })
@@ -308,7 +308,6 @@ export const getDashboardData = async (req, res) => {
         title: r.title,
         price: r.price,
         location: r.location,
-        rating: r.rating,
         image: r.image || ''
       })),
       payments
